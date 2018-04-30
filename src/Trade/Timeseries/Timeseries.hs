@@ -60,7 +60,7 @@ instance Timeseries High where
   timeseries = Vec.map (fmap unHigh)
 
 instance Timeseries Volume where
-  type TSTy Volume = Int
+  type TSTy Volume = Integer
   timeseries = Vec.map (fmap unVolume)
 
 

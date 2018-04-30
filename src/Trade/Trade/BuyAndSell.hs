@@ -9,10 +9,9 @@ import Data.Vector (Vector)
 
 import Trade.Timeseries.Algorithm.Intersection (Intersection(..))
 
-import Trade.Type.EquityAndShare (Close(..))
+import Trade.Type.EquityAndShare (Close(..), Share(..))
 
 data BuySell = Buy | Sell | Hold deriving (Show, Eq, Ord)
-{-
 
 tradeSignal :: Intersection -> BuySell
 tradeSignal Down = Buy
@@ -26,6 +25,8 @@ data Trade a = Trade {
   , tradeShare :: Share
   }
   
+{-
+
 buyAndSell ::
   Vector (UTCTime, BuySell)
   -> Vector (UTCTime, Close)

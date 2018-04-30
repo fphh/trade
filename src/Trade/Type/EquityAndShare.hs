@@ -36,7 +36,7 @@ instance FromField Low where
   parseField =  return . Low . read . BS.unpack
 
 
-newtype Volume = Volume { unVolume :: Int } deriving (Show, Eq, Ord, Num)
+newtype Volume = Volume { unVolume :: Integer } deriving (Show, Eq, Ord, Num)
 
 instance FromField Volume where
   parseField =  return . Volume . read . BS.unpack
