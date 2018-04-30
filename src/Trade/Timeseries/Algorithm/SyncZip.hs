@@ -4,7 +4,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Trade.Timeseries.Quandl.Algorithm.SyncZip where
+module Trade.Timeseries.Algorithm.SyncZip where
 
 import Data.Time.Clock (UTCTime)
 

@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
-module Trade.Timeseries.Quandl where
+module Trade.Timeseries.Quandl.Quandl where
 
 import Control.Monad (foldM)
 
