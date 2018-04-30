@@ -15,6 +15,12 @@ import Data.Maybe (isNothing)
 import Trade.Timeseries.Quandl.Row
 
 
+extractMaybeFromRow ::
+  (DateInterface row) =>
+  (row -> Maybe a) -> Vector row -> Vector (UTCTime, Maybe a)
+extractMaybeFromRow f = Vec.map (\r -> (dateDI r, f r))
+
+
 timeseriesFromMaybe :: Vector (UTCTime, Maybe a) -> (Double, Vector (UTCTime, a))
 timeseriesFromMaybe vs =
   let (nothings, bs) = Vec.partition isNothing (Vec.map sequence vs)
@@ -25,21 +31,10 @@ timeseriesFromMaybe vs =
                 Nothing -> error "Trade.Timeseries.Timeseries.fromMaybe: you should never be here!"
   in (ratio, newVs)
 
-extractMaybeFromRow ::
-  (DateInterface row) =>
-  (row -> Maybe a) -> Vector row -> Vector (UTCTime, Maybe a)
-extractMaybeFromRow f = Vec.map (\r -> (dateDI r, f r))
-
 extractFromRow ::
   (DateInterface row) =>
   (row -> Maybe a) -> Vector row -> Vector (UTCTime, a)
 extractFromRow f vs = snd (timeseriesFromMaybe (extractMaybeFromRow f vs))
-
-timeseriesBy ::
-  (DateInterface row, Timeseries a) =>
-  (row -> Maybe a) -> Vector row -> Vector (UTCTime, TSTy a)
-timeseriesBy f = timeseries . extractFromRow f
-
 
 class Timeseries a where
   type TSTy a :: *
@@ -66,3 +61,10 @@ instance Timeseries High where
 instance Timeseries Volume where
   type TSTy Volume = Int
   timeseries = Vec.map (fmap unVolume)
+
+
+timeseriesBy ::
+  (DateInterface row, Timeseries a) =>
+  (row -> Maybe a) -> Vector row -> Vector (UTCTime, TSTy a)
+timeseriesBy f = timeseries . extractFromRow f
+
