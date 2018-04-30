@@ -11,7 +11,7 @@ import Trade.Quandl.Quandl.Time ()
 import Trade.Quandl.Quandl.Helper
 import Trade.Quandl.Quandl.Row
 
-import Trade.Quandl.Quandl.Algorithm.EquityAndShare (PricePerShare)
+import Trade.Type.EquityAndShare (PricePerShare)
 
 data Row = Row {
   tradeDate :: !UTCTime

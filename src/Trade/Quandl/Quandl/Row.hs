@@ -8,7 +8,7 @@ import Data.Time.Clock (UTCTime)
 
 import Data.Map (Map)
 
-import Trade.Quandl.Quandl.Algorithm.EquityAndShare (PricePerShare)
+import Trade.Type.EquityAndShare (PricePerShare)
 
 class RowInterface row where
   dateR :: row -> UTCTime

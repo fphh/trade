@@ -9,7 +9,7 @@ import Data.Time.Clock (UTCTime)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
-import Trade.Quandl.Quandl.Algorithm.EquityAndShare (PricePerShare)
+import Trade.Type.EquityAndShare (PricePerShare)
 
 
 import Trade.Quandl.Quandl.Database

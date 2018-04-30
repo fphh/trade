@@ -21,7 +21,6 @@ library
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
                         Trade.Quandl.Quandl
-                        Trade.Quandl.Quandl.Algorithm.EquityAndShare
                         Trade.Quandl.Quandl.Algorithm.Intersection
                         Trade.Quandl.Quandl.Algorithm.SyncZip
                         Trade.Quandl.Quandl.CBOE
@@ -46,6 +45,7 @@ library
                         Trade.Report.Report
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
+                        Trade.Type.EquityAndShare
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.11 && <4.12,
