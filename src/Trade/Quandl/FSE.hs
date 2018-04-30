@@ -1,0 +1,235 @@
+{-# LANGUAGE TypeFamilies #-}
+
+module Trade.Quandl.FSE where
+
+import Data.Time.Clock (UTCTime)
+
+import Data.Csv (FromNamedRecord, parseNamedRecord)
+
+import Trade.Quandl.Database
+import Trade.Quandl.Time ()
+import Trade.Quandl.Helper
+import Trade.Quandl.Row
+
+import Trade.Quandl.Algorithm.EquityAndShare (PricePerShare)
+
+data Row = Row {
+  tradeDate :: !UTCTime
+  , open :: !(Maybe Double)
+  , high :: !(Maybe Double)
+  , low :: !(Maybe Double)
+  , close :: !(Maybe PricePerShare)
+  , change :: !(Maybe Double)
+  , tradeVolume :: !(Maybe Double)
+  , turnover :: !(Maybe Double)
+  , lastPriceOfTheDay :: !(Maybe Double)
+  , dailyTradedUnits :: !(Maybe Double)
+  , dailyTurnover :: !(Maybe Double)
+  } deriving (Show)
+
+instance FromNamedRecord Row where
+  parseNamedRecord r =
+    Row
+    <$> (r .:: "Date")
+    <*> (r .:: "Open")
+    <*> (r .:: "High")
+    <*> (r .:: "Low")
+    <*> (r .:: "Close")
+    <*> (r .:: "Change")
+    <*> (r .:: "Traded Volume")
+    <*> (r .:: "Turnover")
+    <*> (r .:: "Last Price of the Day")
+    <*> (r .:: "Daily Traded Units")
+    <*> (r .:: "Daily Turnover")
+
+
+instance ToRow FSE where
+  type RowTy FSE = Row
+
+instance RowInterface Row where
+  dateR = tradeDate
+  {-
+  openR = maybe (error "open: not available") id . open
+  highR = maybe (error "high: not available") id . high
+  lowR = maybe (error "low: not available") id . low
+  closeR = maybe (error "close: not available") id . close
+  volumeR = maybe (error "volume: not available") id . tradeVolume
+  -}
+  openR = maybe (-1) id . open
+  highR = maybe (-1) id . high
+  lowR = maybe (-1) id . low
+  closeR = maybe (-1) id . close
+  volumeR = maybe (-1) id . tradeVolume
+
+instance DateInterface Row where
+  dateDI = tradeDate
+
+instance FromDatabase FSE where
+  type Dataset FSE = FSECode
+
+
+data FSE = FSE deriving (Show, Eq, Ord)
+
+data FSECode =
+  ALV_X    -- Allianz Se (ALV_X)
+  | BAS_X    -- Basf Se (BAS_X)
+  | BMW_X    -- Bmw St (BMW_X)
+  | BEI_X    -- Beiersdorf Aktiengesellschaft (BEI_X)
+  | DAI_X    -- Daimler (DAI_X)
+  | ADS_X    -- Adidas (ADS_X)
+  | DBK_X    -- Deutsche Bank (DBK_X)
+  | DB1_X    -- Deutsche Börse (DB1_X)
+  | BAYN_X    -- Bayer (BAYN_X)
+  | FRE_X    -- Fresenius Se & Co. Kgaa (FRE_X)
+  | CBK_X    -- Commerzbank (CBK_X)
+  | FME_X    -- Fresenius Medical Care  & Co. Kgaa St (FME_X)
+  | CON_X    -- Continental (CON_X)
+  | DPW_X    -- Deutsche Post (DPW_X)
+  | LXS_X    -- Lanxess (LXS_X)
+  | DTE_X    -- Deutsche Telekom (DTE_X)
+  | LIN_X    -- Linde (LIN_X)
+  | EOAN_X    -- E.on Se (EOAN_X)
+  | RWE_X    -- Rwe  St (RWE_X)
+  | HEI_X    -- Heidelbergcement (HEI_X)
+  | SAP_X    -- Sap (SAP_X)
+  | HEN3_X    -- Henkel  & Co. Kgaa Vz (HEN3_X)
+  | SIE_X    -- Siemens (SIE_X)
+  | IFX_X    -- Infineon Technologies (IFX_X)
+  | TKA_X    -- Thyssenkrupp (TKA_X)
+  | SDF_X    -- K+s Aktiengesellschaft (SDF_X)
+  | VOW3_X    -- Volkswagen  Vz (VOW3_X)
+  | LHA_X    -- Deutsche Lufthansa (LHA_X)
+  | MRK_X    -- Merck Kgaa (MRK_X)
+  | MUV2_X    -- Münchener Rück (MUV2_X)
+  | AIR_X    -- Airbus Group (eads N.v.) (AIR_X)
+  | BNR_X    -- Brenntag (BNR_X)
+  | CLS1_X    -- Celesio (CLS1_X)
+  | GIL_X    -- Dmg Mori Seiki (GIL_X)
+  | ARL_X    -- Aareal Bank (ARL_X)
+  | NDA_X    -- Aurubis (NDA_X)
+  | SPR_X    -- Axel Springer Se (SPR_X)
+  | GBF_X    -- Bilfinger Se (GBF_X)
+  | FIE_X    -- Fielmann (FIE_X)
+  | FPE3_X    -- Fuchs Petrolub  Vz (FPE3_X)
+  | DEQ_X    -- Deutsche Euroshop (DEQ_X)
+  | DWNI_X    -- Deutsche Wohnen (DWNI_X)
+  | GFJ_X    -- Gagfah S.a. (GFJ_X)
+  | DUE_X    -- Dürr (DUE_X)
+  | ZIL2_X    -- Elringklinger (ZIL2_X)
+  | EVK_X    -- Evonik Industries (EVK_X)
+  | HOT_X    -- Hochtief (HOT_X)
+  | BOSS_X    -- Hugo Boss (BOSS_X)
+  | FRA_X    -- Fraport (FRA_X)
+  | KD8_X    -- Kabel Deutschland Holding (KD8_X)
+  | G1A_X    -- Gea Group Aktiengesellschaft (G1A_X)
+  | GXI_X    -- Gerresheimer (GXI_X)
+  | GWI1_X    -- Gerry Weber International (GWI1_X)
+  | HNR1_X    -- Hannover Rück Se (HNR1_X)
+  | MAN_X    -- Man Se St (MAN_X)
+  | MEO_X    -- Metro  St (MEO_X)
+  | KCO_X    -- Klöckner & Co Se (KCO_X)
+  | OSR_X    -- Osram Licht (OSR_X)
+  | KRN_X    -- Krones (KRN_X)
+  | KU2_X    -- Kuka Aktiengesellschaft (KU2_X)
+  | LEG_X    -- Leg Immobilien (LEG_X)
+  | LEO_X    -- Leoni (LEO_X)
+  | RAA_X    -- Rational (RAA_X)
+  | MTX_X    -- Mtu Aero Engines (MTX_X)
+  | NOEJ_X    -- Norma Group Se (NOEJ_X)
+  | SAZ_X    -- Stada Arzneimittel Ag (SAZ_X)
+  | PSM_X    -- Prosiebensat.1 Media (PSM_X)
+  | RRTL_X    -- Rtl Group S.a. (RRTL_X)
+  | SY1_X    -- Symrise (SY1_X)
+  | SZU_X    -- Südzucker (SZU_X)
+  | RHM_X    -- Rheinmetall (RHM_X)
+  | RHK_X    -- RhÖn-klinikum (RHK_X)
+  | SGL_X    -- Sgl Carbon Se (SGL_X)
+  | SZG_X    -- Salzgitter (SZG_X)
+  | SKYD_X    -- Sky Deutschland (SKYD_X)
+  | BBZA_X    -- Bb Biotech (BBZA_X)
+  | TEG_X    -- Tag Immobilien (TEG_X)
+  | BC8_X    -- Bechtle (BC8_X)
+  | TUI1_X    -- Tui (TUI1_X)
+  | TLX_X    -- Talanx Aktiengesellschaft (TLX_X)
+  | WCH_X    -- Wacker Chemie (WCH_X)
+  | WIN_X    -- Wincor Nixdorf Aktiengesellschaft (WIN_X)
+  | ADV_X    -- Adva Optical Networking Se (ADV_X)
+  | DRI_X    -- Drillisch (DRI_X)
+  | AIXA_X    -- Aixtron Se (AIXA_X)
+  | DRW3_X    -- Drägerwerk  & Co. Kgaa Vz (DRW3_X)
+  | FNTN_X    -- Freenet (FNTN_X)
+  | COK_X    -- Cancom Se (COK_X)
+  | AFX_X    -- Carl Zeiss Meditec (AFX_X)
+  | COP_X    -- Compugroup Medical (COP_X)
+  | LPK_X    -- Lpkf Laser & Electronics (LPK_X)
+  | DLG_X    -- Dialog Semiconductor Plc (DLG_X)
+  | MOR_X    -- Morphosys (MOR_X)
+  | NEM_X    -- Nemetschek (NEM_X)
+  | EVT_X    -- Evotec (EVT_X)
+  | JEN_X    -- Jenoptik (JEN_X)
+  | KBC_X    -- Kontron (KBC_X)
+  | QSC_X    -- Qsc (QSC_X)
+  | QIA_X    -- Qiagen N.v. (QIA_X)
+  | SBS_X    -- Stratec Biomedical (SBS_X)
+  | NDX1_X    -- Nordex Se (NDX1_X)
+  | SRT3_X    -- Sartorius  Vz (SRT3_X)
+  | PSAN_X    -- Psi Aktiengesellschaft (PSAN_X)
+  | PFV_X    -- Pfeiffer Vacuum Technology (PFV_X)
+  | S92_X    -- Sma Solar Technology (S92_X)
+  | SOW_X    -- Software (SOW_X)
+  | WDI_X    -- Wirecard (WDI_X)
+  | O1BC_X    -- Xing (O1BC_X)
+  | AB1_X    -- Air Berlin Plc (AB1_X)
+  | BAF_X    -- Balda (BAF_X)
+  | BYW6_X    -- Baywa Vna (BYW6_X)
+  | UTDI_X    -- United Internet (UTDI_X)
+  | BDT_X    -- Bertrandt (BDT_X)
+  | BIO3_X    -- Biotest  Vz (BIO3_X)
+  | O2C_X    -- C.a.t. Oil (O2C_X)
+  | CWC_X    -- Cewe Stiftung & Co. Kgaa (CWC_X)
+  | AAD_X    -- Amadeus Fire (AAD_X)
+  | CEV_X    -- Centrotec Sustainable (CEV_X)
+  | B5A_X    -- Bauer Aktiengesellschaft (B5A_X)
+  | DIC_X    -- Dic Asset (DIC_X)
+  | DEZ_X    -- Deutz (DEZ_X)
+  | EVD_X    -- Cts Eventim (EVD_X)
+  | GFK_X    -- Gfk Se (GFK_X)
+  | GSC1_X    -- Gesco (GSC1_X)
+  | COM_X    -- Comdirect Bank (COM_X)
+  | DEX_X    -- Delticom (DEX_X)
+  --  | 2HR_X    -- H&R (2HR_X)
+  | ANN_X    -- Deutsche Annington Immobilien Se (ANN_X)
+  | DBAN_X    -- Deutsche Beteiligungs (DBAN_X)
+  | GMM_X    -- Grammer (GMM_X)
+  | INH_X    -- Indus Holding (INH_X)
+  | GLJ_X    -- Grenkeleasing (GLJ_X)
+  | JUN3_X    -- Jungheinrich (JUN3_X)
+  | HHFA_X    -- Hamburger Hafen Und Logistik (HHFA_X)
+  | HAB_X    -- Hamborner Reit (HAB_X)
+  | HAW_X    -- Hawesko Holding (HAW_X)
+  | MLP_X    -- Mlp (MLP_X)
+  | HDD_X    -- Heidelberger Druckmaschinen (HDD_X)
+  | HBH3_X    -- Hornbach Holding Ag (HBH3_X)
+  | KWS_X    -- Kws Saat (KWS_X)
+  | KGX_X    -- Kion Group (KGX_X)
+  | SW1_X    -- Shw (SW1_X)
+  | SKB_X    -- Koenig & Bauer (SKB_X)
+  | SIX2_X    -- Sixt Se St (SIX2_X)
+  | P1Z_X    -- Patrizia Immobilien (P1Z_X)
+  | PMOX_X    -- Prime Office (PMOX_X)
+  | TTI_X    -- Tom Tailor Holding (TTI_X)
+  | PUM_X    -- Puma Se (PUM_X)
+  | TTK_X    -- Takkt (TTK_X)
+  | SFQ_X    -- Saf-holland S.a. (SFQ_X)
+  | VIB3_X    -- Villeroy & Boch  Vz (VIB3_X)
+  | SLT_X    -- Schaltbau Holding (SLT_X)
+  | VOS_X    -- Vossloh (VOS_X)
+  | SAX_X    -- Ströer Media (SAX_X)
+  | WAC_X    -- Wacker Neuson Se (WAC_X)
+  | AOX_X    -- Alstria Office Reit-ag (AOX_X)
+  | TIM_X    -- Tipp24 Se (TIM_X)
+  | VT9_X    -- Vtg Aktiengesellschaft (VT9_X)
+  | ZO1_X    -- Zooplus (ZO1_X)
+  | O2D_X    -- Telefónica Deutschland Holding AG (O2D_X)
+  | EON_X    -- E.on Se (EON_X)
+  deriving (Show, Enum, Eq, Ord)
