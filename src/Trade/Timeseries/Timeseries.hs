@@ -15,6 +15,7 @@ import Data.Maybe (isNothing)
 import Trade.Timeseries.Row
 
 
+
 extractMaybeFromRow ::
   (DateInterface row) =>
   (row -> Maybe a) -> Vector row -> Vector (UTCTime, Maybe a)
