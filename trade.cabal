@@ -20,17 +20,17 @@ library
                         Trade.Algorithm.Drawdown
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
-                        Trade.Timeseries.Quandl
-                        Trade.Timeseries.Quandl.Algorithm.Intersection
-                        Trade.Timeseries.Quandl.Algorithm.SyncZip
+                        Trade.Timeseries.Algorithm.Intersection
+                        Trade.Timeseries.Algorithm.SyncZip                     
+                        Trade.Timeseries.Quandl.Quandl
                         Trade.Timeseries.Quandl.CBOE
                         Trade.Timeseries.Quandl.Database
                         Trade.Timeseries.Quandl.FSE
                         Trade.Timeseries.Quandl.Helper
-                        Trade.Timeseries.Quandl.Row
                         Trade.Timeseries.Quandl.StripTime
                         Trade.Timeseries.Quandl.Time
                         Trade.Timeseries.Quandl.WIKI
+                        Trade.Timeseries.Row
                         Trade.Timeseries.Timeseries
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color

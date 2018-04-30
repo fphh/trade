@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
-module Trade.Timeseries.Quandl.Row where
+module Trade.Timeseries.Row where
 
 import Data.Time.Clock (UTCTime)
 

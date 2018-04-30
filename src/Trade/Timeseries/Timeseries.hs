@@ -12,7 +12,7 @@ import Data.Vector (Vector)
 
 import Data.Maybe (isNothing)
 
-import Trade.Timeseries.Quandl.Row
+import Trade.Timeseries.Row
 
 
 extractMaybeFromRow ::

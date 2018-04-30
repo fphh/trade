@@ -6,12 +6,14 @@ import Data.Time.Clock (UTCTime)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
+import Trade.Type.EquityAndShare (Open, Close, Low, High, Volume)
+
+import Trade.Timeseries.Row
+
 import Trade.Timeseries.Quandl.Database
 import Trade.Timeseries.Quandl.Time ()
 import Trade.Timeseries.Quandl.Helper
-import Trade.Timeseries.Quandl.Row
 
-import Trade.Type.EquityAndShare (Open, Close, Low, High, Volume)
 
 data Row = Row {
   tradeDate :: !UTCTime

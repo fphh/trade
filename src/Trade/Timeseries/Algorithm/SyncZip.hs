@@ -11,7 +11,7 @@ import Data.Time.Clock (UTCTime)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Timeseries.Quandl.Row
+import Trade.Timeseries.Row
 
 syncZipWith :: (DateInterface rtx, DateInterface rty) => (rtx -> rty -> a) -> Vector rtx -> Vector rty -> (Vector (UTCTime, a))
 syncZipWith f xs ys =
