@@ -1,14 +1,14 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Trade.Quandl.Quandl.CBOE where
+module Trade.Timeseries.Quandl.CBOE where
 
 import Data.Time.Clock (UTCTime)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
-import Trade.Quandl.Quandl.Database
-import Trade.Quandl.Quandl.Time ()
-import Trade.Quandl.Quandl.Helper
+import Trade.Timeseries.Quandl.Database
+import Trade.Timeseries.Quandl.Time ()
+import Trade.Timeseries.Quandl.Helper
 
 -- "Date","Total Call Volume","Total Put Volume","Total Option Volume","P/C Ratio"
 

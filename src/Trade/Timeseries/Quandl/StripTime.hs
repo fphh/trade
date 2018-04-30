@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Trade.Quandl.Quandl.StripTime where
+module Trade.Timeseries.Quandl.StripTime where
 
 import Data.Time.Clock (UTCTime)
 

@@ -2,28 +2,28 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 
-module Trade.Quandl.Quandl.WIKI where
+module Trade.Timeseries.Quandl.WIKI where
 
 import Data.Time.Clock (UTCTime)
 -- import Data.Time.Format (parseTimeM, defaultTimeLocale, iso8601DateFormat)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
-import Trade.Type.EquityAndShare (PricePerShare)
+import Trade.Type.EquityAndShare (Open, Close, Low, High, Volume)
 
 
-import Trade.Quandl.Quandl.Database
-import Trade.Quandl.Quandl.Helper
-import Trade.Quandl.Quandl.Time ()
-import Trade.Quandl.Quandl.Row
+import Trade.Timeseries.Quandl.Database
+import Trade.Timeseries.Quandl.Helper
+import Trade.Timeseries.Quandl.Time ()
+import Trade.Timeseries.Quandl.Row
 
 data Row = Row {
   date :: !UTCTime
-  , open :: !Double
-  , high :: !Double
-  , low :: !Double
-  , close :: !PricePerShare
-  , volume :: !Double
+  , open :: !(Maybe Open)
+  , high :: !(Maybe High)
+  , low :: !(Maybe Low)
+  , close :: !(Maybe Close)
+  , volume :: !(Maybe Volume)
   , exDividend :: !Double
   , splitRatio :: !Double
   , adjOpen :: !Double

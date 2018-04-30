@@ -1,26 +1,26 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Trade.Quandl.Quandl.FSE where
+module Trade.Timeseries.Quandl.FSE where
 
 import Data.Time.Clock (UTCTime)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
-import Trade.Quandl.Quandl.Database
-import Trade.Quandl.Quandl.Time ()
-import Trade.Quandl.Quandl.Helper
-import Trade.Quandl.Quandl.Row
+import Trade.Timeseries.Quandl.Database
+import Trade.Timeseries.Quandl.Time ()
+import Trade.Timeseries.Quandl.Helper
+import Trade.Timeseries.Quandl.Row
 
-import Trade.Type.EquityAndShare (PricePerShare)
+import Trade.Type.EquityAndShare (Open, Close, Low, High, Volume)
 
 data Row = Row {
   tradeDate :: !UTCTime
-  , open :: !(Maybe Double)
-  , high :: !(Maybe Double)
-  , low :: !(Maybe Double)
-  , close :: !(Maybe PricePerShare)
+  , open :: !(Maybe Open)
+  , high :: !(Maybe High)
+  , low :: !(Maybe Low)
+  , close :: !(Maybe Close)
   , change :: !(Maybe Double)
-  , tradeVolume :: !(Maybe Double)
+  , tradeVolume :: !(Maybe Volume)
   , turnover :: !(Maybe Double)
   , lastPriceOfTheDay :: !(Maybe Double)
   , dailyTradedUnits :: !(Maybe Double)
@@ -48,18 +48,11 @@ instance ToRow FSE where
 
 instance RowInterface Row where
   dateR = tradeDate
-  {-
-  openR = maybe (error "open: not available") id . open
-  highR = maybe (error "high: not available") id . high
-  lowR = maybe (error "low: not available") id . low
-  closeR = maybe (error "close: not available") id . close
-  volumeR = maybe (error "volume: not available") id . tradeVolume
-  -}
-  openR = maybe (-1) id . open
-  highR = maybe (-1) id . high
-  lowR = maybe (-1) id . low
-  closeR = maybe (-1) id . close
-  volumeR = maybe (-1) id . tradeVolume
+  openR = open
+  highR = high
+  lowR = low
+  closeR = close
+  volumeR = tradeVolume
 
 instance DateInterface Row where
   dateDI = tradeDate

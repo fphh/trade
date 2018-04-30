@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
-module Trade.Quandl.Quandl where
+module Trade.Timeseries.Quandl where
 
 import Control.Monad (foldM)
 
@@ -15,7 +15,7 @@ import Data.Map (Map)
 
 import qualified Data.Csv as Csv
 
-import Trade.Quandl.Quandl.Database
+import Trade.Timeseries.Quandl.Database
 
 quandlBaseUrl :: String
 quandlBaseUrl = "https://www.quandl.com/api/v3/datasets"
