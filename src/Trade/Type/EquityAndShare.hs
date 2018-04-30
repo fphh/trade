@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Trade.Type.EquityAndShare where
 
@@ -46,8 +46,7 @@ instance FromField Volume where
 
 newtype Share = Share { unShare :: Integer } deriving (Show, Eq, Ord, Num)
 
-newtype Yield = Yield { unYield :: Double } deriving (Show, Eq, Ord, Num)
-
+{-
 class EPS a where
   type Ty a :: *
     
@@ -63,18 +62,53 @@ instance EPS Close where
   type Ty Close = Share 
 
   (Close pps) .* (Share s) = Equity (fromIntegral s * pps)
+-}
 
-
-sharesPerEquity :: Equity -> Close -> Share
-sharesPerEquity (Equity e) (Close pps) = Share (floor (e/pps))
-
+{-
 (./) :: Equity -> Close -> Share
 (./) = sharesPerEquity
 
-totalEquity :: Equity -> Close -> Share -> Equity
-totalEquity e pps s = e + pps .* s
+sharesPerEquity :: Equity -> Close -> Share
+sharesPerEquity (Equity e) (Close pps) = Share (floor (e/pps))
+-}
 
+
+class Mult a where
+  mult :: Share -> a -> Equity
+
+instance Mult Open where
+  mult (Share s) (Open c) = Equity (c * fromIntegral s)
+
+instance Mult Close where
+  mult (Share s) (Close c) = Equity (c * fromIntegral s)
+
+instance Mult Low where
+  mult (Share s) (Low c) = Equity (c * fromIntegral s)
+
+instance Mult High where
+  mult (Share s) (High c) = Equity (c * fromIntegral s)
+
+
+
+class Div a where
+  div :: Equity -> a -> Share
+
+instance Div Open where
+  div (Equity e) (Open pps) = Share (floor (e/pps))
+
+instance Div Close where
+  div (Equity e) (Close pps) = Share (floor (e/pps))
+
+instance Div Low where
+  div (Equity e) (Low pps) = Share (floor (e/pps))
+
+instance Div High where
+  div (Equity e) (High pps) = Share (floor (e/pps))
+
+totalEquity :: Equity -> Share -> Close -> Equity
+totalEquity e s pps = e + s `mult` pps
+
+newtype Yield = Yield { unYield :: Double } deriving (Show, Eq, Ord, Num)
 
 forwardYield :: Equity -> Equity -> Yield
 forwardYield (Equity old) (Equity new) = Yield (new / old)
-
