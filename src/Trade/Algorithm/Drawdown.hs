@@ -8,7 +8,7 @@ import qualified Data.Vector as Vec
 
 import qualified Statistics.Sample as Sample
 
-import qualified Report as R
+import qualified Trade.Report.Report as R
 
 import Debug.Trace
 

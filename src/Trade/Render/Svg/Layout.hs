@@ -1,6 +1,6 @@
 
 
-module Trade.Svg.Layout where
+module Trade.Render.Svg.Layout where
 
 
 newtype Height = Height Double deriving  (Show)

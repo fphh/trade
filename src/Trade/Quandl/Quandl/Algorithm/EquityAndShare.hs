@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Trade.Quandl.Algorithm.EquityAndShare where
+module Trade.Quandl.Quandl.Algorithm.EquityAndShare where
 
 
 import qualified Data.ByteString.Char8 as BS

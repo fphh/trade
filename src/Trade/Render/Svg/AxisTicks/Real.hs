@@ -1,6 +1,6 @@
 
 
-module Trade.Svg.AxisTicks.Real where
+module Trade.Render.Svg.AxisTicks.Real where
 
 import qualified Data.Map as Map
 import Data.Map (Map)

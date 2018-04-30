@@ -18,14 +18,14 @@ import Data.Monoid
 
 import Data.Time.Clock
 
-import Trade.Svg.Svg
-import Trade.Svg.Plot
-import Trade.Svg.Extent
-import Trade.Svg.Layout
-import Trade.Svg.AxisTicks
+import Trade.Render.Svg.Svg
+import Trade.Render.Svg.Plot
+import Trade.Render.Svg.Extent
+import Trade.Render.Svg.Layout
+import Trade.Render.Svg.AxisTicks
 
-import Common.Attr
-import Common.Utils
+import Trade.Render.Common.Attr
+import Trade.Render.Common.Utils
 
 data ReportItem =
   SvgItem Attrs (Svg [])

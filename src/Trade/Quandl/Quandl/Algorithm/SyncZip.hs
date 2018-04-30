@@ -4,14 +4,14 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Trade.Quandl.Algorithm.SyncZip where
+module Trade.Quandl.Quandl.Algorithm.SyncZip where
 
 import Data.Time.Clock (UTCTime)
 
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Quandl.Row
+import Trade.Quandl.Quandl.Row
 
 syncZipWith :: (DateInterface rtx, DateInterface rty) => (rtx -> rty -> a) -> Vector rtx -> Vector rty -> (Vector (UTCTime, a))
 syncZipWith f xs ys =

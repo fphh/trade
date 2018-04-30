@@ -1,11 +1,11 @@
 
 
-module Trade.Svg.AxisTicks where
+module Trade.Render.Svg.AxisTicks where
 
 import Data.Time.Clock (UTCTime)
 
-import Trade.Svg.AxisTicks.Time (ticksUTC)
-import Trade.Svg.AxisTicks.Real (ticksReal)
+import Trade.Render.Svg.AxisTicks.Time (ticksUTC)
+import Trade.Render.Svg.AxisTicks.Real (ticksReal)
 
 
 class AxisTicks a where

@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Trade.Svg.Plot where
+module Trade.Render.Svg.Plot where
 
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Builder as B
@@ -21,14 +21,14 @@ import Data.Time.Clock (UTCTime(..), secondsToDiffTime)
 import Data.Time.Format (formatTime, defaultTimeLocale, iso8601DateFormat, parseTimeM)
 import Data.Time.Calendar (Day(..))
 
-import Trade.Svg.Svg
-import Trade.Svg.Layout
-import Trade.Svg.Extent
-import Trade.Svg.DrawingVec
-import Trade.Svg.AxisTicks
+import Trade.Render.Svg.Svg
+import Trade.Render.Svg.Layout
+import Trade.Render.Svg.Extent
+import Trade.Render.Svg.DrawingVec
+import Trade.Render.Svg.AxisTicks
 
-import Common.Attr
-import Common.Color
+import Trade.Render.Common.Attr
+import Trade.Render.Common.Color
 
 import Debug.Trace
 

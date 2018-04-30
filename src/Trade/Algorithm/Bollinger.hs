@@ -7,7 +7,7 @@ import Data.Vector (Vector)
 
 import Statistics.Sample (mean, stdDev)
 
-import Trade.Svg.Plot
+import Trade.Render.Svg.Plot
 
 -- number stddev
 newtype BolK = BolK Int deriving (Show)

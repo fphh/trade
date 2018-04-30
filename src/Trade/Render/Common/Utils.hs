@@ -1,6 +1,6 @@
 
 
-module Trade.Common.Utils where
+module Trade.Render.Common.Utils where
 
 import qualified Data.ByteString.Builder as B
 import Data.ByteString.Builder (Builder)

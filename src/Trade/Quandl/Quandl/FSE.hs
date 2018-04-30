@@ -1,17 +1,17 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Trade.Quandl.FSE where
+module Trade.Quandl.Quandl.FSE where
 
 import Data.Time.Clock (UTCTime)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
-import Trade.Quandl.Database
-import Trade.Quandl.Time ()
-import Trade.Quandl.Helper
-import Trade.Quandl.Row
+import Trade.Quandl.Quandl.Database
+import Trade.Quandl.Quandl.Time ()
+import Trade.Quandl.Quandl.Helper
+import Trade.Quandl.Quandl.Row
 
-import Trade.Quandl.Algorithm.EquityAndShare (PricePerShare)
+import Trade.Quandl.Quandl.Algorithm.EquityAndShare (PricePerShare)
 
 data Row = Row {
   tradeDate :: !UTCTime

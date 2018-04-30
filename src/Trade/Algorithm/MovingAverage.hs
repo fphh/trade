@@ -11,7 +11,7 @@ import Data.Vector (Vector)
 
 import Data.List (scanl')
 
-import Debug.Trace
+-- import Debug.Trace
 
 class MovingAverage vec where
   movingAverage :: Int -> vec Double -> vec Double

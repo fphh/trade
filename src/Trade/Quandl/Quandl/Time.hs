@@ -1,5 +1,5 @@
 
-module Trade.Quandl.Time where
+module Trade.Quandl.Quandl.Time where
 
 import Control.Monad.Fail
 

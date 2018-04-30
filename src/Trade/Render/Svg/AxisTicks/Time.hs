@@ -1,5 +1,5 @@
 
-module Trade.Svg.AxisTicks.Time where
+module Trade.Render.Svg.AxisTicks.Time where
 
 
 import qualified Data.List as List

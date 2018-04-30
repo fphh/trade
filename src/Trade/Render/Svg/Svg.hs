@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances  #-}
 
 
-module Trade.Svg.Svg where
+module Trade.Render.Svg.Svg where
 
 import qualified Data.List as List
 
@@ -12,18 +12,8 @@ import Data.Vector (Vector)
 import qualified Data.ByteString.Builder as B
 import Data.ByteString.Builder (Builder)
 
--- import qualified Data.ByteString.Lazy as BSL
--- import Data.ByteString.Lazy (ByteString)
-
--- import qualified Data.Map.Strict as Map
--- import Data.Map.Strict (Map)
-
-import Data.Monoid
-
--- import Text.Printf (printf)
-
-import Trade.Common.Attr
-import Trade.Common.Utils
+import Trade.Render.Common.Attr
+import Trade.Render.Common.Utils
 
 comma :: Builder
 comma = B.charUtf8 ','

@@ -2,20 +2,20 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 
-module Trade.Quandl.WIKI where
+module Trade.Quandl.Quandl.WIKI where
 
 import Data.Time.Clock (UTCTime)
 -- import Data.Time.Format (parseTimeM, defaultTimeLocale, iso8601DateFormat)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
-import Quandl.Algorithm.EquityAndShare (PricePerShare)
+import Trade.Quandl.Quandl.Algorithm.EquityAndShare (PricePerShare)
 
 
-import Quandl.Database
-import Quandl.Helper
-import Quandl.Time ()
-import Quandl.Row
+import Trade.Quandl.Quandl.Database
+import Trade.Quandl.Quandl.Helper
+import Trade.Quandl.Quandl.Time ()
+import Trade.Quandl.Quandl.Row
 
 data Row = Row {
   date :: !UTCTime

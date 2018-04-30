@@ -6,9 +6,9 @@ module Trade.Algorithm.StochasticOscillator where
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Algorithm.MovingAverage
+import Trade.Algorithm.MovingAverage
 
-import Svg.Plot
+import Trade.Render.Svg.Plot
 
 
 -- Probably slow implementation

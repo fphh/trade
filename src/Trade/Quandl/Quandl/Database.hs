@@ -4,7 +4,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-module Trade.Quandl.Database where
+module Trade.Quandl.Quandl.Database where
 
 
 import Data.Time.Clock (UTCTime)

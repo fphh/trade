@@ -2,13 +2,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
-module Trade.Quandl.Row where
+module Trade.Quandl.Quandl.Row where
 
 import Data.Time.Clock (UTCTime)
 
 import Data.Map (Map)
 
-import Trade.Quandl.Algorithm.EquityAndShare (PricePerShare)
+import Trade.Quandl.Quandl.Algorithm.EquityAndShare (PricePerShare)
 
 class RowInterface row where
   dateR :: row -> UTCTime

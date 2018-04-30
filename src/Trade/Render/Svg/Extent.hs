@@ -1,13 +1,13 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Trade.Svg.Extent where
+module Trade.Render.Svg.Extent where
 
 import Data.Time.Clock
 
 
-import Trade.Svg.Layout
-import Trade.Svg.DrawingVec
+import Trade.Render.Svg.Layout
+import Trade.Render.Svg.DrawingVec
 
 --import Debug.Trace
 

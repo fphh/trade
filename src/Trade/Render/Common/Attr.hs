@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Trade.Common.Attr where
+module Trade.Render.Common.Attr where
 
 
 import qualified Data.ByteString.Builder as B
@@ -10,9 +10,7 @@ import Data.ByteString.Builder (Builder)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 
-import Data.Monoid
-
-import Trade.Common.Color
+import Trade.Render.Common.Color
 
 data Attr = Attr String String deriving (Show)
 

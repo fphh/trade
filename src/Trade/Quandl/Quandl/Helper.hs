@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 
-module Trade.Quandl.Helper where
+module Trade.Quandl.Quandl.Helper where
   
 import Data.Csv (FromField, NamedRecord, Parser, (.:))
 

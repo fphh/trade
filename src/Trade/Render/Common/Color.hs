@@ -1,6 +1,6 @@
 
 
-module Trade.Common.Color where
+module Trade.Render.Common.Color where
 
 
 

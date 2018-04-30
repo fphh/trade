@@ -20,16 +20,18 @@ library
                         Trade.Algorithm.Drawdown
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
-                        Trade.Quandl.Algorithm.EquityAndShare
-                        Trade.Quandl.Algorithm.Intersection
-                        Trade.Quandl.Algorithm.SyncZip
-                        Trade.Quandl.CBOE
-                        Trade.Quandl.Database
-                        Trade.Quandl.FSE
-                        Trade.Quandl.Helper
-                        Trade.Quandl.Row
-                        Trade.Quandl.StripTime
-                        Trade.Quandl.WIKI
+                        Trade.Quandl.Quandl
+                        Trade.Quandl.Quandl.Algorithm.EquityAndShare
+                        Trade.Quandl.Quandl.Algorithm.Intersection
+                        Trade.Quandl.Quandl.Algorithm.SyncZip
+                        Trade.Quandl.Quandl.CBOE
+                        Trade.Quandl.Quandl.Database
+                        Trade.Quandl.Quandl.FSE
+                        Trade.Quandl.Quandl.Helper
+                        Trade.Quandl.Quandl.Row
+                        Trade.Quandl.Quandl.StripTime
+                        Trade.Quandl.Quandl.Time
+                        Trade.Quandl.Quandl.WIKI
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color
                         Trade.Render.Common.Utils
@@ -54,7 +56,11 @@ library
                        statistics ==0.14.0.2,
                        QuickCheck ==2.11.3,
                        http-conduit ==2.3.0,
-                       cassava ==0.5.1.0
+                       cassava ==0.5.1.0,
+                       statistics ==0.14.0.2,
+                       mwc-random ==0.13.6.0
 
   hs-source-dirs:      src
   default-language:    Haskell2010
+  
+  ghc-options:         -O2 -Wall

@@ -1,6 +1,6 @@
 
 
-module Trade.Quandl.Algorithm.Intersection where
+module Trade.Quandl.Quandl.Algorithm.Intersection where
 
 import Data.Time.Clock (UTCTime)
 
@@ -8,7 +8,7 @@ import Data.Time.Clock (UTCTime)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Quandl.Algorithm.SyncZip (syncZip)
+import Trade.Quandl.Quandl.Algorithm.SyncZip (syncZip)
 
 
 -- import Debug.Trace

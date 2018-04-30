@@ -1,5 +1,5 @@
 
-module Trade.Svg.DrawingVec where
+module Trade.Render.Svg.DrawingVec where
 
 
 import qualified Data.List as List
