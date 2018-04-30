@@ -25,12 +25,6 @@ timeseriesFromMaybe vs =
                 Nothing -> error "Trade.Timeseries.Timeseries.fromMaybe: you should never be here!"
   in (ratio, newVs)
 
-
-toTimeseries :: (a -> b) -> Vector (UTCTime, Maybe a) -> Vector (UTCTime, b)
-toTimeseries f vs =
-  let (_, vs') = timeseriesFromMaybe vs
-  in fmap (fmap f) vs'
-
 extractMaybeFromRow ::
   (DateInterface row) =>
   (row -> Maybe a) -> Vector row -> Vector (UTCTime, Maybe a)
@@ -41,34 +35,34 @@ extractFromRow ::
   (row -> Maybe a) -> Vector row -> Vector (UTCTime, a)
 extractFromRow f vs = snd (timeseriesFromMaybe (extractMaybeFromRow f vs))
 
+timeseriesBy ::
+  (DateInterface row, Timeseries a) =>
+  (row -> Maybe a) -> Vector row -> Vector (UTCTime, TSTy a)
+timeseriesBy f = timeseries . extractFromRow f
+
 
 class Timeseries a where
   type TSTy a :: *
     
-  timeseries :: Vector (UTCTime, Maybe a) -> Vector (UTCTime, TSTy a)
-
-  timeseriesBy ::
-    (DateInterface row) =>
-    (row -> Maybe a) -> Vector row -> Vector (UTCTime, TSTy a)
-  timeseriesBy f = timeseries . extractMaybeFromRow f
-
+  timeseries :: Vector (UTCTime, a) -> Vector (UTCTime, TSTy a)
 
 instance Timeseries Open where
   type TSTy Open = Double
-  timeseries = toTimeseries unOpen
+  timeseries = Vec.map (fmap unOpen)
 
 instance Timeseries Close where
   type TSTy Close = Double
-  timeseries = toTimeseries unClose
+  timeseries = Vec.map (fmap unClose)
+
 
 instance Timeseries Low where
   type TSTy Low = Double
-  timeseries = toTimeseries unLow
+  timeseries = Vec.map (fmap unLow)
 
 instance Timeseries High where
   type TSTy High = Double
-  timeseries = toTimeseries unHigh
+  timeseries = Vec.map (fmap unHigh)
 
 instance Timeseries Volume where
   type TSTy Volume = Int
-  timeseries = toTimeseries unVolume
+  timeseries = Vec.map (fmap unVolume)
