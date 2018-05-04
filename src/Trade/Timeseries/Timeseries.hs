@@ -25,7 +25,6 @@ extractMaybeFromRow f = Vec.map (\r -> (dateDI r, f r))
 timeseriesFromMaybe :: Vector (UTCTime, Maybe a) -> (Double, Vector (UTCTime, a))
 timeseriesFromMaybe vs =
   let (nothings, bs) = Vec.partition isNothing (Vec.map sequence vs)
-      p Nothing = False
       ratio = fromIntegral (Vec.length nothings) / fromIntegral (Vec.length vs)
       newVs = case Vec.sequence bs of
                 Just xs -> xs
