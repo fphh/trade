@@ -5,3 +5,6 @@
 
 * Commissionen und Handelskosten beruecksichtigen (module BuyAndSell)
 
+* Negative y-Achse Beschriftung
+
+

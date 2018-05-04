@@ -23,7 +23,6 @@ newtype Close = Close { unClose :: Double } deriving (Show, Eq, Ord)
 instance FromField Close where
   parseField =  return . Close . read . BS.unpack
 
-
 newtype High = High { unHigh :: Double } deriving (Show, Eq, Ord)
 
 instance FromField High where
@@ -42,39 +41,20 @@ instance FromField Volume where
   parseField =  return . Volume . read . BS.unpack
 
 
+newtype OutToInRatio ohcl = OutToInRatio { unOutToInRatio :: Double } deriving (Show)
+
+class ToRatio ohcl where
+  (./) :: ohcl -> ohcl -> OutToInRatio ohcl
+
+instance ToRatio Close where
+  Close x ./ Close y = OutToInRatio (x/y)
 
 
 newtype Share = Share { unShare :: Integer } deriving (Show, Eq, Ord, Num)
 
-{-
-class EPS a where
-  type Ty a :: *
-    
-  (.*) :: a -> Ty a -> Equity
 
-
-instance EPS Share where
-  type Ty Share = Close
-
-  (Share s) .* (Close pps) = Equity (fromIntegral s * pps)
-
-instance EPS Close where
-  type Ty Close = Share 
-
-  (Close pps) .* (Share s) = Equity (fromIntegral s * pps)
--}
-
-{-
-(./) :: Equity -> Close -> Share
-(./) = sharesPerEquity
-
-sharesPerEquity :: Equity -> Close -> Share
-sharesPerEquity (Equity e) (Close pps) = Share (floor (e/pps))
--}
-
-
-class Mult a where
-  mult :: Share -> a -> Equity
+class Mult ohcl where
+  mult :: Share -> ohcl -> Equity
 
 instance Mult Open where
   mult (Share s) (Open c) = Equity (c * fromIntegral s)
@@ -90,8 +70,8 @@ instance Mult High where
 
 
 
-class Div a where
-  div :: Equity -> a -> Share
+class Div ohcl where
+  div :: Equity -> ohcl -> Share
 
 instance Div Open where
   div (Equity e) (Open pps) = Share (floor (e/pps))

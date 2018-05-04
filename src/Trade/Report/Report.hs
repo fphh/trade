@@ -1,6 +1,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Trade.Report.Report where
 
@@ -66,6 +68,12 @@ instance (ToNumberedLine a) => ToNumberedList (Vector a) where
 
 instance (ToNumberedLine a) => ToNumberedList [a] where
   toNumberedList = zipWith toNumberedLine [0..]
+
+class (Show a) => ToText a where
+  toText :: a -> ReportItem
+  toText = text . show
+
+instance (Show a) => ToText a
 
 numberedList :: ToNumberedList a => a -> ReportItem
 numberedList = vtable . toNumberedList
