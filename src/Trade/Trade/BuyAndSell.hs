@@ -6,6 +6,9 @@
 
 module Trade.Trade.BuyAndSell where
 
+data TradeOrNot = DoTrade | DoNotTrade deriving (Show, Eq, Ord)
+
+{- 
 import Prelude hiding (div)
 
 import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime)
@@ -20,17 +23,12 @@ import Trade.Report.Report (ToNumberedList, toNumberedList, ToNumberedLine, toNu
 
 import Trade.Type.EquityAndShare -- (Close(..), Share(..), Equity(..))
 
-import Trade.Trade.Impulse
-import Trade.Trade.State
+import Trade.Trade.Signal
+
 
 data BuySellTrade = BuyTrade | SellTrade deriving (Show, Eq, Ord)
 
 data TradeOrNot = DoTrade | DoNotTrade deriving (Show, Eq, Ord)
-
-data Trade a = Trade {
-  tradeTrade :: BuySellTrade
-  , tradeShare :: Share
-  } deriving (Show)
 
 data Portfolio = Portfolio {
   equity :: Equity
@@ -40,6 +38,11 @@ data Portfolio = Portfolio {
 newtype PriceSignal ohcl = PriceSignal (Vector (UTCTime, ohcl)) deriving (Show)
 
 newtype EquitySignal = EquitySignal (Vector (UTCTime, Portfolio)) deriving (Show)
+
+data Trade a = Trade {
+  tradeTrade :: BuySellTrade
+  , tradeShare :: Share
+  } deriving (Show)
 
 newtype TradeList ohcl = TradeList (Vector (UTCTime, Trade ohcl)) deriving (Show)
 
@@ -104,7 +107,7 @@ instance (ToNumberedLine (Position ohlc)) => ToNumberedList (StateList ohlc) whe
   toNumberedList (StateList xs) = toNumberedList xs
 
 
-
+-}
 
 
 

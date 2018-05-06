@@ -54,29 +54,11 @@ instance SvgItem Vector where
   svg = SvgItemVec (toAs [ "clear" .= "both" ]) . toSvg
 
 
-class ToNumberedLine a where
-  toNumberedLine :: Int -> a -> [String]
-
-instance (Show a, Show b) => ToNumberedLine (a, b) where
-  toNumberedLine i (x, y) = [show i, show x, show y]
-
-class ToNumberedList vec where
-  toNumberedList :: vec -> [[String]]
-
-instance (ToNumberedLine a) => ToNumberedList (Vector a) where
-  toNumberedList = Vec.toList . Vec.imap toNumberedLine
-
-instance (ToNumberedLine a) => ToNumberedList [a] where
-  toNumberedList = zipWith toNumberedLine [0..]
-
 class (Show a) => ToText a where
   toText :: a -> ReportItem
   toText = text . show
 
 instance (Show a) => ToText a
-
-numberedList :: ToNumberedList a => a -> ReportItem
-numberedList = vtable . toNumberedList
 
 text :: String -> ReportItem
 text = Paragraph (toAs [ "width" .= "760px", "margin-left" .= "40px", "clear" .= "both" ])

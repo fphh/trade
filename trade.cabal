@@ -43,6 +43,8 @@ library
                         Trade.Render.Svg.Layout
                         Trade.Render.Svg.Plot
                         Trade.Render.Svg.Svg
+                        Trade.Report.NumberedList
+                        Trade.Report.Pretty
                         Trade.Report.Report
                         Trade.Trade.BuyAndSell
                         Trade.Trade.Signal

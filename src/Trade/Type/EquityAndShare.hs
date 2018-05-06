@@ -3,6 +3,8 @@
 
 module Trade.Type.EquityAndShare where
 
+import Trade.Report.Pretty
+
 
 import qualified Data.ByteString.Char8 as BS
 
@@ -17,28 +19,40 @@ newtype Open = Open { unOpen :: Double } deriving (Show, Eq, Ord)
 instance FromField Open where
   parseField =  return . Open . read . BS.unpack
 
+instance Pretty Open where
+  pretty = show
 
 newtype Close = Close { unClose :: Double } deriving (Show, Eq, Ord)
 
 instance FromField Close where
   parseField =  return . Close . read . BS.unpack
 
+instance Pretty Close where
+  pretty = show
+
 newtype High = High { unHigh :: Double } deriving (Show, Eq, Ord)
 
 instance FromField High where
   parseField =  return . High . read . BS.unpack
 
+instance Pretty High where
+  pretty = show
 
 newtype Low = Low { unLow :: Double } deriving (Show, Eq, Ord)
 
 instance FromField Low where
   parseField =  return . Low . read . BS.unpack
 
+instance Pretty Low where
+  pretty = show
 
 newtype Volume = Volume { unVolume :: Integer } deriving (Show, Eq, Ord, Num)
 
 instance FromField Volume where
   parseField =  return . Volume . read . BS.unpack
+
+instance Pretty Volume where
+  pretty = show
 
 
 newtype OutToInRatio ohcl = OutToInRatio { unOutToInRatio :: Double } deriving (Show)
