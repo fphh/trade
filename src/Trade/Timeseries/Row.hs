@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 
 
 module Trade.Timeseries.Row where
@@ -18,11 +19,17 @@ class RowInterface row where
 
 
 class DateInterface row where
+  type Ty row :: *
   dateDI :: row -> UTCTime
+  removeDI :: row -> Ty row
 
 instance DateInterface (UTCTime, a) where
-    dateDI = fst
+  type Ty (UTCTime, a) = a
+  dateDI = fst
+  removeDI = snd
 
 instance DateInterface (UTCTime, a, b) where
-    dateDI (t, _, _) = t
+  type Ty (UTCTime, a, b) = (a, b)
+  dateDI (t, _, _) = t
+  removeDI (_, x, y) = (x, y)
 

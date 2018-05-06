@@ -57,7 +57,9 @@ instance RowInterface Row where
   volumeR = tradeVolume
 
 instance DateInterface Row where
+  type Ty Row = Row
   dateDI = tradeDate
+  removeDI = id
 
 instance FromDatabase FSE where
   type Dataset FSE = FSECode

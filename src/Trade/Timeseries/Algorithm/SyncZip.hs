@@ -13,7 +13,7 @@ import Data.Vector (Vector)
 
 import Trade.Timeseries.Row
 
-syncZipWith :: (DateInterface rtx, DateInterface rty) => (rtx -> rty -> a) -> Vector rtx -> Vector rty -> (Vector (UTCTime, a))
+syncZipWith :: (DateInterface rtx, DateInterface rty) => (UTCTime -> Ty rtx -> Ty rty -> a) -> Vector rtx -> Vector rty -> (Vector (UTCTime, a))
 syncZipWith f xs ys =
   let as = Vec.toList xs
       bs = Vec.toList ys
@@ -21,7 +21,7 @@ syncZipWith f xs ys =
       go [] _ = []
       go _ [] = []
       go us@(u:us') vs@(v:vs')
-        | du == dv = (du, f u v) : go us' vs'
+        | du == dv = (du, f du (removeDI u) (removeDI v)) : go us' vs'
         | du < dv = go us' vs
         | otherwise {- du > dv -} = go us vs'
         where du = dateDI u
@@ -38,7 +38,7 @@ class SyncZip rtx rty where
 instance SyncZip (UTCTime, a) (UTCTime, b) where
   type TyX (UTCTime, a) = a
   type TyY (UTCTime, b) = b
-  syncZip = syncZipWith (\x y -> (snd x, snd y))
+  syncZip = syncZipWith (\_ x y -> (x, y))
 
 
 mapTicker :: (rty -> a) -> Vector rty -> Vector a

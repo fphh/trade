@@ -65,8 +65,10 @@ instance RowInterface Row where
   volumeR = volume
 
 instance DateInterface Row where
+  type Ty Row = Row
   dateDI = date
-
+  removeDI = id
+  
 instance FromDatabase WIKI where
   type Dataset WIKI = WIKICode
 
