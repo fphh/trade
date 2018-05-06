@@ -20,7 +20,8 @@ import Trade.Report.Report (ToNumberedList, toNumberedList, ToNumberedLine, toNu
 
 import Trade.Type.EquityAndShare -- (Close(..), Share(..), Equity(..))
 
-data TradeType = Buy | Sell | Hold deriving (Show, Eq, Ord)
+import Trade.Trade.Impulse
+import Trade.Trade.State
 
 data BuySellTrade = BuyTrade | SellTrade deriving (Show, Eq, Ord)
 
@@ -36,40 +37,30 @@ data Portfolio = Portfolio {
   , shares :: Share
   } deriving (Show)
 
-newtype TradeSignal ohcl = TradeSignal (Vector (UTCTime, TradeType)) deriving (Show)
-
 newtype PriceSignal ohcl = PriceSignal (Vector (UTCTime, ohcl)) deriving (Show)
 
 newtype EquitySignal = EquitySignal (Vector (UTCTime, Portfolio)) deriving (Show)
 
 newtype TradeList ohcl = TradeList (Vector (UTCTime, Trade ohcl)) deriving (Show)
 
-
-toTradeSignal ::
-  (Intersection -> TradeType)
-  -> Vector (UTCTime, Intersection)
-  -> TradeSignal ohcl
-toTradeSignal f vs = TradeSignal (Vec.map (fmap f) vs)
-
-
 trade ::
   (Div ohlc, Mult ohlc) =>
-  (Portfolio, [(UTCTime, Trade ohlc)]) -> (UTCTime, (TradeType, ohlc)) -> (Portfolio, [(UTCTime, Trade ohlc)])
-trade (Portfolio eqty shrs, acc) (t, (Buy, pps)) =
+  (Portfolio, [(UTCTime, Trade ohlc)]) -> (UTCTime, (Maybe Impulse, ohlc)) -> (Portfolio, [(UTCTime, Trade ohlc)])
+trade (Portfolio eqty shrs, acc) (t, (Just Buy, pps)) =
   let eqty' = eqty - shrs' `mult` pps
       shrs' = eqty `div` pps
   in (Portfolio eqty' shrs', (t, Trade BuyTrade shrs') : acc)
-trade (Portfolio eqty shrs, acc) (t, (Sell, pps)) =
+trade (Portfolio eqty shrs, acc) (t, (Just Sell, pps)) =
   let eqty' = eqty + shrs `mult` pps
       shrs' = shrs - eqty' `div` pps
   in (Portfolio eqty' shrs', (t, Trade SellTrade shrs) : acc)
-trade acc (_, (Hold, _)) = acc
+trade acc (t, (Nothing, pps)) = acc
 
 
 toTrades ::
   (Div ohlc, Mult ohlc) =>
-  Portfolio -> TradeSignal ohlc -> PriceSignal ohlc -> TradeList ohlc
-toTrades portfolio (TradeSignal bs) (PriceSignal vs) =
+  Portfolio -> ImpulseSignal ohlc -> PriceSignal ohlc -> TradeList ohlc
+toTrades portfolio (ImpulseSignal bs) (PriceSignal vs) =
   TradeList
   $ Vec.reverse
   $ Vec.fromList
@@ -94,23 +85,11 @@ tradesToEquity portfolio (TradeList tl) (PriceSignal vs) =
      $ Vec.foldl' f (portfolio, []) (syncZip tl vs)
 
 
-filterHold :: TradeSignal ohlc -> TradeSignal ohlc
-filterHold (TradeSignal ts) =
-  let p (_, Hold) = False
-      p _ = True
-  in TradeSignal (Vec.filter p ts)
-
 newtype HoldingTime = HoldingTime { unHoldingTime :: NominalDiffTime } deriving (Show)
-
-data PositionType =
-  Long
-  | Short
-  | NoPosition
-  deriving (Show)
 
 
 data Position ohlc = Position {
-  positionType:: PositionType
+  state:: State
   , holdingTime :: HoldingTime
   , outToInRatio :: OutToInRatio ohlc
   } deriving (Show)
@@ -125,16 +104,22 @@ instance (ToNumberedLine (Position ohlc)) => ToNumberedList (StateList ohlc) whe
   toNumberedList (StateList xs) = toNumberedList xs
 
 
+
+
+
+
+{-
 stateListWitMaximalTrades ::
   (ToRatio ohlc, Show ohlc) =>
-  TradeSignal ohlc -> PriceSignal ohlc -> StateList ohlc
-stateListWitMaximalTrades (TradeSignal tl) (PriceSignal vs) =
+  StateSignal ohlc -> PriceSignal ohlc -> StateList ohlc
+stateListWitMaximalTrades (ImpulseSignal tl) (PriceSignal vs) =
   let ss = syncZip tl vs
-      f (t0, (Sell, pps0)) (t1, (Buy, pps1)) =
+      f (t0, (Just Sell, pps0)) (t1, (Just Buy, pps1)) =
         Position NoPosition (HoldingTime (t1 `diffUTCTime` t0)) (pps1 ./ pps0)
-      f (t0, (Buy, pps0)) (t1, (Sell, pps1)) =
+      f (t0, (Just Buy, pps0)) (t1, (Just Sell, pps1)) =
         Position Long (HoldingTime (t1 `diffUTCTime` t0)) (pps1 ./ pps0)
   in StateList (Vec.zipWith f ss (Vec.tail ss))
+-}
 
 
 
@@ -156,7 +141,7 @@ trade acc _ = acc
 
 {-
 buyAndSell ::
-  TradeSignal a
+  ImpulseSignal a
   -> Vector (UTCTime, a)
   -> Vector (Trade a)
 buyAndSell bs vs =

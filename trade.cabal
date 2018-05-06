@@ -45,6 +45,8 @@ library
                         Trade.Render.Svg.Svg
                         Trade.Report.Report
                         Trade.Trade.BuyAndSell
+                        Trade.Trade.Impulse
+                        Trade.Trade.State
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
                         Trade.Type.EquityAndShare
