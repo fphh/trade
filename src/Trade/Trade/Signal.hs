@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 
 module Trade.Trade.Signal where
 
@@ -25,6 +27,10 @@ data Impulse = Buy | Sell deriving (Show, Eq)
 instance Pretty Impulse where
   pretty = show
 
+data ImpulseParameter evt = ImpulseParameter {
+  eventToImpulse :: Int -> UTCTime -> evt -> Maybe Impulse
+  , events :: Vector (UTCTime, evt)
+  }
 
 newtype ImpulseSignal ohcl = ImpulseSignal (Vector (UTCTime, Maybe Impulse)) deriving (Show)
 
@@ -32,17 +38,30 @@ instance ToNumberedList (ImpulseSignal ohcl) where
   toNumberedList (ImpulseSignal imps) = toNumberedList imps
 
 toImpulseSignal ::
-  (a -> Maybe Impulse)
-  -> Vector (UTCTime, a)
+  (Int -> UTCTime -> evt -> Maybe Impulse)
+  -> Vector (UTCTime, evt)
   -> ImpulseSignal ohcl
-toImpulseSignal f vs = ImpulseSignal (Vec.map (fmap f) vs)
+toImpulseSignal f vs = ImpulseSignal (Vec.imap (\i (t, x) -> (t, f i t x)) vs)
 
+{-
 buyAndHold :: PriceSignal ohcl -> ImpulseSignal ohcl
 buyAndHold (PriceSignal cs) =
   let h = fmap (\_ -> Just Buy) (Vec.head cs)
       l = fmap (\_ -> Just Sell) (Vec.last cs)
       ms = Vec.map (fmap (\_ -> Nothing)) (Vec.init (Vec.tail cs))
   in ImpulseSignal (h `Vec.cons` ms `Vec.snoc` l)
+-}
+
+bhImpulse :: Int -> (Int -> UTCTime -> evt -> Maybe Impulse)
+bhImpulse len i _ _ | i == 0 = Just Buy
+bhImpulse len i _ _ | i == len-1 = Just Sell
+bhImpulse _ _ _ _ = Nothing
+ 
+bhImpulseSignal :: Vector (UTCTime, evt) -> ImpulseSignal ohcl
+bhImpulseSignal vs = toImpulseSignal (bhImpulse (Vec.length vs - 1)) vs
+
+bhImpulseParameter :: Vector (UTCTime, ohcl) -> ImpulseParameter ohcl
+bhImpulseParameter vs = ImpulseParameter (bhImpulse (Vec.length vs - 1)) vs
 
 data State =
   Long
@@ -198,3 +217,53 @@ portfolio2equity (PortfolioSignal vs) (PriceSignal pps) =
 
 equity2curve :: EquitySignal -> Vector (UTCTime, Double)
 equity2curve (EquitySignal es) = Vec.map (fmap unEquity) es
+
+
+data SignalParameter evt ohlc = SignalParameter {
+  portfolio :: Portfolio
+  , impulseParameter :: ImpulseParameter evt
+  , quotes :: PriceSignal ohlc
+  }
+
+data Signals ohlc = Signals {
+  impulses :: ImpulseSignal ohlc
+  , states :: StateSignal ohlc
+  , abstractTrades :: AbstractTradeSignal ohlc
+  , portfoliosByTrade :: PortfolioSignal
+  , realPortfolios :: PortfolioSignal
+  , equitiesByTrade :: EquitySignal
+  , realEquities :: EquitySignal
+  }
+
+toSignals :: forall evt ohlc. (Mult ohlc, Div ohlc) => SignalParameter evt ohlc -> Signals ohlc
+toSignals (SignalParameter portfolio (ImpulseParameter tradeSignal traSigInters) quotes) = 
+  let impulses :: ImpulseSignal ohlc
+      impulses = toImpulseSignal tradeSignal traSigInters
+
+      states :: StateSignal ohlc
+      states = impulse2state impulses
+
+      abstractTrades :: AbstractTradeSignal ohlc
+      abstractTrades = state2abstractTrade states quotes
+
+      portfoliosByTrade :: PortfolioSignal
+      portfoliosByTrade = abstractTrade2portfolio portfolio abstractTrades
+
+      realPortfolios :: PortfolioSignal
+      realPortfolios = impulse2portfolio portfolio impulses quotes
+
+      equitiesByTrade :: EquitySignal
+      equitiesByTrade = portfolio2equity portfoliosByTrade quotes
+
+      realEquities :: EquitySignal
+      realEquities = portfolio2equity realPortfolios quotes
+
+  in Signals {
+    impulses = impulses
+    , states = states
+    , abstractTrades = abstractTrades
+    , portfoliosByTrade = portfoliosByTrade
+    , realPortfolios = realPortfolios
+    , equitiesByTrade = equitiesByTrade
+    , realEquities = realEquities
+    }
