@@ -3,7 +3,7 @@
 
 * Leere "Line 'bla' []" in Render behandeln
 
-* Commissionen und Handelskosten beruecksichtigen (module BuyAndSell)
+* Commissionen und Handelskosten beruecksichtigen (module Signal)
 
 * Negative y-Achse Beschriftung
 

@@ -32,7 +32,9 @@ data ImpulseParameter evt = ImpulseParameter {
   , events :: Vector (UTCTime, evt)
   }
 
-newtype ImpulseSignal ohcl = ImpulseSignal (Vector (UTCTime, Maybe Impulse)) deriving (Show)
+newtype ImpulseSignal ohcl = ImpulseSignal {
+  unImpulseSignal :: Vector (UTCTime, Maybe Impulse)
+  } deriving (Show)
 
 instance ToNumberedList (ImpulseSignal ohcl) where
   toNumberedList (ImpulseSignal imps) = toNumberedList imps
@@ -42,15 +44,6 @@ toImpulseSignal ::
   -> Vector (UTCTime, evt)
   -> ImpulseSignal ohcl
 toImpulseSignal f vs = ImpulseSignal (Vec.imap (\i (t, x) -> (t, f i t x)) vs)
-
-{-
-buyAndHold :: PriceSignal ohcl -> ImpulseSignal ohcl
-buyAndHold (PriceSignal cs) =
-  let h = fmap (\_ -> Just Buy) (Vec.head cs)
-      l = fmap (\_ -> Just Sell) (Vec.last cs)
-      ms = Vec.map (fmap (\_ -> Nothing)) (Vec.init (Vec.tail cs))
-  in ImpulseSignal (h `Vec.cons` ms `Vec.snoc` l)
--}
 
 bhImpulse :: Int -> (Int -> UTCTime -> evt -> Maybe Impulse)
 bhImpulse len i _ _ | i == 0 = Just Buy
@@ -164,7 +157,9 @@ data AbstractTradeSignal ohcl = AbstractTradeSignal {
 instance (Pretty ohlc) => ToNumberedList (AbstractTradeSignal ohlc) where
   toNumberedList (AbstractTradeSignal s xs) = [pretty s] : (toNumberedList xs)
   
-newtype PriceSignal ohcl = PriceSignal (Vector (UTCTime, ohcl)) deriving (Show)
+newtype PriceSignal ohcl = PriceSignal {
+  unPriceSignal :: Vector (UTCTime, ohcl)
+  } deriving (Show)
 
 instance (Pretty ohlc) => ToNumberedList (PriceSignal ohlc) where
   toNumberedList (PriceSignal pps) = toNumberedList pps
@@ -185,7 +180,9 @@ data Portfolio = Portfolio {
 instance Pretty Portfolio where
   pretty (Portfolio eqty shrs) = pretty eqty ++ ", " ++ pretty shrs
 
-newtype PortfolioSignal = PortfolioSignal (Vector (UTCTime, Portfolio)) deriving (Show)
+newtype PortfolioSignal = PortfolioSignal {
+  unPortfolioSignal :: Vector (UTCTime, Portfolio)
+  } deriving (Show)
 
 instance ToNumberedList PortfolioSignal where
   toNumberedList (PortfolioSignal xs) = toNumberedList xs
@@ -207,7 +204,9 @@ abstractTrade2portfolio pf (AbstractTradeSignal s ts) =
   $ Vec.foldl' trade (pf, []) ts
 
 
-newtype EquitySignal = EquitySignal (Vector (UTCTime, Equity)) deriving (Show)
+newtype EquitySignal = EquitySignal {
+  unEquitySignal :: Vector (UTCTime, Equity)
+  } deriving (Show)
 
 portfolio2equity ::  (Mult ohcl) => PortfolioSignal -> PriceSignal ohcl -> EquitySignal
 portfolio2equity (PortfolioSignal vs) (PriceSignal pps) =
