@@ -107,7 +107,3 @@ instance Div High where
 totalEquity :: Equity -> Share -> Close -> Equity
 totalEquity e s pps = e + s `mult` pps
 
-newtype Yield = Yield { unYield :: Double } deriving (Show, Eq, Ord, Num)
-
-forwardYield :: Equity -> Equity -> Yield
-forwardYield (Equity old) (Equity new) = Yield (new / old)

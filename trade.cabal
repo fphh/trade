@@ -50,6 +50,7 @@ library
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
                         Trade.Type.EquityAndShare
+                        Trade.Type.Yield
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.11 && <4.12,

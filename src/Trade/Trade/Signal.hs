@@ -16,6 +16,7 @@ import Data.Maybe (isJust, catMaybes)
 
 import Trade.Timeseries.Algorithm.SyncZip
 import Trade.Type.EquityAndShare 
+import Trade.Type.Yield 
 
 import Trade.Report.NumberedList
 import Trade.Report.Pretty
@@ -156,6 +157,7 @@ data AbstractTradeSignal ohcl = AbstractTradeSignal {
 
 instance (Pretty ohlc) => ToNumberedList (AbstractTradeSignal ohlc) where
   toNumberedList (AbstractTradeSignal s xs) = [pretty s] : (toNumberedList xs)
+
   
 newtype PriceSignal ohcl = PriceSignal {
   unPriceSignal :: Vector (UTCTime, ohcl)
@@ -171,6 +173,20 @@ state2abstractTrade (StateSignal stt vs) (PriceSignal ps) =
       f (t, StateInterval d s) = (t, AbstractTrade s d (m Map.! t) (m Map.! (d `addUTCTime` t)))
   in AbstractTradeSignal stt (Vec.map f vs)
 
+data TradeYield ohcl = TradeYield {
+  yieldTrade :: State
+  , yieldDuration :: NominalDiffTime
+  , yield :: Yield
+  } deriving (Show)
+
+newtype YieldSignal ohlc = YieldSignal {
+  unYieldSignal :: Vector (UTCTime, TradeYield ohlc)
+  } deriving (Show)
+
+abstractTrade2yield :: (ToYield ohlc) => AbstractTradeSignal ohlc -> YieldSignal ohlc
+abstractTrade2yield (AbstractTradeSignal _ ts) =
+  let toYield (AbstractTrade s d ent ext) = TradeYield s d (forwardYield ent ext)
+  in YieldSignal (Vec.map (fmap toYield) ts)
 
 data Portfolio = Portfolio {
   equity :: Equity
