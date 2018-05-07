@@ -46,7 +46,6 @@ library
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Report
-                        Trade.Trade.BuyAndSell
                         Trade.Trade.Signal
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
