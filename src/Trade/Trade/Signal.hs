@@ -3,6 +3,8 @@ module Trade.Trade.Signal where
 
 import Prelude hiding (div)
 
+import qualified Data.Map as Map
+
 import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
 
 import qualified Data.Vector as Vec
@@ -15,6 +17,8 @@ import Trade.Type.EquityAndShare
 
 import Trade.Report.NumberedList
 import Trade.Report.Pretty
+
+import Debug.Trace
 
 data Impulse = Buy | Sell deriving (Show, Eq)
 
@@ -33,8 +37,8 @@ toImpulseSignal ::
   -> ImpulseSignal ohcl
 toImpulseSignal f vs = ImpulseSignal (Vec.map (fmap f) vs)
 
-buyAndHold :: Vector (UTCTime, ohlc) -> ImpulseSignal ohcl
-buyAndHold cs =
+buyAndHold :: PriceSignal ohcl -> ImpulseSignal ohcl
+buyAndHold (PriceSignal cs) =
   let h = fmap (\_ -> Just Buy) (Vec.head cs)
       l = fmap (\_ -> Just Sell) (Vec.last cs)
       ms = Vec.map (fmap (\_ -> Nothing)) (Vec.init (Vec.tail cs))
@@ -82,6 +86,18 @@ impulse2state (ImpulseSignal is) =
       f _ _ = error "impulse2state: unexpected sequence of impulses"
 
   in StateSignal s (Vec.zipWith f js (Vec.tail js))
+
+-- buy :: (Div ohcl, Mult ohcl) => Portfolio -> ohlc -> Portfolio
+buy (Portfolio eqty shrs) pps =
+  let eqty' = eqty - shrs' `mult` pps
+      shrs' = eqty `div` pps
+  in Portfolio eqty' shrs'
+
+-- sell :: (Div ohcl, Mult ohcl) => Portfolio -> ohlc -> Portfolio
+sell (Portfolio eqty shrs) pps =
+  let eqty' = eqty + shrs `mult` pps
+      shrs' = 0
+  in Portfolio eqty' shrs'
 
 impulse2portfolio ::
   (Div ohlc, Mult ohlc) =>
@@ -131,14 +147,15 @@ instance (Pretty ohlc) => ToNumberedList (AbstractTradeSignal ohlc) where
   
 newtype PriceSignal ohcl = PriceSignal (Vector (UTCTime, ohcl)) deriving (Show)
 
+instance (Pretty ohlc) => ToNumberedList (PriceSignal ohlc) where
+  toNumberedList (PriceSignal pps) = toNumberedList pps
+
+
 state2abstractTrade :: StateSignal ohcl -> PriceSignal ohcl -> AbstractTradeSignal ohcl
-state2abstractTrade (StateSignal s vs) (PriceSignal ps) =
-  let f t (StateInterval d state) p = ((t, AbstractTrade state d p), (t, d `addUTCTime` t))
-      (fs, ends) = Vec.unzip (Vec.map snd (syncZipWith f vs ps))
-      g t tEnd p = (tEnd, p)
-      endPs = Vec.map snd (syncZipWith g ends ps)
-      h _ f p = f p
-  in AbstractTradeSignal s (syncZipWith h fs endPs)
+state2abstractTrade (StateSignal stt vs) (PriceSignal ps) =
+  let m = Map.fromList (Vec.toList ps)
+      f (t, StateInterval d s) = (t, AbstractTrade s d (m Map.! t) (m Map.! (d `addUTCTime` t)))
+  in AbstractTradeSignal stt (Vec.map f vs)
 
 
 data Portfolio = Portfolio {
@@ -146,33 +163,13 @@ data Portfolio = Portfolio {
   , shares :: Share
   } deriving (Show)
 
+instance Pretty Portfolio where
+  pretty (Portfolio eqty shrs) = pretty eqty ++ ", " ++ pretty shrs
+
 newtype PortfolioSignal = PortfolioSignal (Vector (UTCTime, Portfolio)) deriving (Show)
 
--- buy :: (Div ohcl, Mult ohcl) => Portfolio -> ohlc -> Portfolio
-buy (Portfolio eqty shrs) pps =
-  let eqty' = eqty - shrs' `mult` pps
-      shrs' = eqty `div` pps
-  in Portfolio eqty' shrs'
-
--- sell :: (Div ohcl, Mult ohcl) => Portfolio -> ohlc -> Portfolio
-sell (Portfolio eqty shrs) pps =
-  let eqty' = eqty + shrs `mult` pps
-      shrs' = 0
-  in Portfolio eqty' shrs'
-
-     {-
-trade :: (Div ohcl, Mult ohcl) => (Portfolio, [(UTCTime, Portfolio)]) -> (UTCTime, AbstractTrade ohcl) -> (Portfolio, [(UTCTime, Portfolio)])
-trade (Portfolio eqty shrs, acc) (t, AbstractTrade NoPosition _ pps _) =
-  let eqty' = eqty + shrs `mult` pps
-      shrs' = shrs - eqty' `div` pps
-      pf = Portfolio eqty' shrs'
-  in (pf, (t, pf):acc)
-trade (Portfolio eqty shrs, acc) (t, AbstractTrade Long _ pps _) = 
-  let eqty' = eqty - shrs' `mult` pps
-      shrs' = eqty `div` pps
-      pf = Portfolio eqty' shrs'
-  in (pf, (t, pf):acc)
--}
+instance ToNumberedList PortfolioSignal where
+  toNumberedList (PortfolioSignal xs) = toNumberedList xs
 
 trade :: (Div ohcl, Mult ohcl) => (Portfolio, [(UTCTime, Portfolio)]) -> (UTCTime, AbstractTrade ohcl) -> (Portfolio, [(UTCTime, Portfolio)])
 trade (pf, acc) (t, AbstractTrade Long d ent ext) =

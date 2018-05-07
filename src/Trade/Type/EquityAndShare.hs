@@ -13,6 +13,9 @@ import Data.Csv (FromField, parseField)
 
 newtype Equity = Equity { unEquity :: Double } deriving (Show, Eq, Ord, Num)
 
+instance Pretty Equity where
+  pretty (Equity x) = "Equity=" ++ show x
+
 
 newtype Open = Open { unOpen :: Double } deriving (Show, Eq, Ord)
 
@@ -28,7 +31,7 @@ instance FromField Close where
   parseField =  return . Close . read . BS.unpack
 
 instance Pretty Close where
-  pretty = show
+  pretty (Close x) = "Close=" ++ show x
 
 newtype High = High { unHigh :: Double } deriving (Show, Eq, Ord)
 
@@ -66,6 +69,8 @@ instance ToRatio Close where
 
 newtype Share = Share { unShare :: Integer } deriving (Show, Eq, Ord, Num)
 
+instance Pretty Share where
+  pretty (Share s) = "Share=" ++ show s
 
 class Mult ohcl where
   mult :: Share -> ohcl -> Equity
