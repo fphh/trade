@@ -20,6 +20,7 @@ library
                         Trade.Algorithm.Drawdown
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
+                        Trade.Analysis.Yield
                         Trade.Timeseries.Algorithm.Intersection
                         Trade.Timeseries.Algorithm.SyncZip                     
                         Trade.Timeseries.Quandl.Quandl

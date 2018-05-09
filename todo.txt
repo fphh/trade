@@ -7,4 +7,5 @@
 
 * Negative y-Achse Beschriftung
 
+* Anfang und Ende sind keine ganzen Trades. Was damit tun?
 

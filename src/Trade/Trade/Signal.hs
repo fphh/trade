@@ -61,7 +61,7 @@ data State =
   Long
   -- | Short
   | NoPosition
-  deriving (Show)
+  deriving (Show, Eq, Ord)
 
 instance Pretty State where
   pretty = show
@@ -230,27 +230,36 @@ portfolio2equity (PortfolioSignal vs) (PriceSignal pps) =
       f (Portfolio eqty shrs, ps) = eqty + shrs `mult` ps
   in EquitySignal (Vec.map (fmap f) ss)
 
-equity2curve :: EquitySignal -> Vector (UTCTime, Double)
-equity2curve (EquitySignal es) = Vec.map (fmap unEquity) es
+
+class Curve a where
+  curve :: a -> Vector (UTCTime, Double)
+
+instance Curve EquitySignal where
+  curve (EquitySignal es) = Vec.map (fmap unEquity) es
+
+instance Curve (YieldSignal ohlc) where
+ curve (YieldSignal ys) = Vec.map (fmap (unYield . yield)) ys
 
 
 data SignalParameter evt ohlc = SignalParameter {
   portfolio :: Portfolio
   , impulseParameter :: ImpulseParameter evt
-  , quotes :: PriceSignal ohlc
+  , quotesParameter :: PriceSignal ohlc
   }
 
 data Signals ohlc = Signals {
-  impulses :: ImpulseSignal ohlc
+  quotes :: PriceSignal ohlc
+  , impulses :: ImpulseSignal ohlc
   , states :: StateSignal ohlc
   , abstractTrades :: AbstractTradeSignal ohlc
+  , yields :: YieldSignal ohlc
   , portfoliosByTrade :: PortfolioSignal
   , realPortfolios :: PortfolioSignal
   , equitiesByTrade :: EquitySignal
   , realEquities :: EquitySignal
   }
 
-toSignals :: forall evt ohlc. (Mult ohlc, Div ohlc) => SignalParameter evt ohlc -> Signals ohlc
+toSignals :: forall evt ohlc. (Mult ohlc, Div ohlc, ToYield ohlc) => SignalParameter evt ohlc -> Signals ohlc
 toSignals (SignalParameter portfolio (ImpulseParameter tradeSignal traSigInters) quotes) = 
   let impulses :: ImpulseSignal ohlc
       impulses = toImpulseSignal tradeSignal traSigInters
@@ -260,6 +269,9 @@ toSignals (SignalParameter portfolio (ImpulseParameter tradeSignal traSigInters)
 
       abstractTrades :: AbstractTradeSignal ohlc
       abstractTrades = state2abstractTrade states quotes
+
+      yields :: YieldSignal ohlc
+      yields = abstractTrade2yield abstractTrades
 
       portfoliosByTrade :: PortfolioSignal
       portfoliosByTrade = abstractTrade2portfolio portfolio abstractTrades
@@ -274,9 +286,11 @@ toSignals (SignalParameter portfolio (ImpulseParameter tradeSignal traSigInters)
       realEquities = portfolio2equity realPortfolios quotes
 
   in Signals {
-    impulses = impulses
+    quotes = quotes
+    , impulses = impulses
     , states = states
     , abstractTrades = abstractTrades
+    , yields = yields
     , portfoliosByTrade = portfoliosByTrade
     , realPortfolios = realPortfolios
     , equitiesByTrade = equitiesByTrade
