@@ -37,10 +37,10 @@ stepTicks =
 startTicks :: [(Ratio Integer, Ratio Integer)]
 startTicks =
   let as = map (*pico) [0, 100 .. 900] ++ map (*1000) as
-  
   in zip as (tail as)
 
 findNearest :: [(Ratio Integer, Ratio Integer)] -> Ratio Integer -> Ratio Integer
+findNearest ts t | t == 0 = t
 findNearest ts t =
   case filter (\(x, y) -> x < t && t <= y) ts of
     (a, b):_ -> case t-a < b-t of
@@ -87,6 +87,7 @@ format x = flip printf x $
     y -> "%e"
 
 ticksReal :: Double -> Double -> (Double -> String, [Double])
+ticksReal a b | a == b = (format, [a-1, a-0.5, a, a+0.5, a+1])
 ticksReal a b =
   let (i, s) = intervalAndStep a b
       a' = approxRational a (10**(-12))

@@ -5,7 +5,7 @@ module Trade.Render.Common.Color where
 
 
 data Color =
-  OrangeRed | Blue | Green | Magenta | Darkcyan | Black | Gray | Orange | Purple | Pink deriving (Show, Enum, Bounded)
+  Red | Blue | Green | Magenta | Orange | Darkcyan | Black | Gray | Purple | Pink deriving (Show, Enum, Bounded)
 
 colors :: [Color]
 colors = cycle [minBound .. maxBound]

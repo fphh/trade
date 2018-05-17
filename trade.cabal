@@ -20,9 +20,10 @@ library
                         Trade.Algorithm.Drawdown
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
+                        Trade.Analysis.MonteCarlo
                         Trade.Analysis.Yield
                         Trade.Timeseries.Algorithm.Intersection
-                        Trade.Timeseries.Algorithm.SyncZip                     
+                        Trade.Timeseries.Algorithm.SyncZip
                         Trade.Timeseries.Quandl.Quandl
                         Trade.Timeseries.Quandl.CBOE
                         Trade.Timeseries.Quandl.Database
@@ -47,7 +48,12 @@ library
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Report
+                        Trade.Trade.ImpulseSignal
+                        Trade.Trade.PriceSignal
+                        Trade.Trade.State
+                        Trade.Trade.StateSignal
                         Trade.Trade.Signal
+                        Trade.Trade.TradeSignal
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
                         Trade.Type.EquityAndShare
@@ -56,6 +62,8 @@ library
   -- other-extensions:
   build-depends:       base >=4.11 && <4.12,
                        containers ==0.5.11.0,
+                       mtl ==2.2.2,
+                       random ==1.1,
                        vector ==0.12.0.1,
                        bytestring ==0.10.8.2,
                        time ==1.9.1,

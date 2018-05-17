@@ -26,6 +26,21 @@ xyExtent cs =
   in vecFoldl f (XExtent v v, YExtent lo hi) cs
 
 
+{-
+xyExtent :: (DrawingVec vec, Ord x, Num x) => vec (x, Double) -> (XExtent x, YExtent)
+xyExtent cs =
+  let hi = -1/0
+      lo = 1/0
+      (v, _) = vecHead cs
+      f (XExtent xminv xmaxv, YExtent yminv ymaxv) (x, y) =
+        (XExtent (min xminv x) (max xmaxv x), YExtent (min yminv y) (max ymaxv y))
+  in case vecFoldl f (XExtent v v, YExtent lo hi) cs of
+       (XExtent x0 x1, YExtent y0 y1) | x0 == x1 && y0 == y1 -> (XExtent (x0-1) (x0+1), YExtent (y0-1) (y0+1))
+       (XExtent x0 x1, yext) | x0 == x1 -> (XExtent (x0-1) (x0+1), yext)
+       (xext, YExtent y0 y1) | y0 == y1 -> (xext, YExtent (y0-1) (y0+1))
+       ext -> ext
+-}
+
 class Scale ext where
   type Orient ext :: *
   type Ty ext :: *

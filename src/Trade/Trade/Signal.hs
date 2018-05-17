@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Trade.Trade.Signal where
 
@@ -12,7 +13,10 @@ import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Data.Maybe (isJust, catMaybes)
+import qualified Data.List as List
+
+
+import Data.Function (on)
 
 import Trade.Timeseries.Algorithm.SyncZip
 import Trade.Type.EquityAndShare 
@@ -21,92 +25,20 @@ import Trade.Type.Yield
 import Trade.Report.NumberedList
 import Trade.Report.Pretty
 
-import Debug.Trace
-
-data Impulse = Buy | Sell deriving (Show, Eq)
-
-instance Pretty Impulse where
-  pretty = show
-
-data ImpulseParameter evt = ImpulseParameter {
-  eventToImpulse :: Int -> UTCTime -> evt -> Maybe Impulse
-  , events :: Vector (UTCTime, evt)
-  }
-
-newtype ImpulseSignal ohcl = ImpulseSignal {
-  unImpulseSignal :: Vector (UTCTime, Maybe Impulse)
-  } deriving (Show)
-
-instance ToNumberedList (ImpulseSignal ohcl) where
-  toNumberedList (ImpulseSignal imps) = toNumberedList imps
-
-toImpulseSignal ::
-  (Int -> UTCTime -> evt -> Maybe Impulse)
-  -> Vector (UTCTime, evt)
-  -> ImpulseSignal ohcl
-toImpulseSignal f vs = ImpulseSignal (Vec.imap (\i (t, x) -> (t, f i t x)) vs)
-
-bhImpulse :: Int -> (Int -> UTCTime -> evt -> Maybe Impulse)
-bhImpulse len i _ _ | i == 0 = Just Buy
-bhImpulse len i _ _ | i == len-1 = Just Sell
-bhImpulse _ _ _ _ = Nothing
- 
-bhImpulseSignal :: Vector (UTCTime, evt) -> ImpulseSignal ohcl
-bhImpulseSignal vs = toImpulseSignal (bhImpulse (Vec.length vs - 1)) vs
-
-bhImpulseParameter :: Vector (UTCTime, ohcl) -> ImpulseParameter ohcl
-bhImpulseParameter vs = ImpulseParameter (bhImpulse (Vec.length vs - 1)) vs
-
-data State =
-  Long
-  -- | Short
-  | NoPosition
-  deriving (Show, Eq, Ord)
-
-instance Pretty State where
-  pretty = show
-
-data StateInterval = StateInterval {
-  duration :: NominalDiffTime
-  , state :: State
-  } deriving (Show)
-
-instance Pretty StateInterval where
-  pretty (StateInterval d s) = pretty d ++ ", " ++ pretty s
-
-data StateSignal ohlc = StateSignal {
-  start :: UTCTime
-  , signal :: Vector (UTCTime, StateInterval)
-  } deriving (Show)
-
-instance ToNumberedList (StateSignal ohlc) where
-  toNumberedList (StateSignal start ss) = [show start] : toNumberedList ss
+import Trade.Trade.ImpulseSignal
+import Trade.Trade.PriceSignal
+import Trade.Trade.StateSignal
+import Trade.Trade.State
 
 
-impulse2state :: ImpulseSignal ohlc -> StateSignal ohlc
-impulse2state (ImpulseSignal is) =
-  let (s, _) = Vec.head is
-  
-      js = Vec.fromList
-           $ catMaybes
-           $ Vec.toList
-           $ case Vec.filter isJust (Vec.map sequence is) of
-               xs | Vec.null xs -> error "impulse2state: no impulses in sequence"
-               xs -> xs
 
-      f (t0, Sell) (t1, Buy)  = (t0, StateInterval (t1 `diffUTCTime` t0) NoPosition)
-      f (t0, Buy) (t1, Sell)  = (t0, StateInterval (t1 `diffUTCTime` t0) Long)
-      f _ _ = error "impulse2state: unexpected sequence of impulses"
-
-  in StateSignal s (Vec.zipWith f js (Vec.tail js))
-
--- buy :: (Div ohcl, Mult ohcl) => Portfolio -> ohlc -> Portfolio
+buy :: (Div ohcl, Mult ohcl) => Portfolio -> ohcl -> Portfolio
 buy (Portfolio eqty shrs) pps =
   let eqty' = eqty - shrs' `mult` pps
       shrs' = eqty `div` pps
   in Portfolio eqty' shrs'
 
--- sell :: (Div ohcl, Mult ohcl) => Portfolio -> ohlc -> Portfolio
+sell :: (Mult ohlc) => Portfolio -> ohlc -> Portfolio
 sell (Portfolio eqty shrs) pps =
   let eqty' = eqty + shrs `mult` pps
       shrs' = 0
@@ -134,10 +66,6 @@ impulse2portfolio pf (ImpulseSignal is) (PriceSignal pps) =
      $ snd
      $ Vec.foldl' trade (pf, [(t0, pf)]) ss
 
-    
-state2impulse :: StateSignal ohcl -> ImpulseSignal ohcl
-state2impulse (StateSignal _s _vs) = error "state2impulse: to be defined"
-
 
 
 data AbstractTrade ohcl = AbstractTrade {
@@ -158,14 +86,6 @@ data AbstractTradeSignal ohcl = AbstractTradeSignal {
 instance (Pretty ohlc) => ToNumberedList (AbstractTradeSignal ohlc) where
   toNumberedList (AbstractTradeSignal s xs) = [pretty s] : (toNumberedList xs)
 
-  
-newtype PriceSignal ohcl = PriceSignal {
-  unPriceSignal :: Vector (UTCTime, ohcl)
-  } deriving (Show)
-
-instance (Pretty ohlc) => ToNumberedList (PriceSignal ohlc) where
-  toNumberedList (PriceSignal pps) = toNumberedList pps
-
 
 state2abstractTrade :: StateSignal ohcl -> PriceSignal ohcl -> AbstractTradeSignal ohcl
 state2abstractTrade (StateSignal stt vs) (PriceSignal ps) =
@@ -173,6 +93,7 @@ state2abstractTrade (StateSignal stt vs) (PriceSignal ps) =
       f (t, StateInterval d s) = (t, AbstractTrade s d (m Map.! t) (m Map.! (d `addUTCTime` t)))
   in AbstractTradeSignal stt (Vec.map f vs)
 
+{-
 data TradeYield ohcl = TradeYield {
   yieldTrade :: State
   , yieldDuration :: NominalDiffTime
@@ -187,6 +108,24 @@ abstractTrade2yield :: (ToYield ohlc) => AbstractTradeSignal ohlc -> YieldSignal
 abstractTrade2yield (AbstractTradeSignal _ ts) =
   let toYield (AbstractTrade s d ent ext) = TradeYield s d (forwardYield ent ext)
   in YieldSignal (Vec.map (fmap toYield) ts)
+
+newtype Fraction = Fraction {
+  unFraction :: Double
+  } deriving (Show)
+
+yield2equity :: Fraction -> YieldSignal ohlc -> EquitySignal
+yield2equity (Fraction f) (YieldSignal ys) =
+  let g acc (t, TradeYield NoPosition _ _) = acc
+      g (Equity eqty) (t, TradeYield Long _ (Yield y)) =
+        let a = eqty * f
+            b = eqty * (1-f)
+        in Equity (a*y + b)
+      ts = Vec.map fst ys
+  in EquitySignal (Vec.zip ts (Vec.scanl' g (Equity 1) ys))
+-}
+
+instance Curve (Vector (UTCTime, Yield)) where
+  curve vs = Vec.map (fmap unYield) vs
 
 data Portfolio = Portfolio {
   equity :: Equity
@@ -237,8 +176,97 @@ class Curve a where
 instance Curve EquitySignal where
   curve (EquitySignal es) = Vec.map (fmap unEquity) es
 
+instance Curve DrawdownSignal where
+ curve (DrawdownSignal ds) = Vec.map (fmap toAbsDD) ds
+
+instance Curve AccDrawdownSignal where
+ curve (AccDrawdownSignal start ds) =
+   let vs = Vec.toList ds
+       (tl, AccDrawdown d yl) = Vec.last ds
+       f (t0, AccDrawdown _ y0) (t1, AccDrawdown _ y1) =
+         [(t0, toAbsDD y0), (t1, toAbsDD y0), (t1, toAbsDD y1)]
+   in Vec.fromList (concat (zipWith f vs (tail vs)) ++ [(d `addUTCTime` tl, toAbsDD yl)])
+   
+
+{-
 instance Curve (YieldSignal ohlc) where
  curve (YieldSignal ys) = Vec.map (fmap (unYield . yield)) ys
+-}
+
+
+data Drawdown = Drawdown {
+  drawdownIn :: Equity
+  , drawdownOut :: Equity
+  } deriving (Show)
+
+
+
+toAbsoluteDrawdown :: Drawdown -> Equity
+toAbsoluteDrawdown (Drawdown i o) = i-o
+
+toAbsDD :: Drawdown -> Double
+toAbsDD = unEquity . toAbsoluteDrawdown
+
+maxAbsoluteDrawdown :: DrawdownSignal -> Drawdown
+maxAbsoluteDrawdown (DrawdownSignal ds) = snd (Vec.maximumBy (compare `on` (toAbsDD . snd)) ds)
+
+toRelDD :: Drawdown -> Double
+toRelDD (Drawdown (Equity i) (Equity o)) = 1-o/i
+
+maxRelativeDrawdown :: DrawdownSignal -> Drawdown
+maxRelativeDrawdown (DrawdownSignal ds) = snd (Vec.maximumBy (compare `on` (toRelDD . snd)) ds)
+
+
+instance Pretty Drawdown where
+  pretty = show
+
+newtype DrawdownSignal = DrawdownSignal {
+  unDrawdownSignal :: Vector (UTCTime, Drawdown)
+  } deriving (Show)
+
+realEquity2drawdown :: EquitySignal -> DrawdownSignal
+realEquity2drawdown (EquitySignal es) =
+  let len = Vec.length es
+      f i (t, u) = (t, Drawdown u (Vec.minimum (Vec.map snd (Vec.slice i (len-i) es))))
+  in DrawdownSignal (Vec.imap f es)
+
+data AccDrawdown = AccDrawdown {
+  ddDuration :: NominalDiffTime
+  , accDD :: Drawdown
+  } deriving (Show)
+
+instance Pretty AccDrawdown where
+  pretty (AccDrawdown a b) = show a ++ "|" ++ show b
+
+data AccDrawdownSignal = AccDrawdownSignal {
+  ddStart :: UTCTime
+  , unAccDrawdownSignal :: Vector (UTCTime, AccDrawdown)
+  } deriving (Show)
+
+accumulateDrawdown :: DrawdownSignal -> AccDrawdownSignal
+accumulateDrawdown (DrawdownSignal ds) =
+  let start =
+        case ds Vec.!? 0 of
+          Nothing -> error "accumulateDrawdown: empty signal"
+          Just (s, _) -> s
+
+      (ts, ys) = Vec.unzip ds
+      ys' = Vec.toList ys
+
+      g xs =
+        let (t0, y0) = head xs
+            (t1, _) = last xs
+        in (t0, AccDrawdown (t1 `diffUTCTime` t0) y0)
+
+      h (mx, acc) y = if toAbsDD mx < toAbsDD y then (y, y:acc) else (mx, mx:acc)
+        
+      as =
+        map g
+        $ List.groupBy (\a b -> toAbsDD (snd a) == toAbsDD (snd b))
+        $ zip (Vec.toList ts) (reverse $ snd $ List.foldl' h (Drawdown 0 0, []) ys')
+      
+  in AccDrawdownSignal start (Vec.fromList as)
+
 
 
 data SignalParameter evt ohlc = SignalParameter {
@@ -252,11 +280,13 @@ data Signals ohlc = Signals {
   , impulses :: ImpulseSignal ohlc
   , states :: StateSignal ohlc
   , abstractTrades :: AbstractTradeSignal ohlc
-  , yields :: YieldSignal ohlc
+  -- , yields :: YieldSignal ohlc
   , portfoliosByTrade :: PortfolioSignal
   , realPortfolios :: PortfolioSignal
   , equitiesByTrade :: EquitySignal
   , realEquities :: EquitySignal
+  , drawdown :: DrawdownSignal
+  , accDrawdown :: AccDrawdownSignal
   }
 
 toSignals :: forall evt ohlc. (Mult ohlc, Div ohlc, ToYield ohlc) => SignalParameter evt ohlc -> Signals ohlc
@@ -270,8 +300,8 @@ toSignals (SignalParameter portfolio (ImpulseParameter tradeSignal traSigInters)
       abstractTrades :: AbstractTradeSignal ohlc
       abstractTrades = state2abstractTrade states quotes
 
-      yields :: YieldSignal ohlc
-      yields = abstractTrade2yield abstractTrades
+      -- yields :: YieldSignal ohlc
+      -- yields = abstractTrade2yield abstractTrades
 
       portfoliosByTrade :: PortfolioSignal
       portfoliosByTrade = abstractTrade2portfolio portfolio abstractTrades
@@ -283,16 +313,24 @@ toSignals (SignalParameter portfolio (ImpulseParameter tradeSignal traSigInters)
       equitiesByTrade = portfolio2equity portfoliosByTrade quotes
 
       realEquities :: EquitySignal
-      realEquities = portfolio2equity realPortfolios quotes
+      realEquities  = portfolio2equity realPortfolios quotes
+
+      drawdown :: DrawdownSignal
+      drawdown = realEquity2drawdown realEquities
+
+      accDrawdown :: AccDrawdownSignal
+      accDrawdown = accumulateDrawdown drawdown
 
   in Signals {
     quotes = quotes
     , impulses = impulses
     , states = states
     , abstractTrades = abstractTrades
-    , yields = yields
+    -- , yields = yields
     , portfoliosByTrade = portfoliosByTrade
     , realPortfolios = realPortfolios
     , equitiesByTrade = equitiesByTrade
     , realEquities = realEquities
+    , drawdown = drawdown
+    , accDrawdown = accDrawdown
     }

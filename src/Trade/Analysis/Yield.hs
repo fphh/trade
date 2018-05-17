@@ -11,13 +11,21 @@ import qualified Data.List as List
 
 import qualified Trade.TStatistics.SampleStatistics as TS
 
-import Trade.Trade.Signal (Signals(..), YieldSignal(..), TradeYield(..), State, curve)
+-- import Trade.Trade.Signal (Signals(..), YieldSignal(..), curve)
+import Trade.Trade.State (State)
+import Trade.Trade.TradeSignal
 
 import Trade.Type.Yield (Yield(..))
 
 import Trade.Report.Report (ReportItem, subheader, htable)
 
 
+trade2stats :: TradeList ohlc -> TS.SampleStatistics
+trade2stats (TradeList tl) =
+  let f (t0, y0) (_, y1) = (t0, unYield (y1 `forwardYield` y0))
+  in TS.sampleStatistics (map f tl)
+
+{-
 yields2stats :: YieldSignal ohlc -> TS.SampleStatistics 
 yields2stats = TS.sampleStatistics . curve
 
@@ -87,3 +95,4 @@ yieldStatsTable f =
   lines2table f
   . yieldStats2lines
   
+-}

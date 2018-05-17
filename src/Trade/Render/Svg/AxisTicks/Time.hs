@@ -127,7 +127,7 @@ format Week _ = formatTime defaultTimeLocale (iso8601DateFormat Nothing)
 format Month _ = formatTime defaultTimeLocale "%Y-%m"
 format Year _ = formatTime defaultTimeLocale "%Y"
 
-ticksUTC :: UTCTime -> UTCTime -> (UTCTime -> String, [UTCTime])
+ticksUTC :: UTCTime -> UTCTime -> (UTCTime -> String, [UTCTime]) 
 ticksUTC start end =
   let (i, s) = intervalAndStep (round $ nominalDiffTimeToSeconds (end `diffUTCTime` start))
       s' = fromIntegral s

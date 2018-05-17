@@ -9,3 +9,8 @@
 
 * Anfang und Ende sind keine ganzen Trades. Was damit tun?
 
+* intersectionToLine in class Curve eingliedern
+
+* x und y Achsen, wenn extent 0 ist, z.B. [(1,1), (2, 1)]
+
+* startTicks
