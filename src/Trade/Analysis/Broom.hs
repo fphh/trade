@@ -21,3 +21,5 @@ normHistoryBroom n begin end ntl = do
 
 normEquityBroom :: Broom (NormHistory ohlc) -> Broom (NormEquityHistory ohlc)
 normEquityBroom (Broom bs) = Broom (map normHistory2normEquity bs)
+
+

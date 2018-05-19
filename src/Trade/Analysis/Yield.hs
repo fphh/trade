@@ -11,21 +11,27 @@ import qualified Data.Vector as Vec
 
 import qualified Data.List as List
 
-import qualified Trade.TStatistics.TradeStatistics as TS
+-- import qualified Trade.TStatistics.TradeStatistics as TS
 
 -- import Trade.Trade.Signal (Signals(..), YieldSignal(..), curve)
 import Trade.Trade.State (State)
 import Trade.Trade.TradeList
 
-import Trade.Type.Yield (Yield(..), forwardYield, ToYield)
+-- import Trade.Type.Yield (Yield(..), forwardYield, ToYield)
 
 import Trade.Report.Report (ReportItem, subheader, htable)
 
-
+{-
 normTrade2stats :: NormTradeList ohlc -> TS.TradeStatistics
 normTrade2stats (NormTradeList tl) =
   let f (NormTrade _ dur vs) = (dur, log (Vec.product (Vec.map unYield vs)))
   in TS.tradeStatistics (Vec.fromList (map f tl))
+-}
+
+sortTradeByState :: TradeList ohlc -> Map State (TradeList ohlc)
+sortTradeByState (TradeList tl) =
+  let f acc t@(Trade stat _) = Map.insertWith (++) stat [t] acc 
+  in fmap TradeList (List.foldl' f Map.empty tl)
 
 sortNormTradeByState :: NormTradeList ohlc -> Map State (NormTradeList ohlc)
 sortNormTradeByState (NormTradeList tl) =

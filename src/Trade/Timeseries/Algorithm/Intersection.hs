@@ -51,6 +51,8 @@ data IntersectionArgs = IntersectionArgs {
   , spikeLength :: Double
   } deriving (Show)
 
+
+
 intersectionToLine :: IntersectionArgs -> Vector (UTCTime, Intersection) -> Vector (UTCTime, Double)
 intersectionToLine (IntersectionArgs m len) =
   let l = m-len

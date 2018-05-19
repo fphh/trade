@@ -230,6 +230,7 @@ accumulateDrawdown (DrawdownSignal ds) =
   in AccDrawdownSignal start (Vec.fromList as)
 
 
+{-
 
 data SignalParameter evt ohlc = SignalParameter {
   portfolio :: Portfolio
@@ -297,6 +298,7 @@ toSignals (SignalParameter portfolio (ImpulseParameter tradeSignal traSigInters)
     , accDrawdown = accDrawdown
     }
 
+-}
 
 
 {-

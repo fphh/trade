@@ -20,6 +20,7 @@ library
                         Trade.Algorithm.Drawdown
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
+                        Trade.Analysis.Backtest
                         Trade.Analysis.Broom
                         Trade.Analysis.NormHistory
                         Trade.Analysis.MonteCarlo

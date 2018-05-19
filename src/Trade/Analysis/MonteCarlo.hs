@@ -51,7 +51,7 @@ randomYieldSignal' begin end ys offs (i:is) =
       
       (_, NormTradeList ys0'):(_, NormTradeList ys1'):_ =
         case Map.toList (sortNormTradeByState ys) of
-          cs@(x:y:_) -> cs
+          cs@(_:_:_) -> cs
           _ -> error "randomYieldSignal': not enough types of trades available"
       
       ys0 = Vec.fromList ys0'
