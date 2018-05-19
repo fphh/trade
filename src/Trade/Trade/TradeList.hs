@@ -4,7 +4,7 @@ module Trade.Trade.TradeList where
 
 
 
-import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
+import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime)
 
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
@@ -63,7 +63,8 @@ impulses2trades (PriceSignal ps) (ImpulseSignal is) =
 
 data NormTrade ohlc = NormTrade {
   normTradeState :: State
-  , normedYield :: Vector (UTCTime, Yield)
+  , normTradeDuration :: NominalDiffTime
+  , normedYield :: Vector Yield
   } deriving (Show)
 
 
@@ -75,7 +76,12 @@ newtype NormTradeList ohlc = NormTradeList {
 
 trades2normTrades :: (ToYield ohlc) => TradeList ohlc -> NormTradeList ohlc
 trades2normTrades (TradeList tl) =
-  let f (Trade st ts) =
-        let (_, x) = Vec.head ts
-        in NormTrade st (Vec.map (fmap (`forwardYield` x)) ts)
+  let g (_, old) (_, new) = (new `forwardYield` old)
+      
+      f (Trade st ts) =
+        let (t0, _) = Vec.head ts
+            (t1, _) = Vec.last ts
+            dur = t1 `diffUTCTime` t0
+        in NormTrade st dur (Vec.zipWith g ts (Vec.tail ts))
+        
   in NormTradeList (map f tl)

@@ -2,6 +2,8 @@
 
 module Trade.Analysis.Yield where
 
+import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
+
 import qualified Data.Map as Map
 import Data.Map (Map)
 
@@ -9,21 +11,27 @@ import qualified Data.Vector as Vec
 
 import qualified Data.List as List
 
-import qualified Trade.TStatistics.SampleStatistics as TS
+import qualified Trade.TStatistics.TradeStatistics as TS
 
 -- import Trade.Trade.Signal (Signals(..), YieldSignal(..), curve)
 import Trade.Trade.State (State)
-import Trade.Trade.TradeSignal
+import Trade.Trade.TradeList
 
-import Trade.Type.Yield (Yield(..))
+import Trade.Type.Yield (Yield(..), forwardYield, ToYield)
 
 import Trade.Report.Report (ReportItem, subheader, htable)
 
 
-trade2stats :: TradeList ohlc -> TS.SampleStatistics
-trade2stats (TradeList tl) =
-  let f (t0, y0) (_, y1) = (t0, unYield (y1 `forwardYield` y0))
-  in TS.sampleStatistics (map f tl)
+normTrade2stats :: NormTradeList ohlc -> TS.TradeStatistics
+normTrade2stats (NormTradeList tl) =
+  let f (NormTrade _ dur vs) = (dur, log (Vec.product (Vec.map unYield vs)))
+  in TS.tradeStatistics (Vec.fromList (map f tl))
+
+sortNormTradeByState :: NormTradeList ohlc -> Map State (NormTradeList ohlc)
+sortNormTradeByState (NormTradeList tl) =
+  let f acc t@(NormTrade stat _ _) = Map.insertWith (++) stat [t] acc 
+  in fmap NormTradeList (List.foldl' f Map.empty tl)
+
 
 {-
 yields2stats :: YieldSignal ohlc -> TS.SampleStatistics 

@@ -29,6 +29,7 @@ import Trade.Trade.ImpulseSignal
 import Trade.Trade.PriceSignal
 import Trade.Trade.StateSignal
 import Trade.Trade.State
+import Trade.Trade.Curve
 
 
 
@@ -93,37 +94,6 @@ state2abstractTrade (StateSignal stt vs) (PriceSignal ps) =
       f (t, StateInterval d s) = (t, AbstractTrade s d (m Map.! t) (m Map.! (d `addUTCTime` t)))
   in AbstractTradeSignal stt (Vec.map f vs)
 
-{-
-data TradeYield ohcl = TradeYield {
-  yieldTrade :: State
-  , yieldDuration :: NominalDiffTime
-  , yield :: Yield
-  } deriving (Show)
-
-newtype YieldSignal ohlc = YieldSignal {
-  unYieldSignal :: Vector (UTCTime, TradeYield ohlc)
-  } deriving (Show)
-
-abstractTrade2yield :: (ToYield ohlc) => AbstractTradeSignal ohlc -> YieldSignal ohlc
-abstractTrade2yield (AbstractTradeSignal _ ts) =
-  let toYield (AbstractTrade s d ent ext) = TradeYield s d (forwardYield ent ext)
-  in YieldSignal (Vec.map (fmap toYield) ts)
-
-newtype Fraction = Fraction {
-  unFraction :: Double
-  } deriving (Show)
-
-yield2equity :: Fraction -> YieldSignal ohlc -> EquitySignal
-yield2equity (Fraction f) (YieldSignal ys) =
-  let g acc (t, TradeYield NoPosition _ _) = acc
-      g (Equity eqty) (t, TradeYield Long _ (Yield y)) =
-        let a = eqty * f
-            b = eqty * (1-f)
-        in Equity (a*y + b)
-      ts = Vec.map fst ys
-  in EquitySignal (Vec.zip ts (Vec.scanl' g (Equity 1) ys))
--}
-
 instance Curve (Vector (UTCTime, Yield)) where
   curve vs = Vec.map (fmap unYield) vs
 
@@ -170,9 +140,6 @@ portfolio2equity (PortfolioSignal vs) (PriceSignal pps) =
   in EquitySignal (Vec.map (fmap f) ss)
 
 
-class Curve a where
-  curve :: a -> Vector (UTCTime, Double)
-
 instance Curve EquitySignal where
   curve (EquitySignal es) = Vec.map (fmap unEquity) es
 
@@ -187,11 +154,6 @@ instance Curve AccDrawdownSignal where
          [(t0, toAbsDD y0), (t1, toAbsDD y0), (t1, toAbsDD y1)]
    in Vec.fromList (concat (zipWith f vs (tail vs)) ++ [(d `addUTCTime` tl, toAbsDD yl)])
    
-
-{-
-instance Curve (YieldSignal ohlc) where
- curve (YieldSignal ys) = Vec.map (fmap (unYield . yield)) ys
--}
 
 
 data Drawdown = Drawdown {
@@ -334,3 +296,40 @@ toSignals (SignalParameter portfolio (ImpulseParameter tradeSignal traSigInters)
     , drawdown = drawdown
     , accDrawdown = accDrawdown
     }
+
+
+
+{-
+
+data TradeYield ohcl = TradeYield {
+  yieldTrade :: State
+  , yieldDuration :: NominalDiffTime
+  , yield :: Yield
+  } deriving (Show)
+
+newtype YieldSignal ohlc = YieldSignal {
+  unYieldSignal :: Vector (UTCTime, TradeYield ohlc)
+  } deriving (Show)
+
+abstractTrade2yield :: (ToYield ohlc) => AbstractTradeSignal ohlc -> YieldSignal ohlc
+abstractTrade2yield (AbstractTradeSignal _ ts) =
+  let toYield (AbstractTrade s d ent ext) = TradeYield s d (forwardYield ent ext)
+  in YieldSignal (Vec.map (fmap toYield) ts)
+
+newtype Fraction = Fraction {
+  unFraction :: Double
+  } deriving (Show)
+
+yield2equity :: Fraction -> YieldSignal ohlc -> EquitySignal
+yield2equity (Fraction f) (YieldSignal ys) =
+  let g acc (t, TradeYield NoPosition _ _) = acc
+      g (Equity eqty) (t, TradeYield Long _ (Yield y)) =
+        let a = eqty * f
+            b = eqty * (1-f)
+        in Equity (a*y + b)
+      ts = Vec.map fst ys
+  in EquitySignal (Vec.zip ts (Vec.scanl' g (Equity 1) ys))
+
+instance Curve (YieldSignal ohlc) where
+ curve (YieldSignal ys) = Vec.map (fmap (unYield . yield)) ys
+-}

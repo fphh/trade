@@ -77,3 +77,6 @@ stats2para stats =
   : ["minimum", printf "%.2f" $ minimum stats]
   : ["maximum", printf "%.2f" $ maximum stats]
   : []
+
+
+  

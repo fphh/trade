@@ -20,8 +20,12 @@ library
                         Trade.Algorithm.Drawdown
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
+                        Trade.Analysis.Broom
+                        Trade.Analysis.NormHistory
                         Trade.Analysis.MonteCarlo
+                        Trade.Analysis.OffsettedNormTradeList
                         Trade.Analysis.Yield
+                        Trade.Test.Data
                         Trade.Timeseries.Algorithm.Intersection
                         Trade.Timeseries.Algorithm.SyncZip
                         Trade.Timeseries.Quandl.Quandl
@@ -48,14 +52,16 @@ library
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Report
+                        Trade.Trade.Curve
                         Trade.Trade.ImpulseSignal
                         Trade.Trade.PriceSignal
                         Trade.Trade.State
                         Trade.Trade.StateSignal
                         Trade.Trade.Signal
-                        Trade.Trade.TradeSignal
+                        Trade.Trade.TradeList
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
+                        Trade.TStatistics.TradeStatistics
                         Trade.Type.EquityAndShare
                         Trade.Type.Yield
   -- other-modules:

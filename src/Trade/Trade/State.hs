@@ -9,7 +9,6 @@ data State =
   Long
   -- | Short
   | NoPosition
-  | NoState
   deriving (Show, Eq, Ord)
 
 instance Pretty State where
