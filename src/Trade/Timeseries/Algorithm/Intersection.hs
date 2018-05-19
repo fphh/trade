@@ -13,7 +13,7 @@ import Trade.Timeseries.Algorithm.SyncZip (syncZip)
 import Trade.Report.Pretty
 
 
-import Debug.Trace
+-- import Debug.Trace
 
 --    y1 = m x1 + b und y2 = n x2 + c.
 --    x = (c−b) / (m−n)
