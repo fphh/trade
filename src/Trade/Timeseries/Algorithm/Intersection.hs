@@ -26,7 +26,7 @@ intersect b0 b1 y0 y1 =
       n = y1-y0
       x = (y0-b0) / (m-n)
       y = m*x + b0
-  in trace (show (x, y)) (x, y)
+  in (x, y)
 
 data Intersection = Up | Down | NoIntersection deriving (Eq, Show)
 
