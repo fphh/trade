@@ -18,7 +18,8 @@ data TradeStatistics = TradeStatistics {
   , stdDev :: !Double
   } deriving (Show)
 
-tradeStatistics :: Vector (NominalDiffTime, Double) -> TradeStatistics
+-- tradeStatistics :: Vector (NominalDiffTime, Double) -> TradeStatistics
+tradeStatistics :: TradeList ohlc -> TradeStatistics
 tradeStatistics as =
   let ts = Vec.map snd as
   in TradeStatistics {

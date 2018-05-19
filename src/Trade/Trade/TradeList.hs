@@ -76,7 +76,7 @@ newtype NormTradeList ohlc = NormTradeList {
 
 trades2normTrades :: (ToYield ohlc) => TradeList ohlc -> NormTradeList ohlc
 trades2normTrades (TradeList tl) =
-  let g (_, old) (_, new) = (new `forwardYield` old)
+  let g (_, old) (_, new) = (old `forwardYield` new)
       
       f (Trade st ts) =
         let (t0, _) = Vec.head ts

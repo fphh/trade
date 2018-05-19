@@ -48,17 +48,15 @@ intersection vs us =
 
 data IntersectionArgs = IntersectionArgs {
   middle :: Double
-  , high :: Double
-  , low :: Double
+  , spikeLength :: Double
   } deriving (Show)
 
 intersectionToLine :: IntersectionArgs -> Vector (UTCTime, Intersection) -> Vector (UTCTime, Double)
-intersectionToLine args =
-  let m = middle args
-      l = low args
-      h = high args
-      f (t, Up) = [(t, m), (t, l), (t, m)]
-      f (t, Down) = [(t, m), (t, h), (t, m)]
+intersectionToLine (IntersectionArgs m len) =
+  let l = m-len
+      h = m+len
+      f (t, Up) = [(t, m), (t, h), (t, m)]
+      f (t, Down) = [(t, m), (t, l), (t, m)]
       f _ = []
   in Vec.fromList . concatMap f . Vec.toList
 

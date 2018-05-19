@@ -48,7 +48,11 @@ randomYieldSignal' _ _ _ _ [] = error "randomYieldSignal': no random numbers"
 randomYieldSignal' begin end ys offs (i:is) =
   let j = i `mod` 2
       tradeTypes = j:(1 - j):tradeTypes
-      (_, NormTradeList ys0'):(_, NormTradeList ys1'):_ = Map.toList (sortNormTradeByState ys)
+      
+      (_, NormTradeList ys0'):(_, NormTradeList ys1'):_ =
+        case Map.toList (sortNormTradeByState ys) of
+          cs@(x:y:_) -> cs
+          _ -> error "randomYieldSignal': not enough types of trades available"
       
       ys0 = Vec.fromList ys0'
       ys0Len = Vec.length ys0
