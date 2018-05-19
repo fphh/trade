@@ -10,8 +10,10 @@ import Data.Vector (Vector)
 
 import Trade.Timeseries.Algorithm.SyncZip (syncZip)
 
+import Trade.Report.Pretty
 
--- import Debug.Trace
+
+import Debug.Trace
 
 --    y1 = m x1 + b und y2 = n x2 + c.
 --    x = (c−b) / (m−n)
@@ -24,9 +26,12 @@ intersect b0 b1 y0 y1 =
       n = y1-y0
       x = (y0-b0) / (m-n)
       y = m*x + b0
-  in (x, y)
+  in trace (show (x, y)) (x, y)
 
 data Intersection = Up | Down | NoIntersection deriving (Eq, Show)
+
+instance Pretty Intersection where
+  pretty = show
 
 intersection :: Vector (UTCTime, Double) -> Vector (UTCTime, Double) -> Vector (UTCTime, Intersection)
 intersection vs us =
@@ -36,7 +41,7 @@ intersection vs us =
         let (x, _) = intersect y0 y1 y0' y1'
         in case x of
              r | r <= 0 -> (x1, NoIntersection)
-             r | r >= 1 -> (x1, NoIntersection)
+             r | r > 1 -> (x1, NoIntersection)
              _ -> (x1, if (y0 < y0') then Up else Down)
   in Vec.zipWith f ss (Vec.tail ss)
 
