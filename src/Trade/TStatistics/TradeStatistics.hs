@@ -25,6 +25,7 @@ import Trade.Report.Report
 
 data TradeStatistics = TradeStatistics {
   state :: State
+  , cnt :: !Int
   , mean :: !Double
   , stdDev :: !Double
   } deriving (Show)
@@ -41,6 +42,7 @@ tradeStatistics tl =
 
       g st ts = TradeStatistics {
         state = st
+        , cnt = Vec.length ts
         , mean = Sample.mean ts
         , stdDev = Sample.stdDev ts
         }
@@ -54,6 +56,7 @@ stats2para :: TradeStatistics -> ReportItem
 stats2para stats =
   vtable $
   [ "state", show $ state stats]
+  : ["cnt", show $ cnt stats]
   : ["mean", show $ mean stats]
   : ["stdDev", show $ stdDev stats]
   : []

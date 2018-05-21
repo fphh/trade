@@ -13,7 +13,8 @@ import Data.Maybe (isNothing)
 
 import Trade.Timeseries.Algorithm.SyncZip
 
-import Trade.Type.Yield 
+import Trade.Type.Yield
+import Trade.Type.EquityAndShare
 
 import Trade.Trade.PriceSignal
 import Trade.Trade.ImpulseSignal
@@ -85,3 +86,23 @@ trades2normTrades (TradeList tl) =
         in NormTrade st dur (Vec.zipWith g ts (Vec.tail ts))
         
   in NormTradeList (map f tl)
+
+
+trade2equity :: Equity -> TradeList Close -> Vector (UTCTime, Equity)
+trade2equity (Equity eqty) (TradeList tl) =
+  let p (Trade NoPosition _) = False
+      p _ = True
+
+      g ys =
+        let (ts, zs) = Vec.unzip ys
+        in Vec.cons (Vec.head ts, 1) (Vec.zip (Vec.tail ts) (Vec.zipWith (/) (Vec.tail zs) zs))
+
+      unCl (Trade _ vs) = Vec.map (fmap unClose) vs
+      
+      cs = map (g . unCl) (filter p tl)
+
+      (ts, ys) = Vec.unzip (Vec.concat cs)
+
+      ysNew = Vec.map Equity (Vec.tail (Vec.scanl (*) eqty ys))
+      
+  in Vec.zip ts ysNew

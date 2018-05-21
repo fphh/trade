@@ -8,6 +8,7 @@ import Data.Vector (Vector)
 import qualified Data.Vector as Vec
 
 import Trade.Type.Yield
+import Trade.Type.EquityAndShare
 
 import Trade.Trade.Curve
 
@@ -20,9 +21,9 @@ instance Curve (NormHistory ohlc) where
   
 
 newtype NormEquityHistory ohlc = NormEquityHistory {
-  unNormEquityHistory :: Vector (UTCTime, Yield)
+  unNormEquityHistory :: Vector (UTCTime, Equity)
   } deriving (Show)
 
 instance Curve (NormEquityHistory ohlc) where
-  curve (NormEquityHistory nh) = Vec.map (fmap unYield) nh
+  curve (NormEquityHistory nh) = Vec.map (fmap unEquity) nh
   

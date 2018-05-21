@@ -11,7 +11,7 @@ import Data.Vector (Vector)
 
 import Data.List (scanl')
 
--- import Debug.Trace
+import Debug.Trace
 
 class MovingAverage vec where
   movingAverage :: Int -> vec Double -> vec Double
@@ -38,14 +38,14 @@ instance MovingAverage [] where
 movingAvgV :: Int -> Vector Double -> Vector Double
 movingAvgV k v =
   let len = Vec.length v
-      f a = Vec.slice a k v
+      f a = {- trace (show (0, a, k)) -} (Vec.slice a k v)
       idx = Vec.generate (len-k) id
   in Vec.map (mean . f) idx
 
 mavgV :: Int -> Vector Double -> Vector (Double, Double)
 mavgV k v =
   let len = Vec.length v
-      f a = (fromIntegral (k+a), mean (Vec.slice a k v))
+      f a = {- trace (show (1, a, k)) -} (fromIntegral (k+a), mean (Vec.slice a k v))
   in Vec.generate (len-k) f
 
 

@@ -25,6 +25,7 @@ library
                         Trade.Analysis.NormHistory
                         Trade.Analysis.MonteCarlo
                         Trade.Analysis.OffsettedNormTradeList
+                        Trade.Analysis.Report
                         Trade.Analysis.Yield
                         Trade.Test.Data
                         Trade.Timeseries.Algorithm.Intersection

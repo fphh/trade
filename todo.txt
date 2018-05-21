@@ -14,3 +14,6 @@
 * x und y Achsen, wenn extent 0 ist, z.B. [(1,1), (2, 1)]
 
 * startTicks
+
+
+* Evaluieren: https://hackage.haskell.org/package/Chart
