@@ -5,8 +5,6 @@ module Trade.Render.Common.Utils where
 import qualified Data.ByteString.Builder as B
 import Data.ByteString.Builder (Builder)
 
-import Data.Monoid
-
 tag :: Builder -> Builder -> Builder -> Builder -> Builder
 tag open close attrs inner =
   open <> attrs <> (B.charUtf8 '>') <> inner <> close

@@ -18,6 +18,10 @@ data Interval =
   Sec | Min | Hour | Day | Week | Month | Year
   deriving (Show, Eq, Ord, Enum)
 
+
+secondsToNominalDiffTime = error "Trade.Render.Svg.AxisTicks.Time: secondsToNominalDiffTime undefined"
+nominalDiffTimeToSeconds = error "Trade.Render.Svg.AxisTicks.Time: nominalDiffTimeToSeconds undefined"
+
 intervals :: [Interval]
 intervals = [ Sec .. Year ]
 

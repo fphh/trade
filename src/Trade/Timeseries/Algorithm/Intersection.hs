@@ -8,12 +8,14 @@ import Data.Time.Clock (UTCTime)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
+import Trade.Trade.SafeTail
+
 import Trade.Timeseries.Algorithm.SyncZip (syncZip)
 
 import Trade.Report.Pretty
 
 
--- import Debug.Trace
+import Debug.Trace
 
 --    y1 = m x1 + b und y2 = n x2 + c.
 --    x = (c−b) / (m−n)
@@ -43,7 +45,7 @@ intersection vs us =
              r | r <= 0 -> (x1, NoIntersection)
              r | r > 1 -> (x1, NoIntersection)
              _ -> (x1, if (y0 < y0') then Up else Down)
-  in Vec.zipWith f ss (Vec.tail ss)
+  in Vec.zipWith f ss (stail "intersection" ss)
 
 
 data IntersectionArgs = IntersectionArgs {

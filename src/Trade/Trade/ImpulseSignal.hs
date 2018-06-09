@@ -2,13 +2,19 @@
 
 module Trade.Trade.ImpulseSignal where
 
+import qualified Data.List as List
+
 import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
 
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
+import qualified Graphics.Rendering.Chart.Easy as E
+
+
 import Trade.Report.NumberedList
 import Trade.Report.Pretty
+import qualified Trade.Report.Report as Report
 
 import Trade.Render.Svg.Plot
 
@@ -17,13 +23,6 @@ data Impulse = Buy | Sell deriving (Show, Eq)
 
 instance Pretty Impulse where
   pretty = show
-
-{-
-data ImpulseParameter evt = ImpulseParameter {
-  eventToImpulse :: Int -> UTCTime -> evt -> Maybe Impulse
-  , events :: Vector (UTCTime, evt)
-  }
--}
 
 newtype ImpulseSignal ohcl = ImpulseSignal {
   unImpulseSignal :: Vector (UTCTime, Maybe Impulse)
@@ -46,10 +45,6 @@ bhImpulse _ _ _ _ = Nothing
 bhImpulseSignal :: Vector (UTCTime, evt) -> ImpulseSignal ohcl
 bhImpulseSignal vs = toImpulseSignal (bhImpulse (Vec.length vs - 1)) vs
 
---bhImpulseParameter :: Vector (UTCTime, ohcl) -> ImpulseParameter ohcl
---bhImpulseParameter vs = ImpulseParameter (bhImpulse (Vec.length vs - 1)) vs
-
-
 
 data ImpulseArgs = ImpulseArgs {
   middle :: Double
@@ -67,5 +62,13 @@ impulse2line' (ImpulseArgs m len) (ImpulseSignal imps) =
   in Vec.fromList (concatMap f (Vec.toList imps))
 
   
-impulse2line :: ImpulseArgs -> ImpulseSignal ohlc -> PlotItem Vector UTCTime
-impulse2line args imps = Line "impulses" (impulse2line' args imps)
+impulse2line :: ImpulseArgs -> ImpulseSignal ohlc -> Report.LineTyR UTCTime z Double
+impulse2line args imps = Report.lineR "buy/sell" (impulse2line' args imps)
+
+
+simplifyImpulseSignal :: ImpulseSignal ohlc -> ImpulseSignal ohlc
+simplifyImpulseSignal (ImpulseSignal is) =
+  let js = Vec.toList is
+      cs = List.groupBy (\x y -> snd x == snd y) js
+      ss = map head cs
+  in ImpulseSignal (Vec.fromList ss)

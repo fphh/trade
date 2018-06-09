@@ -6,8 +6,9 @@ import Data.Time.Clock (UTCTime)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
+import Trade.Timeseries.Time ()
+
 import Trade.Timeseries.Quandl.Database
-import Trade.Timeseries.Quandl.Time ()
 import Trade.Timeseries.Quandl.Helper
 
 -- "Date","Total Call Volume","Total Put Volume","Total Option Volume","P/C Ratio"

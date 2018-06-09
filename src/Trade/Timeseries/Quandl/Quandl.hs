@@ -16,6 +16,7 @@ import Data.Map (Map)
 import qualified Data.Csv as Csv
 
 import Trade.Timeseries.Quandl.Database
+import Trade.Timeseries.Url (toUrl)
 
 quandlBaseUrl :: String
 quandlBaseUrl = "https://www.quandl.com/api/v3/datasets"

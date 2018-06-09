@@ -2,15 +2,14 @@
 
 module Trade.Analysis.OffsettedNormTradeList where
 
-import Control.Applicative (liftA2)
-
 import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime)
 
 import qualified Data.Vector as Vec
-import Data.Vector (Vector)
 
 import Trade.Trade.TradeList
 import Trade.Trade.State
+import Trade.Trade.SafeTail
+
 import Trade.Type.Yield
 import Trade.Type.EquityAndShare
 
@@ -45,5 +44,5 @@ normHistory2normEquity ::
   (Equity -> Yield -> Equity) -> Equity -> NormHistory ohlc -> NormEquityHistory ohlc
 normHistory2normEquity step eqty (NormHistory nhs) =
   let f (_, e) (t1, y) = (t1, step e y)
-      (t0, y0) = Vec.head nhs
-  in NormEquityHistory (Vec.scanl' f (t0, step eqty y0) (Vec.tail nhs))
+      (t0, y0) = shead "normHistory2normEquity" nhs      
+  in NormEquityHistory (Vec.scanl' f (t0, step eqty y0) (stail "normHistory2normEquity" nhs))

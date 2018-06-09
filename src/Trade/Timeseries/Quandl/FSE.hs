@@ -9,9 +9,9 @@ import Data.Csv (FromNamedRecord, parseNamedRecord)
 import Trade.Type.EquityAndShare (Open, Close, Low, High, Volume)
 
 import Trade.Timeseries.Row
+import Trade.Timeseries.Time ()
 
 import Trade.Timeseries.Quandl.Database
-import Trade.Timeseries.Quandl.Time ()
 import Trade.Timeseries.Quandl.Helper
 
 
@@ -63,7 +63,6 @@ instance DateInterface Row where
 
 instance FromDatabase FSE where
   type Dataset FSE = FSECode
-
 
 data FSE = FSE deriving (Show, Eq, Ord)
 

@@ -9,6 +9,8 @@ import Statistics.Sample (mean, stdDev)
 
 import Trade.Render.Svg.Plot
 
+import Debug.Trace
+
 -- number stddev
 newtype BolK = BolK Int deriving (Show)
 

@@ -10,6 +10,9 @@ module Trade.Timeseries.Quandl.Database where
 import Data.Time.Clock (UTCTime)
 -- import Data.Time.Format (parseTimeM, defaultTimeLocale, iso8601DateFormat)
 
+
+import Trade.Timeseries.Url
+
 data Symbol dbCode = Symbol {
   dbCode :: dbCode
   , dsCode :: Dataset dbCode
@@ -19,9 +22,6 @@ data Symbol dbCode = Symbol {
 deriving instance (Eq dbCode, Eq (Dataset dbCode)) => Eq (Symbol dbCode)
 
 deriving instance (Ord dbCode, Ord (Dataset dbCode)) => Ord (Symbol dbCode)
-
-class ToUrl a where
-  toUrl :: a -> String
 
 instance (Show dbCode, Show (Dataset dbCode)) => ToUrl (Symbol dbCode) where
   toUrl (Symbol x y) = "/" ++ show x ++ "/" ++ show y
@@ -51,3 +51,4 @@ instance (Show dbCode, Show (Dataset dbCode)) => ToUrl (RequestParams dbCode) wh
 
 class ToRow row where
   type RowTy row :: *
+    

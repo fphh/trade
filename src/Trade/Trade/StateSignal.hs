@@ -15,6 +15,7 @@ import Trade.Report.Pretty
 
 import Trade.Trade.ImpulseSignal
 import Trade.Trade.State
+import Trade.Trade.SafeTail
 
 data StateInterval = StateInterval {
   duration :: NominalDiffTime
@@ -48,4 +49,4 @@ impulse2state (ImpulseSignal is) =
       f (t0, Buy) (t1, Sell)  = (t0, StateInterval (t1 `diffUTCTime` t0) Long)
       f _ _ = error "impulse2state: unexpected sequence of impulses"
 
-  in StateSignal s (Vec.zipWith f js (Vec.tail js))
+  in StateSignal s (Vec.zipWith f js (stail "impulse2state" js))

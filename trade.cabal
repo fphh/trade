@@ -15,6 +15,7 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
+                     
 library
   exposed-modules:      Trade.Algorithm.Bollinger
                         Trade.Algorithm.Drawdown
@@ -30,16 +31,22 @@ library
                         Trade.Test.Data
                         Trade.Timeseries.Algorithm.Intersection
                         Trade.Timeseries.Algorithm.SyncZip
+                        Trade.Timeseries.Binance.Binance
+                        Trade.Timeseries.Binance.Database
+                        Trade.Timeseries.Binance.Interval
+                        Trade.Timeseries.Binance.Symbol
+                        Trade.Timeseries.OHLC
                         Trade.Timeseries.Quandl.Quandl
                         Trade.Timeseries.Quandl.CBOE
                         Trade.Timeseries.Quandl.Database
                         Trade.Timeseries.Quandl.FSE
                         Trade.Timeseries.Quandl.Helper
                         Trade.Timeseries.Quandl.StripTime
-                        Trade.Timeseries.Quandl.Time
                         Trade.Timeseries.Quandl.WIKI
                         Trade.Timeseries.Row
+                        Trade.Timeseries.Time
                         Trade.Timeseries.Timeseries
+                        Trade.Timeseries.Url
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color
                         Trade.Render.Common.Utils
@@ -57,9 +64,9 @@ library
                         Trade.Trade.Curve
                         Trade.Trade.ImpulseSignal
                         Trade.Trade.PriceSignal
+                        Trade.Trade.SafeTail
                         Trade.Trade.State
                         Trade.Trade.StateSignal
-                        Trade.Trade.Signal
                         Trade.Trade.TradeList
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
@@ -68,19 +75,24 @@ library
                         Trade.Type.Yield
   -- other-modules:
   -- other-extensions:
-  build-depends:       base >=4.11 && <4.12,
-                       containers ==0.5.11.0,
-                       mtl ==2.2.2,
-                       random ==1.1,
-                       vector ==0.12.0.1,
-                       bytestring ==0.10.8.2,
-                       time ==1.9.1,
-                       statistics ==0.14.0.2,
-                       QuickCheck ==2.11.3,
-                       http-conduit ==2.3.0,
-                       cassava ==0.5.1.0,
-                       statistics ==0.14.0.2,
-                       mwc-random ==0.13.6.0
+  build-depends:       base >=4.11 && <5
+                     , containers ==0.5.11.0
+                     , mtl
+                     , time
+                     , random ==1.1
+                     , vector ==0.12.0.1
+                     , bytestring ==0.10.8.2
+                     , statistics ==0.14.0.2
+                     , QuickCheck ==2.11.3
+                     , http-conduit ==2.3.0
+                     , cassava ==0.5.1.0
+                     , statistics ==0.14.0.2
+                     , mwc-random ==0.13.6.0
+                     , Chart ==1.8.3
+                     , Chart-diagrams ==1.8.3
+                     , aeson
+                     , text
+                     , scientific
 
   hs-source-dirs:      src
   default-language:    Haskell2010

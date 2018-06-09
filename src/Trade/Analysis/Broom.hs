@@ -19,26 +19,25 @@ import Trade.Type.Yield
 import Trade.Type.EquityAndShare
 
 import Trade.Trade.Curve
-import Trade.Report.Report
-import Trade.Render.Svg.Plot
-
-import Debug.Trace
+import qualified Trade.Report.Report as Report
 
 newtype Broom history = Broom {
   unBroom :: [history]
   } deriving (Show)
 
-broom2chart :: (Curve history) => Int -> Broom history -> ReportItem
+
+broom2chart :: (Curve history) => Int -> Broom history -> [Report.LineTy UTCTime Double]
 broom2chart n (Broom xs) =
-  let f i x = Line (show i) (curve x)
-      cs = zipWith f [0..] (take n xs)
-  in svg cs
+  let f i x = Report.line (show i) (curve x)
+  in zipWith f [0 :: Integer ..] (take n xs)
+
 
 
 normHistoryBroom :: Int -> UTCTime -> UTCTime -> NormTradeList ohlc -> IO (Broom (NormHistory ohlc))
 normHistoryBroom n begin end ntl = do
   tls <- replicateM n (randomYieldSignal begin end ntl)
-  return (Broom (map (offsettedNormTradeList2normHistory begin (24*60*60)) tls))
+  let day = 24*60*60
+  return (Broom (map (offsettedNormTradeList2normHistory begin day) tls))
 
 
 normEquityBroom ::
@@ -59,9 +58,9 @@ terminalWealthRelative (Equity e) (Broom hs) =
 risk :: Broom (NormEquityHistory ohlc) -> Vector (Percent, Double)
 risk (Broom hs) =
   let f vs =
-        let len = Vec.length vs
+        let l = Vec.length vs
             g i x =
-              let us = Vec.filter (<=x) (trace (show (i, (len-i))) Vec.slice i (len-i) vs)
+              let us = Vec.filter (<=x) (Vec.slice i (l-i) vs)
               in case Vec.length us of
                    0 -> 1/0
                    _ -> Vec.maximum (Vec.map ((1-) . (/x)) us)
@@ -73,6 +72,6 @@ risk (Broom hs) =
       
       qs = map (f . Vec.map (unEquity . snd) . unNormEquityHistory) hs
 
-      g i w = (i/len, w)
+      h i w = (i/len, w)
 
-  in Vec.fromList (zipWith g [0..] (List.sort qs))
+  in Vec.fromList (zipWith h [0..] (List.sort qs))

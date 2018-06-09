@@ -15,6 +15,7 @@ data XExtent x = XExtent { xmin :: !x, xmax :: !x } deriving  (Show)
 
 data YExtent = YExtent { ymin :: !Double, ymax :: !Double } deriving  (Show)
  
+nominalDiffTimeToSeconds = error "Trade.Render.Svg.Extent: nominalDiffTimeToSeconds undefined"
 
 xyExtent :: (DrawingVec vec, Ord x) => vec (x, Double) -> (XExtent x, YExtent)
 xyExtent cs =

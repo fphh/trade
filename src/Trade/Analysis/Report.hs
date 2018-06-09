@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
-
+{-# LANGUAGE RankNTypes #-}
 
 module Trade.Analysis.Report where
 
@@ -12,13 +12,17 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import Text.Printf (printf)
 
+import qualified Graphics.Rendering.Chart.Easy as E
 
 import qualified Trade.TStatistics.TradeStatistics as TS
 
 import Trade.Type.EquityAndShare
 import Trade.Type.Yield
 
-import Trade.Timeseries.Quandl.Database (Symbol, Dataset, toUrl)
+import Trade.Timeseries.Quandl.Database (Symbol)
+import Trade.Timeseries.Url (ToUrl, toUrl)
+-- import Trade.Timeseries.Row (RowInterface, closeR)
+import Trade.Timeseries.OHLC
 
 import Trade.Render.Svg.Plot
 
@@ -34,16 +38,19 @@ import Trade.Analysis.Backtest
 
 import qualified Trade.Report.Report as Report
 
+import Debug.Trace
+
 newtype Fraction = Fraction {
   unFraction :: Double
   } deriving (Show)
 
 
-data ReportInput ex ohlc = ReportInput {
+data ReportInput sym ohlc trdAt = ReportInput {
   title :: String
-  , symbol :: Symbol ex
+  , symbol :: sym
   , begin :: UTCTime
   , end :: UTCTime
+  , tradeAt :: ohlc -> trdAt
   , initialEquity :: Equity
   , monteCarloN :: Int
   , generateImpulses :: PriceSignal ohlc -> ImpulseSignal ohlc
@@ -61,19 +68,18 @@ data ReportOutput ohlc = ReportOutput {
   , tradeStatistics :: [TS.TradeStatistics]
   }
 
-data Report ex ohlc = Report {
-  reportInput :: ReportInput ex ohlc
+data Report ex ohlc trdAt = Report {
+  reportInput :: ReportInput ex ohlc trdAt
   , reportOutput :: ReportOutput ohlc
   }
 
-
   
 prepareReport ::
-  Vector (UTCTime, Double) -> ReportInput ex Close -> IO (Report ex Close)
-prepareReport qsTsDateClose' args = do
-  let qsTsDateClose = PriceSignal (Vec.map (fmap Close) qsTsDateClose')
-      impulses = (generateImpulses args) qsTsDateClose
-      trades = impulses2trades qsTsDateClose impulses
+  (OHLCInterface ohlc, ToYield ohlc) =>
+  PriceSignal ohlc -> ReportInput ex ohlc trdAt -> IO (Report ex ohlc trdAt)
+prepareReport qsTs args = do
+  let impulses = (generateImpulses args) qsTs
+      trades = impulses2trades qsTs impulses
       ntrades = trades2normTrades trades
       
   broom <- Broom.normHistoryBroom (monteCarloN args) (begin args) (end args) ntrades
@@ -83,13 +89,13 @@ prepareReport qsTsDateClose' args = do
         in (frac, Broom.terminalWealthRelative (initialEquity args) br, Broom.risk br)
 
       twrs = map toTWR (fractions args)
-
-      stats = TS.tradeStatistics trades
+  
+      stats = TS.tradeStatistics ohlcClose trades
       
   return $ Report {
     reportInput = args
     , reportOutput = ReportOutput {
-        priceSignal = qsTsDateClose
+        priceSignal = qsTs
         , impulseSignal = impulses
         , tradeList = trades
         , broom = broom
@@ -98,14 +104,27 @@ prepareReport qsTsDateClose' args = do
         }
     }
 
-renderReport :: (Show ex, Show (Dataset ex)) => Report ex Close -> BSL.ByteString
+renderReport :: (ToUrl ex, OHLCInterface ohlc, UnOHLC trdAt) => Report ex ohlc trdAt -> IO BSL.ByteString
 renderReport report =
   let inArgs = reportInput report
       outArgs = reportOutput report
-      
-      tickerLine = Line (toUrl (symbol inArgs)) (Vec.map (fmap unClose) (unPriceSignal (priceSignal outArgs)))
 
-      intersArgs = ImpulseArgs 25 25
+      toC (t, ohlc) =
+        let c = E.Candle t
+                (unOHLC $ ohlcLow ohlc)
+                (unOHLC $ ohlcOpen ohlc)
+                0
+                (unOHLC $ ohlcClose ohlc)
+                (unOHLC $ ohlcHigh ohlc)
+        in c
+      toCandle (PriceSignal ps) = Vec.map toC ps
+            
+      -- tickerLine = Report.lineL (toUrl (symbol inArgs)) (Vec.map (fmap unClose) (unPriceSignal (priceSignal outArgs)))
+      -- tickerLine2 = Report.line (toUrl (symbol inArgs)) (Vec.map (fmap unClose) (unPriceSignal (priceSignal outArgs)))
+
+      bt = backtest (tradeAt inArgs) (Equity 100000) (tradeList outArgs)
+
+      intersArgs = ImpulseArgs 0.2 0.1
       inters = impulse2line intersArgs (impulseSignal outArgs)
 
       normEqBroom = Broom.normEquityBroom ((step inArgs) (Fraction 1)) (initialEquity inArgs) (broom outArgs)
@@ -113,11 +132,11 @@ renderReport report =
       twrs = terminalWealthRelative outArgs
 
       n = 10
-      baseLineTWR = Line "1.0" (Vec.fromList [(0, 1), (1, 1)])
-      baseLineRisk = Line "95%" (Vec.fromList [(0.95, 0), (0.95, 1)])
-      baseLineRisk2 = Line "20%" (Vec.fromList [(0, 0.2), (1, 0.2)])
+      baseLineTWR = Report.line "1.0" [(0, 1), (1, 1)]
+      baseLineRisk = Report.line "95%" [(0.95, 0), (0.95, 1)]
+      baseLineRisk2 = Report.line "20%" [(0, 0.2), (1, 0.2)]
 
-      twr2line (frac, twr, _) = Line (printf "Frac %.2f" (unFraction frac)) twr
+      twr2line (frac, twr, _) = Report.line (printf "Frac %.2f" (unFraction frac)) twr
 
       twr2row (frac, twr, _) =
         printf "Frac %.2f" (unFraction frac)
@@ -133,24 +152,23 @@ renderReport report =
         
       toRisk (frac, _, risk) =
         let label = printf "Frac %.2f" (unFraction frac)
-        in Line label risk
+        in Report.line label risk
      
       stats = map TS.stats2para (tradeStatistics outArgs)
 
-      rep = Report.report $
-        (Report.header (title inArgs))
+      items =
+        -- (Report.svgLR [ cdl {- tickerLine, bt -} ] [ inters ])
+        -- : (Report.svg [ tickerLine2 ])
 
-        : stats ++
-
-        ((Report.svg [ tickerLine, inters, backtest (Equity 100) (tradeList outArgs) ])
-
-        -- : (broom2chart n (broom outArgs))
         
+        -- :
+        Report.candle (toUrl (symbol inArgs)) [toCandle (priceSignal outArgs)]
         : (Report.subheader "Monte Carlo Sample")
-        : (Broom.broom2chart n normEqBroom)
+        : (Report.svg (Broom.broom2chart n normEqBroom))
+
 
         : (Report.subheader "Terminal Wealth Relative")
-        : (Report.svg ((map twr2line twrs) ++ [baseLineTWR]))
+        : (Report.svg ((map twr2line twrs)++ [baseLineTWR]))
 
 
         : (Report.subheader "Probability of ending with less than 100% of initial equity")
@@ -163,12 +181,14 @@ renderReport report =
         : (Report.subheader "Risk Analysis")
         : (Report.svg (map toRisk twrs ++ [baseLineRisk, baseLineRisk2]))
 
-        : [])
-        
+        : []
+
+      rep = Report.report (Report.header (title inArgs) : stats ++ items)
+
   in Report.renderReport rep
 
 
-renderStats :: (Show ex, Show (Dataset ex)) => [Report ex Close] -> BSL.ByteString
+renderStats :: [Report sym ohlc trdAt] -> IO BSL.ByteString
 renderStats rs =
   let f r =
         Report.subheader (title (reportInput r))

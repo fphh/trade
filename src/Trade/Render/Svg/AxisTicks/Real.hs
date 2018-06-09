@@ -26,7 +26,7 @@ steps :: [(Ratio Integer, Magnitude)]
 steps = zip (iterate (*1000) pico) [Pico .. Tera]
 
 pico :: Ratio Integer
-pico = 1 % (10^12)
+pico = 1 % ((10 :: Integer) ^ (12 :: Integer))
 
 stepTicks :: [(Ratio Integer, Ratio Integer)]
 stepTicks =
@@ -40,12 +40,13 @@ startTicks =
   in zip as (tail as)
 
 findNearest :: [(Ratio Integer, Ratio Integer)] -> Ratio Integer -> Ratio Integer
-findNearest ts t | t == 0 = t
+findNearest _ t | t == 0 = t
 findNearest ts t =
   case filter (\(x, y) -> x < t && t <= y) ts of
     (a, b):_ -> case t-a < b-t of
                  True -> a
                  False -> b
+    [] -> error "findNearest: empty list"
 
 prevMags :: Map Magnitude Magnitude
 prevMags = Map.fromList $ zip (tail [Pico .. Tera]) [Pico .. Tera]
@@ -89,7 +90,7 @@ format x = flip printf x $
 ticksReal :: Double -> Double -> (Double -> String, [Double])
 ticksReal a b | a == b = (format, [a-1, a-0.5, a, a+0.5, a+1])
 ticksReal a b =
-  let (i, s) = intervalAndStep a b
+  let (_, s) = intervalAndStep a b
       a' = approxRational a (10**(-12))
       firstTick = findNearest startTicks (abs (a'-(s/2)))
       ts = iterate (+s) firstTick

@@ -18,6 +18,7 @@ import Trade.Trade.TradeList
 import Trade.Analysis.Yield
 import Trade.Analysis.OffsettedNormTradeList
 
+import Debug.Trace
 
 startingOffsets :: NormTradeList ohlc -> Map NominalDiffTime Int
 startingOffsets (NormTradeList tl) =
@@ -55,11 +56,16 @@ randomYieldSignal' begin end ys offs (i:is) =
           _ -> error "randomYieldSignal': not enough types of trades available"
       
       ys0 = Vec.fromList ys0'
-      ys0Len = Vec.length ys0
+      ys0Len =
+        case Vec.length ys0 of
+          0 -> error "randomYieldSignal': y0 has zero length"
+          n -> n
 
       ys1 = Vec.fromList ys1'
-      ys1Len = Vec.length ys1
-
+      ys1Len =
+        case Vec.length ys1 of
+          0 -> error "randomYieldSignal': y1 has zero length"
+          n -> n
 
       f 0 k = ys0 Vec.! (k `mod` ys0Len)
       f 1 k = ys1 Vec.! (k `mod` ys1Len)
@@ -78,7 +84,7 @@ randomYieldSignal' begin end ys offs (i:is) =
 randomYieldSignal :: UTCTime -> UTCTime -> NormTradeList ohlc -> IO (OffsettedNormTradeList ohlc)
 randomYieldSignal begin end ys = do
     gen <- newStdGen
-    let i:is = randoms gen
+    let i:is = map abs (randoms gen)
         offs = randomOffset (startingOffsets ys) i
     return (OffsettedNormTradeList offs (randomYieldSignal' begin end ys offs is))
 

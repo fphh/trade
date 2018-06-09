@@ -126,7 +126,11 @@ plotlines LinePlot{..} =
         
       polyline c (Histogram str (bnds, smpls)) =
         let pts = Vec.map (yScale . fromIntegral) smpls
-            bs = Vec.map xScale bnds
+        
+            bs = case Vec.map xScale bnds of
+                   cs | Vec.length cs == 0 -> error "plotlines: vector of zero length"
+                   cs -> cs
+                   
             b0 = bs Vec.! 0
             b1 = bs Vec.! 1
             lw = b1-b0-4
