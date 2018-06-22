@@ -27,14 +27,6 @@ import Data.Time.Clock
 import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
 
-{-
-import Trade.Render.Svg.Svg
-import Trade.Render.Svg.Plot
-import Trade.Render.Svg.Extent
-import Trade.Render.Svg.Layout
-import Trade.Render.Svg.AxisTicks
--}
-
 import Trade.Timeseries.OHLC
 import Trade.Type.EquityAndShare
 
@@ -43,13 +35,41 @@ import Trade.Render.Common.Utils
 
 import Debug.Trace
 
+data AxisConfig a = AxisConfig {
+  axisLayout :: E.LayoutAxis a
+  , axisVisibility :: E.AxisVisibility
+--  , axisStyle :: E.AxisStyle
+  , axisFn :: Maybe (E.AxisFn a)
+  }
+
+axisConfDef ::(E.PlotValue y, RealFloat y, Show y, Num y, E.Default (E.AxisData y)) =>  AxisConfig y
+axisConfDef = AxisConfig E.def E.def {- E.def -} Nothing
+
+
+instance E.Default (E.AxisData Double) where
+  def = E.AxisData E.def E.def E.def E.def E.def E.def
+
+
+instance (E.PlotValue a, RealFloat a, Show a, E.Default (E.AxisData a)) => E.Default (AxisConfig a) where
+  def = axisConfDef
+
+exampleAxisConf ::(E.PlotValue y, RealFloat y, Show y, Num y) =>  AxisConfig y
+exampleAxisConf =
+  let al = E.laxis_title E..~ "Impulse Signal"
+           $ E.def
+      av = E.axis_show_labels E..~ False
+           $ E.axis_show_ticks E..~ False
+           $ E.def
+      af = E.scaledAxis E.def (-1,10)
+  in AxisConfig al av {- E.def -} (Just af)
+                  
 type LineTy x y = E.EC (E.Layout x y) (E.PlotLines x y)
 type LineTyL x y0 y1 = E.EC (E.LayoutLR x y0 y1) (E.PlotLines x y0)
 type LineTyR x y0 y1 = E.EC (E.LayoutLR x y0 y1) (E.PlotLines x y1)
 
 data ReportItem =
-  forall x y. (E.PlotValue x, E.PlotValue y) => SvgItem Attrs [LineTy x y]
-  | forall x y0 y1. (E.PlotValue x, E.PlotValue y0, E.PlotValue y1) => SvgItemLR Attrs [LineTyL x y0 y1] [LineTyR x y0 y1]
+  forall x y. (E.PlotValue x, E.PlotValue y) => SvgItem Attrs (AxisConfig x) (AxisConfig y, [LineTy x y])
+  | forall x y0 y1. (E.PlotValue x, E.PlotValue y0,  RealFloat y0, Show y0, E.PlotValue y1, RealFloat y1, Show y1) => SvgItemLR Attrs (AxisConfig x) (AxisConfig y0, [LineTyL x y0 y1]) (AxisConfig y1, [LineTyR x y0 y1])
   | SvgCandle Attrs String [[E.Candle UTCTime Double]]
   | Paragraph Attrs String
   | Table Attrs Attrs Attrs [[String]]
@@ -61,18 +81,16 @@ report :: [ReportItem] -> Report
 report = Report (toAs [ "font-family" .= "monospace" ])
 
 
-svg :: (E.PlotValue x, E.PlotValue y) => [LineTy x y] -> ReportItem
+svg :: (E.PlotValue x, E.PlotValue y) => (AxisConfig x) -> (AxisConfig y, [LineTy x y]) -> ReportItem
 svg = SvgItem (toAs [ "clear" .= "both" ])
+
+svgLR ::
+  (E.PlotValue x, E.PlotValue y0, RealFloat y0, Show y0, E.PlotValue y1, RealFloat y1, Show y1) =>
+  (AxisConfig x) -> (AxisConfig y0, [LineTyL x y0 y1]) -> (AxisConfig y1, [LineTyR x y0 y1]) -> ReportItem
+svgLR = SvgItemLR (toAs [ "clear" .= "both" ])
 
 candle :: String -> [Vector (E.Candle UTCTime Double)] -> ReportItem
 candle str = SvgCandle (toAs [ "clear" .= "both" ]) str . map Vec.toList
-
--- candleL :: String -> Vector (E.Candle x y) -> E.EC (E.Layout x y) (E.PlotCandle x y)
--- candleL str vs = E.candle_x (Vec.toList vs)
-
-svgLR :: (E.PlotValue x, E.PlotValue y0, E.PlotValue y1) => [LineTyL x y0 y1] -> [LineTyR x y0 y1] -> ReportItem
-svgLR = SvgItemLR (toAs [ "clear" .= "both" ])
-
 
 class Line a where
   type TyX a :: *
@@ -127,6 +145,7 @@ subheader =
         , "font-weight" .= "bold"
         , "margin-left" .= "40px"
         , "margin-bottom" .= "10px"
+        , "margin-top" .= "12px"
         , "clear" .= "both" ]
   in Paragraph (toAs attrs)
 
@@ -148,7 +167,7 @@ divTableRow = toAs [
 divTableCol = toAs [
   "float" .= "left"
   , "display" .= "table-column"
-  , "width" .= "200px" ]
+  , "width" .= "150px" ]
 
 
 hSplitTable = toAs [
@@ -192,10 +211,10 @@ colors :: [E.AlphaColour Double]
 colors = map E.opaque [ E.red, E.blue, E.green, E.magenta, E.orange, E.darkcyan, E.black, E.gray, E.purple, E.pink ] ++ colors
 
 chartSize :: (Double, Double)
-chartSize = (1200, 600)
+chartSize = (1000, 520)
 
-lines2str :: (E.PlotValue x, E.PlotValue y) => [LineTy x y] -> IO Builder
-lines2str ls = do
+lines2str :: (E.PlotValue x, E.PlotValue y) => AxisConfig x -> (AxisConfig y, [LineTy x y]) -> IO Builder
+lines2str acx (acy, ls) = do
   let fstyle = E.FontStyle {
         E._font_name = "monospace"
         , E._font_size = 24
@@ -207,19 +226,30 @@ lines2str ls = do
                  , D._fo_size = chartSize }
            
       diagram = do
-        -- E.layout_title .= "Amplitude Modulation"
-        -- E.layout_all_font_styles undefined
         E.setColors colors
-        mapM_ E.plot ls
-        -- plot (line "am" [signal [0,(0.5)..400]] :: _)
-        -- plot (line "bm" [[(0,0), (400, 1)]])
-        -- plot (points "am points" (signal [0,7..400]) :: _)
+        
+        E.layout_x_axis E..= axisLayout acx
+        E.layout_bottom_axis_visibility E..= axisVisibility acx
+        case axisFn acx of
+          Just x -> E.layout_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
 
+        E.layout_y_axis E..= axisLayout acy
+        E.layout_left_axis_visibility E..= axisVisibility acy
+        case axisFn acy of
+          Just x -> E.layout_y_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        mapM_ E.plot ls
   
   fmap B.lazyByteString (D.toBS df diagram)
 
-lines2strLR :: (E.PlotValue x, E.PlotValue y0, E.PlotValue y1) => [LineTyL x y0 y1] -> [LineTyR x y0 y1] -> IO Builder
-lines2strLR lsL lsR = do
+lines2strLR ::
+  (E.PlotValue x
+  , E.PlotValue y0, RealFloat y0, Show y0, Num y0
+  , E.PlotValue y1, RealFloat y1, Show y1, Num y1) =>
+  AxisConfig x -> (AxisConfig y0, [LineTyL x y0 y1]) -> (AxisConfig y1, [LineTyR x y0 y1]) -> IO Builder
+lines2strLR acx (acL, lsL) (acR, lsR) = do
   let fstyle = E.FontStyle {
         E._font_name = "monospace"
         , E._font_size = 24
@@ -232,6 +262,25 @@ lines2strLR lsL lsR = do
 
       diagram = do
         E.setColors colors
+
+        E.layoutlr_x_axis E..= axisLayout acx
+        E.layoutlr_bottom_axis_visibility E..= axisVisibility acx
+        case axisFn acx of
+          Just x -> E.layoutlr_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        E.layoutlr_left_axis E..= axisLayout acL
+        E.layoutlr_left_axis_visibility E..= axisVisibility acL
+        case axisFn acL of
+          Just x -> E.layoutlr_left_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        E.layoutlr_right_axis E..= axisLayout acR
+        E.layoutlr_right_axis_visibility E..= axisVisibility acR
+        case axisFn acR of
+          Just x -> E.layoutlr_right_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
         mapM_ E.plotLeft lsL
         mapM_ E.plotRight lsR
 
@@ -271,8 +320,9 @@ toCandle label cs = do
   fmap B.lazyByteString (D.toBS df (E.plot diagram))
   
 renderItem :: ReportItem -> IO Builder
-renderItem (SvgItem as ls) = lines2str ls >>= return . tag2 "div" (attr2str as) 
-renderItem (SvgItemLR as ls0 ls1) = lines2strLR ls0 ls1 >>= return . tag2 "div" (attr2str as)
+renderItem (SvgItem as acx ls) = lines2str acx ls >>= return . tag2 "div" (attr2str as) 
+renderItem (SvgItemLR as acy ls0 ls1) =
+  lines2strLR acy ls0 ls1 >>= return . tag2 "div" (attr2str as)
 renderItem (SvgCandle as label ls) = toCandle label ls >>= return . tag2 "div" (attr2str as) 
 renderItem (Paragraph as str) =
   return (tag2 "div" (attr2str as) (B.stringUtf8 str))

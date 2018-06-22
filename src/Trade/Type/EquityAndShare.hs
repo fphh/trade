@@ -14,13 +14,13 @@ class UnOHLC a where
   unOHLC :: a -> Double
   
 
-newtype Equity = Equity { unEquity :: Double } deriving (Show, Eq, Ord, Num)
+newtype Equity = Equity { unEquity :: Double } deriving (Show, Read, Eq, Ord, Num)
 
 instance Pretty Equity where
   pretty (Equity x) = "Equity=" ++ show x
 
 
-newtype Open = Open { unOpen :: Double } deriving (Show, Eq, Ord)
+newtype Open = Open { unOpen :: Double } deriving (Show, Read, Eq, Ord)
 
 instance FromField Open where
   parseField =  return . Open . read . BS.unpack
@@ -31,7 +31,7 @@ instance UnOHLC Open where
 instance Pretty Open where
   pretty = show
 
-newtype Close = Close { unClose :: Double } deriving (Show, Eq, Ord)
+newtype Close = Close { unClose :: Double } deriving (Show, Read, Eq, Ord)
 
 instance FromField Close where
   parseField =  return . Close . read . BS.unpack
@@ -42,7 +42,7 @@ instance UnOHLC Close where
 instance Pretty Close where
   pretty (Close x) = "Close=" ++ show x
 
-newtype High = High { unHigh :: Double } deriving (Show, Eq, Ord)
+newtype High = High { unHigh :: Double } deriving (Show, Read, Eq, Ord)
 
 instance FromField High where
   parseField =  return . High . read . BS.unpack
@@ -53,7 +53,7 @@ instance UnOHLC High where
 instance Pretty High where
   pretty = show
 
-newtype Low = Low { unLow :: Double } deriving (Show, Eq, Ord)
+newtype Low = Low { unLow :: Double } deriving (Show, Read, Eq, Ord)
 
 instance FromField Low where
   parseField =  return . Low . read . BS.unpack
@@ -64,7 +64,7 @@ instance UnOHLC Low where
 instance Pretty Low where
   pretty = show
 
-newtype Volume = Volume { unVolume :: Double } deriving (Show, Eq, Ord, Num)
+newtype Volume = Volume { unVolume :: Double } deriving (Show, Read, Eq, Ord, Num)
 
 instance FromField Volume where
   parseField =  return . Volume . read . BS.unpack
@@ -82,7 +82,7 @@ instance ToRatio Close where
   Close x ./ Close y = OutToInRatio (x/y)
 
 
-newtype Share = Share { unShare :: Integer } deriving (Show, Eq, Ord, Num)
+newtype Share = Share { unShare :: Integer } deriving (Show, Read, Eq, Ord, Num)
 
 instance Pretty Share where
   pretty (Share s) = "Share=" ++ show s

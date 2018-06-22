@@ -3,6 +3,7 @@
 
 module Trade.TStatistics.TradeStatistics where
 
+import Data.Time.Clock
 
 import qualified Data.Map as Map
 
@@ -10,6 +11,8 @@ import qualified Data.Map as Map
 import qualified Statistics.Sample as Sample
 
 import qualified Data.Vector as Vec
+
+import Text.Printf (printf)
 
 import Trade.Trade.TradeList
 import Trade.Trade.State
@@ -25,25 +28,32 @@ data TradeStatistics = TradeStatistics {
   , cnt :: !Int
   , mean :: !Double
   , stdDev :: !Double
+  , tmean :: !Double
+  , tstdDev :: !Double
   } deriving (Show)
 
 
--- tradeStatistics :: () -> TradeList ohlc -> [TradeStatistics]
 tradeStatistics :: (UnOHLC b) => (ohlc -> b) -> TradeList ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
   let m = sortTradeByState tl
 
+      day = 60*60*24
+
       h v = case (Vec.head v, Vec.last v) of
-              ((_, x), (_, y)) -> unOHLC y / unOHLC x
+              ((tx, x), (ty, y)) -> (realToFrac (ty `diffUTCTime` tx), log (unOHLC y / unOHLC x))
 
-      f = Vec.fromList . map (log . h . Vec.map (fmap extract) . ticker) . unTradeList
+      f = Vec.fromList . map (h . Vec.map (fmap extract) . ticker) . unTradeList
 
-      g st ts = TradeStatistics {
-        state = st
-        , cnt = Vec.length ts
-        , mean = Sample.mean ts
-        , stdDev = Sample.stdDev ts
-        }
+      g st xs =
+        let (ts, qs) = Vec.unzip xs
+        in TradeStatistics {
+          state = st
+          , cnt = Vec.length qs
+          , mean = Sample.mean qs
+          , stdDev = Sample.stdDev qs
+          , tmean = Sample.mean ts / day
+          , tstdDev = Sample.stdDev ts / day
+          }
       
       xs = Map.mapWithKey g (fmap f m)
       
@@ -55,6 +65,8 @@ stats2para stats =
   vtable $
   [ "state", show $ state stats]
   : ["cnt", show $ cnt stats]
-  : ["mean", show $ mean stats]
-  : ["stdDev", show $ stdDev stats]
+  : ["mean", printf "%.4f log yield" $ mean stats]
+  : ["stdDev", printf "%.4f log yield" $ stdDev stats]
+  : ["duration mean", printf "%.2f days" $ tmean stats]
+  : ["duration stdDev", printf "%.2f days" $ tstdDev stats]
   : []

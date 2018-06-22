@@ -13,13 +13,11 @@ import qualified Data.ByteString.Char8 as BS
 parseDate :: (Monad m, MonadFail m) => String -> m UTCTime
 parseDate = parseTimeM True defaultTimeLocale (iso8601DateFormat Nothing)
 
-{-
-parseDate :: String -> Maybe UTCTime
-parseDate str =
-  let r = parseTimeM True defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S%QZ")) str
-      s = parseTimeM True defaultTimeLocale (iso8601DateFormat Nothing) str
-  in maybe s Just r
--}
+
+parseDateISO :: (Monad m, MonadFail m) => String -> m UTCTime
+parseDateISO = parseTimeM True defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S%QZ"))
+
+
 
 instance FromField UTCTime where
   parseField = parseDate . BS.unpack

@@ -2,6 +2,7 @@
 module Trade.Timeseries.OHLC where
 
 import Trade.Type.EquityAndShare
+import Trade.Type.Yield
 
 data OHLC = OHLC {
   _ohlcOpen :: Open
@@ -9,7 +10,7 @@ data OHLC = OHLC {
   , _ohlcLow :: Low
   , _ohlcClose :: Close
   , _ohlcVolume :: Volume
-  } deriving (Show)
+  } deriving (Show, Read)
 
 
 class OHLCInterface a where
@@ -25,3 +26,7 @@ instance OHLCInterface OHLC where
   ohlcLow = _ohlcLow
   ohlcClose = _ohlcClose
   ohlcVolume = _ohlcVolume
+
+  
+instance ToYield OHLC where
+  forwardYield x y = forwardYield (_ohlcClose x) (_ohlcClose y)
