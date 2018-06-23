@@ -2,7 +2,9 @@
 
 module Trade.Analysis.OffsettedNormTradeList where
 
-import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime)
+import qualified Data.List as List
+
+-- import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime)
 
 import qualified Data.Vector as Vec
 
@@ -14,22 +16,30 @@ import Trade.Type.Yield
 import Trade.Type.EquityAndShare
 
 import Trade.Analysis.NormHistory
+import Trade.Analysis.Bars
+
+import Debug.Trace
 
 data OffsettedNormTradeList ohlc = OffsettedNormTradeList {
-  offset :: NominalDiffTime
+  offset :: Bars
   , tradeList :: NormTradeList ohlc
   } deriving (Show)
 
 offsettedNormTradeList2normHistory ::
-  UTCTime -> NominalDiffTime -> OffsettedNormTradeList ohlc -> NormHistory ohlc
-offsettedNormTradeList2normHistory begin day (OffsettedNormTradeList off (NormTradeList ntl)) =
+  Bars -> OffsettedNormTradeList ohlc -> NormHistory ohlc
+offsettedNormTradeList2normHistory (Bars bs) (OffsettedNormTradeList (Bars offs) (NormTradeList ntl)) =
   let f (NormTrade NoPosition _ vs) = Vec.replicate (Vec.length vs + 1) (Left (Yield 1))
       f (NormTrade _ _ vs) = Vec.map Right (Vec.cons (Yield 1) vs)
+      -- could be more efficient, if we cons before ?
 
-      cs = Vec.concat (map f ntl)
+      g (b, x:xs) =
+        let len = Vec.length x + b
+        in case len < bs of
+             False -> Nothing
+             True -> Just (x, (len, xs))
       
-      start = off `addUTCTime` begin
-      times = Vec.generate (Vec.length cs) (\i -> (fromIntegral i*day) `addUTCTime` start)
+      cs = Vec.concat $ List.unfoldr g (offs, map f ntl)
+      bars = Vec.generate (Vec.length cs) (BarNo . (offs+))
 
       p (_, Right _) = True
       p _ = False
@@ -37,7 +47,7 @@ offsettedNormTradeList2normHistory begin day (OffsettedNormTradeList off (NormTr
       unEither (Right x) = x
       unEither _ = error "offsettedNormTradeList2normHistory: should never be Left"
 
-  in NormHistory (Vec.map (fmap unEither) (Vec.filter p (Vec.zip times cs)))
+  in NormHistory (Vec.map (fmap unEither) (Vec.filter p (Vec.zip bars cs)))
 
 
 normHistory2normEquity ::

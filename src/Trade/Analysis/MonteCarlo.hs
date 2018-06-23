@@ -9,33 +9,28 @@ import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 
-import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime)
-
 import System.Random
 
 import Trade.Trade.TradeList
 
 import Trade.Analysis.Yield
 import Trade.Analysis.OffsettedNormTradeList
+import Trade.Analysis.Bars
 
-import Debug.Trace
 
-startingOffsets :: NormTradeList ohlc -> Map NominalDiffTime Int
+startingOffsets :: NormTradeList ohlc -> Map Bars Int
 startingOffsets (NormTradeList tl) =
-  let day = 24*60*60
-      f acc (NormTrade _ dur _) =
-        let days = map (day*) [0, 1 .. (dur / day)]
+  let f acc (NormTrade _ _ ys) =
+        let bs = map Bars [0 .. (Vec.length ys + 1)]
             g m d = Map.insertWith (+) d 1 m
-        in List.foldl' g acc days
+        in List.foldl' g acc bs
   in List.foldl' f Map.empty tl
 
-
-randomOffset :: Map NominalDiffTime Int -> Int -> NominalDiffTime
+randomOffset :: Map Bars Int -> Int -> Bars
 randomOffset m n =
   let s = sum (Map.elems m)
       xs = Map.toList m
       f (x, acc) (dt, cnt) = (x+cnt, (x, x+cnt-1, dt):acc)
-      table :: [(Int, Int, NominalDiffTime)]
       table = snd (List.foldl' f (0, []) xs)
       n' = n `mod` s
   in case dropWhile (\(p, _, _) -> n' < p) table of
@@ -43,10 +38,9 @@ randomOffset m n =
        (_, _, startingDiffTime):_ -> startingDiffTime
 
 
-randomYieldSignal' ::
-  UTCTime -> UTCTime -> NormTradeList ohlc -> NominalDiffTime -> [Int] -> NormTradeList ohlc
-randomYieldSignal' _ _ _ _ [] = error "randomYieldSignal': no random numbers"
-randomYieldSignal' begin end ys offs (i:is) =
+randomYieldSignal' :: NormTradeList ohlc -> [Int] -> NormTradeList ohlc
+randomYieldSignal' _ [] = error "randomYieldSignal': no random numbers"
+randomYieldSignal' ys (i:is) =
   let j = i `mod` 2
       tradeTypes = j:(1 - j):tradeTypes
       
@@ -73,18 +67,14 @@ randomYieldSignal' begin end ys offs (i:is) =
 
       trades = zipWith f tradeTypes is
       
-      start = offs `addUTCTime` begin
-
-      g t tr = normTradeDuration tr `addUTCTime` t
-      times = scanl g start trades
-      
-  in NormTradeList (map snd $ takeWhile ((<end) . fst) (zip times trades))
+  in NormTradeList trades
 
 
-randomYieldSignal :: UTCTime -> UTCTime -> NormTradeList ohlc -> IO (OffsettedNormTradeList ohlc)
-randomYieldSignal begin end ys = do
+randomYieldSignal :: NormTradeList ohlc -> IO (OffsettedNormTradeList ohlc)
+randomYieldSignal ys = do
     gen <- newStdGen
     let i:is = map abs (randoms gen)
         offs = randomOffset (startingOffsets ys) i
-    return (OffsettedNormTradeList offs (randomYieldSignal' begin end ys offs is))
+        rysig = randomYieldSignal' ys is
+    return (OffsettedNormTradeList offs rysig)
 

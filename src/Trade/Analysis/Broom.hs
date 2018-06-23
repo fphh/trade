@@ -12,8 +12,9 @@ import Data.Time.Clock (UTCTime)
 
 import Trade.Trade.TradeList
 import Trade.Analysis.NormHistory
-import Trade.Analysis.MonteCarlo
+import qualified Trade.Analysis.MonteCarlo as MC
 import Trade.Analysis.OffsettedNormTradeList
+import Trade.Analysis.Bars
 
 import Trade.Type.Yield
 import Trade.Type.EquityAndShare
@@ -25,19 +26,17 @@ newtype Broom history = Broom {
   unBroom :: [history]
   } deriving (Show)
 
-
-broom2chart :: (Curve history) => Int -> Broom history -> [Report.LineTy UTCTime Double]
+broom2chart :: (Curve history) => Int -> Broom history -> [Report.LineTy Int Double]
 broom2chart n (Broom xs) =
   let f i x = Report.line (show i) (curve x)
   in zipWith f [0 :: Integer ..] (take n xs)
 
 
 
-normHistoryBroom :: Int -> UTCTime -> UTCTime -> NormTradeList ohlc -> IO (Broom (NormHistory ohlc))
-normHistoryBroom n begin end ntl = do
-  tls <- replicateM n (randomYieldSignal begin end ntl)
-  let day = 24*60*60
-  return (Broom (map (offsettedNormTradeList2normHistory begin day) tls))
+normHistoryBroom :: Bars -> Int -> NormTradeList ohlc -> IO (Broom (NormHistory ohlc))
+normHistoryBroom bs n ntl = do
+  tls <- replicateM n (MC.randomYieldSignal ntl)
+  return (Broom (map (offsettedNormTradeList2normHistory bs) tls))
 
 
 normEquityBroom ::

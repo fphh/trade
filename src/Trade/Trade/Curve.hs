@@ -7,4 +7,4 @@ import Data.Time.Clock (UTCTime)
 import Data.Vector (Vector)
 
 class Curve a where
-  curve :: a -> Vector (UTCTime, Double)
+  curve :: a -> Vector (Int, Double)

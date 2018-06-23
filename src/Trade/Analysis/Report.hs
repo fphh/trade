@@ -34,6 +34,8 @@ import qualified Trade.Analysis.Broom as Broom
 import Trade.Analysis.Broom (Broom)
 import Trade.Analysis.NormHistory
 import Trade.Analysis.Backtest
+import qualified Trade.Analysis.MonteCarlo as MC
+import Trade.Analysis.Bars
 
 
 import qualified Trade.Report.Report as Report
@@ -49,8 +51,9 @@ data ReportInput sym ohlc trdAt = ReportInput {
   title :: String
   , description :: String
   , symbol :: sym
-  , begin :: UTCTime
-  , end :: UTCTime
+  -- , simStart :: UTCTime
+  , simBars :: Bars
+  -- , end :: UTCTime
   , tradeAt :: ohlc -> trdAt
   , initialEquity :: Equity
   , monteCarloN :: Int
@@ -83,7 +86,7 @@ prepareReport qsTs args = do
       trades = impulses2trades qsTs impulses
       ntrades = trades2normTrades trades
       
-  broom <- Broom.normHistoryBroom (monteCarloN args) (begin args) (end args) ntrades
+  broom <- Broom.normHistoryBroom (simBars args) (monteCarloN args) ntrades
 
   let toTWR frac =
         let br = Broom.normEquityBroom ((step args) frac) (initialEquity args) broom
@@ -315,7 +318,7 @@ renderReport report =
         : (Report.svgLR (axTitle "Time") (axTitle "Equity", [tickerLine, bt ]) (impulseAxisConf, [inters]))
 
         : (Report.subheader "Monte Carlo Sample")
-        : (Report.svg (axTitle "Time") (axTitle "Equity", Broom.broom2chart n normEqBroom))
+        : (Report.svg (axTitle "No. of Bars") (axTitle "Equity", Broom.broom2chart n normEqBroom))
 
         : (Report.subheader "Terminal Wealth Relative")
         : (Report.svg (axTitle "Probability") (axTitle "Times initial Equity", (map twr2line twrs) ++ [baseLineTWR]))

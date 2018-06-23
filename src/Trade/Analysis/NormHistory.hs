@@ -1,8 +1,6 @@
 
 module Trade.Analysis.NormHistory where
 
-import Data.Time.Clock (UTCTime)
-
 import Data.Vector (Vector)
 
 import qualified Data.Vector as Vec
@@ -12,18 +10,22 @@ import Trade.Type.EquityAndShare
 
 import Trade.Trade.Curve
 
+import Trade.Analysis.Bars
+
 newtype NormHistory ohlc = NormHistory {
-  unNormHistory :: Vector (UTCTime, Yield)
+  unNormHistory :: Vector (BarNo, Yield)
   } deriving (Show)
+
 
 instance Curve (NormHistory ohlc) where
-  curve (NormHistory nh) = Vec.map (fmap unYield) nh
-  
+  curve (NormHistory nh) = Vec.map (\(BarNo x, Yield y) -> (x, y)) nh
+
 
 newtype NormEquityHistory ohlc = NormEquityHistory {
-  unNormEquityHistory :: Vector (UTCTime, Equity)
+  unNormEquityHistory :: Vector (BarNo, Equity)
   } deriving (Show)
 
+
 instance Curve (NormEquityHistory ohlc) where
-  curve (NormEquityHistory nh) = Vec.map (fmap unEquity) nh
-  
+  curve (NormEquityHistory nh) = Vec.map (\(BarNo x, Equity y) -> (x, y)) nh
+
