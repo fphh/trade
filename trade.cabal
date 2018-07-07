@@ -22,7 +22,6 @@ library
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
                         Trade.Analysis.Backtest
-                        Trade.Analysis.Bars
                         Trade.Analysis.Broom
                         Trade.Analysis.NormHistory
                         Trade.Analysis.MonteCarlo
@@ -74,6 +73,8 @@ library
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
                         Trade.TStatistics.TradeStatistics
+                        Trade.Type.Bars
+                        Trade.Type.Commission
                         Trade.Type.Fraction
                         Trade.Type.Equity
                         Trade.Type.OHLC
