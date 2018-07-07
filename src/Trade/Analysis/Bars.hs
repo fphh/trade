@@ -8,4 +8,4 @@ newtype Bars = Bars {
 
 newtype BarNo = BarNo {
   unBarNo :: Int
-  } deriving (Show)
+  } deriving (Show, Eq, Ord)

@@ -1,5 +1,4 @@
 
-
 module Trade.Analysis.OffsettedNormTradeList where
 
 import qualified Data.List as List
@@ -28,27 +27,16 @@ data OffsettedNormTradeList ohlc = OffsettedNormTradeList {
 offsettedNormTradeList2normHistory ::
   Bars -> OffsettedNormTradeList ohlc -> NormHistory ohlc
 offsettedNormTradeList2normHistory (Bars bs) (OffsettedNormTradeList (Bars offs) (NormTradeList ntl)) =
-  let f (NormTrade NoPosition _ vs) = Vec.replicate (Vec.length vs + 1) (Left (Yield 1))
-      f (NormTrade _ _ vs) = Vec.map Right (Vec.cons (Yield 1) vs)
-      -- could be more efficient, if we cons before ?
-
-      g (b, x:xs) =
-        let len = Vec.length x + b
-        in case len < bs of
+  let f (o, NormTrade state _ vs : xs) =
+        let len = o + Vec.length vs
+        in case len <= bs of
+             True -> Just $ (\v -> (v, (len, xs))) $
+               case state of
+                 NoPosition -> Vec.empty
+                 _ -> Vec.imap (\i x -> (BarNo (o+i), x)) vs
              False -> Nothing
-             True -> Just (x, (len, xs))
-      
-      cs = Vec.concat $ List.unfoldr g (offs, map f ntl)
-      bars = Vec.generate (Vec.length cs) (BarNo . (offs+))
 
-      p (_, Right _) = True
-      p _ = False
-
-      unEither (Right x) = x
-      unEither _ = error "offsettedNormTradeList2normHistory: should never be Left"
-
-  in NormHistory (Vec.map (fmap unEither) (Vec.filter p (Vec.zip bars cs)))
-
+  in NormHistory (Vec.concat (List.unfoldr f (offs, ntl)))
 
 normHistory2normEquity ::
   (Equity -> Yield -> Equity) -> Equity -> NormHistory ohlc -> NormEquityHistory ohlc

@@ -17,25 +17,15 @@ import Trade.Analysis.Yield
 import Trade.Analysis.OffsettedNormTradeList
 import Trade.Analysis.Bars
 
+import Debug.Trace
 
-startingOffsets :: NormTradeList ohlc -> Map Bars Int
+startingOffsets :: NormTradeList ohlc -> (Int -> Bars)
 startingOffsets (NormTradeList tl) =
-  let f acc (NormTrade _ _ ys) =
-        let bs = map Bars [0 .. (Vec.length ys + 1)]
-            g m d = Map.insertWith (+) d 1 m
-        in List.foldl' g acc bs
-  in List.foldl' f Map.empty tl
-
-randomOffset :: Map Bars Int -> Int -> Bars
-randomOffset m n =
-  let s = sum (Map.elems m)
-      xs = Map.toList m
-      f (x, acc) (dt, cnt) = (x+cnt, (x, x+cnt-1, dt):acc)
-      table = snd (List.foldl' f (0, []) xs)
-      n' = n `mod` s
-  in case dropWhile (\(p, _, _) -> n' < p) table of
-       [] -> error "randomStartingPoint: not possible"
-       (_, _, startingDiffTime):_ -> startingDiffTime
+  let f (NormTrade _ _ ys) = Vec.imap (\i _ -> Bars i) ys
+        -- Vec.generate (Vec.length ys) (Bars . id)
+      table = Vec.concat (map f tl)
+      len = Vec.length table
+  in \n -> table Vec.! (n `mod` len)
 
 
 randomYieldSignal' :: NormTradeList ohlc -> [Int] -> NormTradeList ohlc
@@ -61,20 +51,22 @@ randomYieldSignal' ys (i:is) =
           0 -> error "randomYieldSignal': y1 has zero length"
           n -> n
 
-      f 0 k = ys0 Vec.! (k `mod` ys0Len)
-      f 1 k = ys1 Vec.! (k `mod` ys1Len)
-      f _ _ = error "randomYieldSignal': never here"
+      f n k =
+        case n of
+          0 -> ys0 Vec.! (k `mod` ys0Len)
+          1 -> ys1 Vec.! (k `mod` ys1Len)
+          _ -> error "randomYieldSignal': never here"
 
       trades = zipWith f tradeTypes is
       
   in NormTradeList trades
 
 
-randomYieldSignal :: NormTradeList ohlc -> IO (OffsettedNormTradeList ohlc)
-randomYieldSignal ys = do
+randomYieldSignal :: NormTradeList ohlc -> (Int -> Bars) -> IO (OffsettedNormTradeList ohlc)
+randomYieldSignal ys offsetTable = do
     gen <- newStdGen
     let i:is = map abs (randoms gen)
-        offs = randomOffset (startingOffsets ys) i
+        offs = offsetTable i
         rysig = randomYieldSignal' ys is
     return (OffsettedNormTradeList offs rysig)
 

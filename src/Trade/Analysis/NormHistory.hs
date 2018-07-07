@@ -14,7 +14,7 @@ import Trade.Analysis.Bars
 
 newtype NormHistory ohlc = NormHistory {
   unNormHistory :: Vector (BarNo, Yield)
-  } deriving (Show)
+  } deriving (Show, Eq)
 
 
 instance Curve (NormHistory ohlc) where
@@ -23,7 +23,7 @@ instance Curve (NormHistory ohlc) where
 
 newtype NormEquityHistory ohlc = NormEquityHistory {
   unNormEquityHistory :: Vector (BarNo, Equity)
-  } deriving (Show)
+  } deriving (Show, Eq)
 
 
 instance Curve (NormEquityHistory ohlc) where

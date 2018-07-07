@@ -28,6 +28,8 @@ library
                         Trade.Analysis.MonteCarlo
                         Trade.Analysis.OffsettedNormTradeList
                         Trade.Analysis.Report
+                        Trade.Analysis.Report2
+                        Trade.Analysis.StepFunc
                         Trade.Analysis.Yield
                         Trade.Test.Data
                         Trade.Timeseries.Algorithm.Intersection
@@ -72,6 +74,7 @@ library
                         Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
                         Trade.TStatistics.TradeStatistics
+                        Trade.Type.Fraction
                         Trade.Type.EquityAndShare
                         Trade.Type.Yield
   -- other-modules:

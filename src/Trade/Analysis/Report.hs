@@ -42,6 +42,8 @@ import qualified Trade.Report.Report as Report
 
 import Debug.Trace
 
+{-
+
 newtype Fraction = Fraction {
   unFraction :: Double
   } deriving (Show)
@@ -355,3 +357,5 @@ renderStats rs =
         : ss
 
   in Report.renderReport rep
+
+-}
