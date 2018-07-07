@@ -23,7 +23,6 @@ library
                         Trade.Algorithm.StochasticOscillator
                         Trade.Analysis.Backtest
                         Trade.Analysis.Broom
-                        Trade.Analysis.NormHistory
                         Trade.Analysis.MonteCarlo
                         Trade.Analysis.OffsettedNormTradeList
                         Trade.Analysis.Report
@@ -77,6 +76,7 @@ library
                         Trade.Type.Commission
                         Trade.Type.Fraction
                         Trade.Type.Equity
+                        Trade.Type.History
                         Trade.Type.OHLC
                         Trade.Type.Yield
   -- other-modules:
