@@ -75,7 +75,8 @@ library
                         Trade.TStatistics.SampleStatistics
                         Trade.TStatistics.TradeStatistics
                         Trade.Type.Fraction
-                        Trade.Type.EquityAndShare
+                        Trade.Type.Equity
+                        Trade.Type.OHLC
                         Trade.Type.Yield
   -- other-modules:
   -- other-extensions:
