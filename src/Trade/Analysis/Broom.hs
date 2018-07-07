@@ -8,18 +8,16 @@ import Data.Vector (Vector)
 
 import Control.Monad (replicateM)
 
-import Data.Time.Clock (UTCTime)
+import Trade.Type.Yield (Yield(..))
+import Trade.Type.Equity (Equity(..))
+import Trade.Type.Fraction (Fraction)
+import Trade.Type.Bars (Bars)
+import Trade.Type.History (History(..))
 
 import Trade.Trade.TradeList
-import Trade.Analysis.NormHistory
 import qualified Trade.Analysis.MonteCarlo as MC
 import Trade.Analysis.OffsettedNormTradeList
-import Trade.Analysis.Bars
 import Trade.Analysis.StepFunc
-
-import Trade.Type.Yield
-import Trade.Type.EquityAndShare
-import Trade.Type.Fraction
 
 import Trade.Trade.SafeTail
 
@@ -28,13 +26,9 @@ import Trade.Trade.Curve
 import qualified Trade.Report.Report as Report
 
 
-import Debug.Trace
-
 newtype Broom history = Broom {
   unBroom :: [history]
   } deriving (Show, Eq)
-
-
 
 
 broom2chart :: (Curve history) => Int -> Broom history -> [Report.LineTy Int Double]
@@ -42,7 +36,7 @@ broom2chart n (Broom xs) =
   let f i x = Report.line (show i) (curve x)
   in zipWith f [0 :: Integer ..] (take n xs)
 
-normHistoryBroom :: Bars -> Int -> NormTradeList ohlc -> IO (Broom (NormHistory ohlc))
+normHistoryBroom :: Bars -> Int -> NormTradeList ohlc -> IO (Broom (History Yield))
 normHistoryBroom bs n ntl = do
   let soffs = MC.startingOffsets ntl
       f (NormTrade NoPosition t vs) =
@@ -58,15 +52,16 @@ normHistoryBroom bs n ntl = do
 
 
 normEquityBroom ::
-  StepFunc -> Equity -> Broom (NormHistory ohlc) -> Broom (NormEquityHistory ohlc)
+  StepFunc -> Equity -> Broom (History Yield) -> Broom (History Equity)
 normEquityBroom step eqty (Broom bs) = Broom (map (normHistory2normEquity step eqty) bs)
 
-relativeBroom :: Broom (NormEquityHistory ohlc) -> Broom (NormHistory ohlc)
+
+relativeBroom :: Broom (History Equity) -> Broom (History Yield)
 relativeBroom (Broom bs) =
   let g (_, Equity old) (b, Equity new) = (b, Yield (new / old)) 
-      f (NormEquityHistory vs) =
+      f (History vs) =
         let start = fmap (const (Yield 1)) (Vec.head vs)
-        in NormHistory $ Vec.cons start (Vec.zipWith g vs (Vec.tail vs))
+        in History $ Vec.cons start (Vec.zipWith g vs (stail "relativeBroom" vs))
   in Broom (map f bs)
 
 
@@ -80,14 +75,14 @@ newtype CDF a = CDF {
   } deriving (Show)
 
 -- twr = terminal wealth relative
-terminalWealthRelative :: Equity -> Broom (NormEquityHistory ohlc) -> CDF TWR -- Vector (Percent, Double)
+terminalWealthRelative :: Equity -> Broom (History Equity) -> CDF TWR -- Vector (Percent, Double)
 terminalWealthRelative (Equity e) (Broom hs) =
-  let twrs = List.sort (map ((/e) . unEquity . snd . Vec.last . unNormEquityHistory) hs)
+  let twrs = List.sort (map ((/e) . unEquity . snd . Vec.last . unHistory) hs)
       len = fromIntegral (length twrs)
       g i w = (i/len, w)
   in CDF (Vec.fromList (zipWith g [0..] twrs))
 
-risk :: Broom (NormEquityHistory ohlc) -> CDF Risk -- Vector (Percent, Double)
+risk :: Broom (History Equity) -> CDF Risk -- Vector (Percent, Double)
 risk (Broom hs) =
   let f vs =
         let l = Vec.length vs
@@ -102,7 +97,7 @@ risk (Broom hs) =
       len = fromIntegral (length hs)
 
       
-      qs = map (f . Vec.map (unEquity . snd) . unNormEquityHistory) hs
+      qs = map (f . Vec.map (unEquity . snd) . unHistory) hs
 
       h i w = (i/len, w)
 

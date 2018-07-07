@@ -14,7 +14,8 @@ import Data.Maybe (isNothing)
 import Trade.Timeseries.Algorithm.SyncZip
 
 import Trade.Type.Yield
-import Trade.Type.EquityAndShare
+import Trade.Type.Equity (Equity(..))
+import Trade.Type.OHLC (UnOHLC, unOHLC)
 
 import Trade.Trade.PriceSignal
 import Trade.Trade.ImpulseSignal
@@ -26,10 +27,16 @@ data Trade ohlc = Trade {
   , ticker :: Vector (UTCTime, ohlc)
   } deriving (Show)
 
+instance Functor Trade where
+  fmap f (Trade ts vs) = Trade ts (Vec.map (fmap f) vs)
 
 newtype TradeList ohlc = TradeList {
   unTradeList :: [Trade ohlc]
   } deriving (Show)
+
+instance Functor TradeList where
+  fmap f (TradeList tl) = TradeList (map (fmap f) tl)
+
 
 impulses2trades :: PriceSignal ohlc -> ImpulseSignal ohlc -> TradeList ohlc
 impulses2trades (PriceSignal ps) (ImpulseSignal is) =
@@ -71,9 +78,9 @@ newtype NormTradeList ohlc = NormTradeList {
 
 
 
-trades2normTrades :: (ToYield ohlc) => TradeList ohlc -> NormTradeList ohlc
+trades2normTrades :: (UnOHLC a) => TradeList a -> NormTradeList Yield
 trades2normTrades (TradeList tl) =
-  let g (_, old) (_, new) = (old `forwardYield` new)
+  let g (_, old) (_, new) = Yield (unOHLC old / unOHLC new)
       
       f (Trade st ts) =
         let (t0, _) = shead "trades2normTrades" ts

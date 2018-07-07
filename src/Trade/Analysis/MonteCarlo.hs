@@ -11,11 +11,15 @@ import Data.Map.Strict (Map)
 
 import System.Random
 
+
+import Trade.Type.Bars (Bars(..))
+
 import Trade.Trade.TradeList
+
+
 
 import Trade.Analysis.Yield
 import Trade.Analysis.OffsettedNormTradeList
-import Trade.Analysis.Bars
 
 import Debug.Trace
 

@@ -11,7 +11,6 @@ module Trade.Report.Report where
 import qualified Data.ByteString.Builder as B
 import Data.ByteString.Builder (Builder)
 
-import qualified Data.ByteString.Lazy as BSL
 import Data.ByteString.Lazy (ByteString)
 
 import qualified Data.Map as Map
@@ -19,16 +18,13 @@ import qualified Data.Map as Map
 import Data.Vector (Vector)
 import qualified Data.Vector as Vec
 
-import Data.Monoid
-
 import Data.Time.Clock
 
 
 import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
 
-import Trade.Timeseries.OHLC
-import Trade.Type.EquityAndShare
+import Trade.Type.Equity (Equity)
 
 import Trade.Render.Common.Attr
 import Trade.Render.Common.Utils

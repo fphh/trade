@@ -2,13 +2,10 @@
 
 module Trade.Analysis.StepFunc where
 
-import Trade.Type.Fraction
-import Trade.Type.EquityAndShare
-import Trade.Type.Yield
-
-newtype Commission = Commission {
-  unCommission :: Double -> Double
-  }
+import Trade.Type.Fraction (Fraction(..))
+import Trade.Type.Equity (Equity(..))
+import Trade.Type.Yield (Yield(..))
+import Trade.Type.Commission (Commission(..))
 
 type StepFunc = Equity -> Yield -> Equity
 

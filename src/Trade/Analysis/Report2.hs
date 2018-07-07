@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 
 module Trade.Analysis.Report2 where
 
@@ -14,9 +15,13 @@ import qualified Graphics.Rendering.Chart.Easy as E
 
 import qualified Trade.TStatistics.TradeStatistics as TS
 
-import Trade.Type.EquityAndShare
-import Trade.Type.Yield
-import Trade.Type.Fraction
+-- import Trade.Type.Equity ()
+-- import Trade.Type.Yield ()
+
+import Trade.Type.Fraction (Fraction)
+import Trade.Type.Bars (Bars)
+import Trade.Type.Equity (Equity)
+import Trade.Type.History (History)
 
 import Trade.Timeseries.Quandl.Database (Symbol)
 import Trade.Timeseries.Url (ToUrl, toUrl)
@@ -31,10 +36,8 @@ import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom
 import Trade.Analysis.Broom (Broom)
-import Trade.Analysis.NormHistory
 import Trade.Analysis.Backtest
 import qualified Trade.Analysis.MonteCarlo as MC
-import Trade.Analysis.Bars
 
 import qualified Trade.Analysis.StepFunc as SF
 
@@ -44,33 +47,35 @@ import qualified Trade.Report.Report as Report
 import Debug.Trace
 
 
-data MCParams = MCParams {
+data MCParams mcinput = MCParams {
   simBars :: Bars
   , monteCarloN :: Int
+  , input :: mcinput
   }
 
-data MCOutput ohlc = MCOutput {
-  broom :: Broom.Broom (NormEquityHistory ohlc)
+data MCOutput ey = MCOutput {
+  broom :: Broom.Broom (History ey)
   }
 
 type ImpulseGenerator ohlc = PriceSignal ohlc -> ImpulseSignal ohlc
 
 
-data ReportInput mcoutput ohlc = ReportInput {
+data ReportInput mcinput mcoutput ohlc {- trdAt -} = ReportInput {
   priceSignal :: PriceSignal ohlc
-  , mcParams :: MCParams
+  -- , tradeAt :: ohlc -> trdAt
+  , mcParams :: MCParams mcinput
   , generateImpulses :: ImpulseGenerator ohlc
-  , montecarlo :: PriceSignal ohlc -> MCParams -> ImpulseGenerator ohlc -> IO (mcoutput ohlc)
+  , montecarlo :: MCParams mcinput -> ImpulseGenerator ohlc -> IO (mcoutput Equity)
   , fractions :: [Fraction]
   }
 
-createMC :: ReportInput mcoutput ohlc -> IO (mcoutput ohlc)
-createMC args = (montecarlo args) (priceSignal args) (mcParams args) (generateImpulses args)
+createMC :: ReportInput mcinput mcoutput ohlc {- trdAt -} -> IO (mcoutput Equity)
+createMC args = (montecarlo args) (mcParams args) (generateImpulses args)
 
 class MCReport a where
   toMCReport :: a -> [Report.ReportItem]
 
-instance MCReport (MCOutput ohlc) where
+instance MCReport (MCOutput Equity) where
   toMCReport mcout =
     let  axisTitle str =
            let al = E.laxis_title E..~ str $ E.def

@@ -16,8 +16,10 @@ import qualified Graphics.Rendering.Chart.Easy as E
 
 import qualified Trade.TStatistics.TradeStatistics as TS
 
-import Trade.Type.EquityAndShare
-import Trade.Type.Yield
+import Trade.Type.Equity ()
+import Trade.Type.Yield ()
+import Trade.Type.Bars ()
+import Trade.Type.History
 
 import Trade.Timeseries.Quandl.Database (Symbol)
 import Trade.Timeseries.Url (ToUrl, toUrl)
@@ -32,10 +34,8 @@ import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom
 import Trade.Analysis.Broom (Broom)
-import Trade.Analysis.NormHistory
 import Trade.Analysis.Backtest
 import qualified Trade.Analysis.MonteCarlo as MC
-import Trade.Analysis.Bars
 
 
 import qualified Trade.Report.Report as Report

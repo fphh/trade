@@ -7,7 +7,8 @@ module Trade.Timeseries.Row where
 
 import Data.Time.Clock (UTCTime)
 
-import Trade.Type.EquityAndShare (Open, Close, High, Low, Volume)
+import Trade.Type.OHLC (Open, Close, High, Low, Volume)
+
 import Trade.Timeseries.OHLC
 
 class RowInterface row where

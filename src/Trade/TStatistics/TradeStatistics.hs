@@ -14,11 +14,11 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
+import Trade.Type.OHLC (UnOHLC, unOHLC)
+
 import Trade.Trade.TradeList
 import Trade.Trade.State
 import Trade.Analysis.Yield
-
-import Trade.Type.EquityAndShare
 
 import Trade.Report.Report
 

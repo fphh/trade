@@ -10,7 +10,8 @@ import qualified Trade.Report.Report as Report
 
 import Trade.Trade.TradeList
 
-import Trade.Type.EquityAndShare
+import Trade.Type.Equity (Equity(..))
+import Trade.Type.OHLC (UnOHLC)
 
 backtest :: (UnOHLC a) => (ohlc -> a) -> Equity -> TradeList ohlc -> Report.LineTyL UTCTime Double z
 backtest tradeAt eqty trades =

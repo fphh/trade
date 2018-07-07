@@ -6,7 +6,7 @@ import Data.Time.Clock (UTCTime)
 
 import Data.Csv (FromNamedRecord, parseNamedRecord)
 
-import Trade.Type.EquityAndShare (Open, Close, Low, High, Volume)
+import Trade.Type.OHLC (Open, Close, Low, High, Volume)
 
 import Trade.Timeseries.Row
 import Trade.Timeseries.Time ()

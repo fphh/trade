@@ -5,7 +5,7 @@ module Trade.Timeseries.Timeseries where
 
 import Data.Time.Clock (UTCTime)
 
-import Trade.Type.EquityAndShare (Open(..), Close(..), Low(..), High(..), Volume(..))
+import Trade.Type.OHLC (Open(..), Close(..), Low(..), High(..), Volume(..))
 
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)

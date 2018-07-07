@@ -1,31 +1,27 @@
+{-# LANGUAGE FlexibleInstances #-}
 
-module Trade.Analysis.NormHistory where
+module Trade.Type.History where
 
 import Data.Vector (Vector)
-
 import qualified Data.Vector as Vec
 
-import Trade.Type.Yield
-import Trade.Type.EquityAndShare
+import Trade.Type.Bars (BarNo(..))
+import Trade.Type.Yield (Yield(..))
+import Trade.Type.Equity (Equity(..))
 
 import Trade.Trade.Curve
 
-import Trade.Analysis.Bars
 
-newtype NormHistory ohlc = NormHistory {
-  unNormHistory :: Vector (BarNo, Yield)
+newtype History p = History {
+  unHistory :: Vector (BarNo, p)
   } deriving (Show, Eq)
 
+instance Functor History where
+  fmap f (History h) = History (Vec.map (fmap f) h)
 
-instance Curve (NormHistory ohlc) where
-  curve (NormHistory nh) = Vec.map (\(BarNo x, Yield y) -> (x, y)) nh
+instance Curve (History Yield) where
+  curve = fmap (\(BarNo x, Yield y) -> (x, y)) . unHistory
 
-
-newtype NormEquityHistory ohlc = NormEquityHistory {
-  unNormEquityHistory :: Vector (BarNo, Equity)
-  } deriving (Show, Eq)
-
-
-instance Curve (NormEquityHistory ohlc) where
-  curve (NormEquityHistory nh) = Vec.map (\(BarNo x, Equity y) -> (x, y)) nh
+instance Curve (History Equity) where
+  curve = fmap (\(BarNo x, Equity y) -> (x, y)) . unHistory
 
