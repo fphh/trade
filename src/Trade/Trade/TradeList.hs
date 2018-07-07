@@ -80,7 +80,7 @@ newtype NormTradeList ohlc = NormTradeList {
 
 trades2normTrades :: (UnOHLC a) => TradeList a -> NormTradeList Yield
 trades2normTrades (TradeList tl) =
-  let g (_, old) (_, new) = Yield (unOHLC old / unOHLC new)
+  let g (_, old) (_, new) = Yield (unOHLC new / unOHLC old)
       
       f (Trade st ts) =
         let (t0, _) = shead "trades2normTrades" ts
