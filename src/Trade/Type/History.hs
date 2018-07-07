@@ -11,7 +11,7 @@ import Trade.Type.Equity (Equity(..))
 
 import Trade.Trade.Curve
 
-
+-- | History by `BarNo`, usually `Equity` or `Yield`.
 newtype History p = History {
   unHistory :: Vector (BarNo, p)
   } deriving (Show, Eq)

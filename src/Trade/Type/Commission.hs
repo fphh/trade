@@ -4,6 +4,7 @@ module Trade.Type.Commission where
 
 import Trade.Report.Pretty
 
+-- | Apply fees to the trade volume.
 newtype Commission = Commission {
   unCommission :: Double -> Double
   }
