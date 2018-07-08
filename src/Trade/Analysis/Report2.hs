@@ -18,6 +18,7 @@ import Trade.Type.Bars (Bars)
 import Trade.Type.Equity (Equity)
 import Trade.Type.History (History)
 import Trade.Type.Broom (Broom)
+import Trade.Type.PriceSignal
 import qualified Trade.Type.StepFunc as SF
 
 import Trade.Timeseries.Quandl.Database (Symbol)
@@ -28,7 +29,6 @@ import Trade.Timeseries.OHLC
 import Trade.Render.Svg.Plot
 
 import Trade.Trade.ImpulseSignal
-import Trade.Trade.PriceSignal
 import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom

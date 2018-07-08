@@ -1,5 +1,5 @@
 
-module Trade.Trade.PriceSignal where
+module Trade.Type.PriceSignal where
 
 import Data.Time.Clock (UTCTime)
 

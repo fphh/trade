@@ -63,7 +63,6 @@ library
                         Trade.Report.Report
                         Trade.Trade.Curve
                         Trade.Trade.ImpulseSignal
-                        Trade.Trade.PriceSignal
                         Trade.Trade.SafeTail
                         Trade.Trade.State
                         Trade.Trade.StateSignal
@@ -78,6 +77,7 @@ library
                         Trade.Type.Equity
                         Trade.Type.History
                         Trade.Type.OHLC
+                        Trade.Type.PriceSignal
                         Trade.Type.StepFunc
                         Trade.Type.Yield
   -- other-modules:

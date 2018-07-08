@@ -17,7 +17,8 @@ newtype Broom history = Broom {
 
 instance Functor Broom where
   fmap f (Broom hs) = Broom (map f hs)
-
+  
+-- | TODO: Testing (yield2equity . equity2yield) == id
 yield2equity ::
   StepFunc -> Equity -> Broom (History Yield) -> Broom (History Equity)
 yield2equity step eqty = fmap (Hist.yield2equity step eqty)
