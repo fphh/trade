@@ -8,7 +8,7 @@ import Data.Time.Clock (UTCTime)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Trade.SafeTail
+import Trade.Help.SafeTail
 
 import Trade.Timeseries.Algorithm.SyncZip (syncZip)
 

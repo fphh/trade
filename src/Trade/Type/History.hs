@@ -10,7 +10,7 @@ import Trade.Type.Yield (Yield(..))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.StepFunc (StepFunc)
 
-import Trade.Trade.SafeTail (shead, stail)
+import Trade.Help.SafeTail (shead, stail)
 
 import Trade.Report.Curve
 

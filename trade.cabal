@@ -28,6 +28,22 @@ library
                         Trade.Analysis.Report
                         Trade.Analysis.Report2
                         Trade.Analysis.Yield
+                        Trade.Help.SafeTail
+                        Trade.Render.Common.Attr
+                        Trade.Render.Common.Color
+                        Trade.Render.Common.Utils
+                        Trade.Render.Svg.AxisTicks.Real
+                        Trade.Render.Svg.AxisTicks.Time
+                        Trade.Render.Svg.AxisTicks
+                        Trade.Render.Svg.DrawingVec
+                        Trade.Render.Svg.Extent
+                        Trade.Render.Svg.Layout
+                        Trade.Render.Svg.Plot
+                        Trade.Render.Svg.Svg
+                        Trade.Report.Curve
+                        Trade.Report.NumberedList
+                        Trade.Report.Pretty
+                        Trade.Report.Report
                         Trade.Test.Data
                         Trade.Timeseries.Algorithm.Intersection
                         Trade.Timeseries.Algorithm.SyncZip
@@ -47,23 +63,7 @@ library
                         Trade.Timeseries.Time
                         Trade.Timeseries.Timeseries
                         Trade.Timeseries.Url
-                        Trade.Render.Common.Attr
-                        Trade.Render.Common.Color
-                        Trade.Render.Common.Utils
-                        Trade.Render.Svg.AxisTicks.Real
-                        Trade.Render.Svg.AxisTicks.Time
-                        Trade.Render.Svg.AxisTicks
-                        Trade.Render.Svg.DrawingVec
-                        Trade.Render.Svg.Extent
-                        Trade.Render.Svg.Layout
-                        Trade.Render.Svg.Plot
-                        Trade.Render.Svg.Svg
-                        Trade.Report.Curve
-                        Trade.Report.NumberedList
-                        Trade.Report.Pretty
-                        Trade.Report.Report
                         Trade.Trade.ImpulseSignal
-                        Trade.Trade.SafeTail
                         Trade.Trade.State
                         Trade.Trade.StateSignal
                         Trade.Trade.TradeList

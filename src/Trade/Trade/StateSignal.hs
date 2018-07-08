@@ -15,7 +15,8 @@ import Trade.Report.Pretty
 
 import Trade.Trade.ImpulseSignal
 import Trade.Trade.State
-import Trade.Trade.SafeTail
+
+import Trade.Help.SafeTail
 
 data StateInterval = StateInterval {
   duration :: NominalDiffTime

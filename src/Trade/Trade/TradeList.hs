@@ -20,7 +20,8 @@ import Trade.Type.PriceSignal (PriceSignal(..))
 
 import Trade.Trade.ImpulseSignal
 import Trade.Trade.State
-import Trade.Trade.SafeTail
+
+import Trade.Help.SafeTail
 
 data Trade ohlc = Trade {
   tradeState :: State
