@@ -20,7 +20,7 @@ import qualified Trade.Analysis.MonteCarlo as MC
 import Trade.Analysis.OffsettedNormTradeList
 
 import Trade.Trade.State
-import Trade.Trade.Curve
+import Trade.Report.Curve
 import qualified Trade.Report.Report as Report
 
 

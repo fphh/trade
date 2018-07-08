@@ -12,7 +12,7 @@ import Trade.Type.StepFunc (StepFunc)
 
 import Trade.Trade.SafeTail (shead, stail)
 
-import Trade.Trade.Curve
+import Trade.Report.Curve
 
 -- | History by `BarNo`, usually `Equity` or `Yield`.
 newtype History p = History {

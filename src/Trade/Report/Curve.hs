@@ -1,6 +1,6 @@
 
 
-module Trade.Trade.Curve where
+module Trade.Report.Curve where
 
 import Data.Time.Clock (UTCTime)
 
