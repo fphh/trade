@@ -1,6 +1,6 @@
 
 
-module Trade.Trade.State where
+module Trade.Type.State where
 
 import Trade.Report.Pretty
 

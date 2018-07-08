@@ -2,24 +2,18 @@
 
 module Trade.Analysis.Yield where
 
-import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
-
 import qualified Data.Map as Map
 import Data.Map (Map)
-
-import qualified Data.Vector as Vec
 
 import qualified Data.List as List
 
 -- import qualified Trade.TStatistics.TradeStatistics as TS
 
 -- import Trade.Trade.Signal (Signals(..), YieldSignal(..), curve)
-import Trade.Trade.State (State)
+import Trade.Type.State (State)
 import Trade.Trade.TradeList
 
 -- import Trade.Type.Yield (Yield(..), forwardYield, ToYield)
-
-import Trade.Report.Report (ReportItem, subheader, htable)
 
 {-
 normTrade2stats :: NormTradeList ohlc -> TS.TradeStatistics

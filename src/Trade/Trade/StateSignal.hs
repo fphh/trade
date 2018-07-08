@@ -10,11 +10,12 @@ import Data.Vector (Vector)
 
 import Data.Maybe (catMaybes, isJust)
 
+import Trade.Type.State (State(..))
+
 import Trade.Report.NumberedList
 import Trade.Report.Pretty
 
 import Trade.Trade.ImpulseSignal
-import Trade.Trade.State
 
 import Trade.Help.SafeTail
 

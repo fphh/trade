@@ -3,16 +3,14 @@ module Trade.Analysis.OffsettedNormTradeList where
 
 import qualified Data.List as List
 
--- import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime)
-
 import qualified Data.Vector as Vec
 
 import Trade.Trade.TradeList
-import Trade.Trade.State
 
 import Trade.Type.Yield (Yield)
 import Trade.Type.Bars (Bars(..), BarNo(..))
 import Trade.Type.History (History(..))
+import Trade.Type.State (State(..))
 
 
 data OffsettedNormTradeList ohlc = OffsettedNormTradeList {

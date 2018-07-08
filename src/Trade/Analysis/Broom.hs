@@ -14,12 +14,12 @@ import Trade.Type.Fraction (Fraction)
 import Trade.Type.Bars (Bars)
 import Trade.Type.History (History(..))
 import Trade.Type.Broom (Broom(..))
+import Trade.Type.State (State(..))
 
 import Trade.Trade.TradeList
 import qualified Trade.Analysis.MonteCarlo as MC
 import Trade.Analysis.OffsettedNormTradeList
 
-import Trade.Trade.State
 import Trade.Report.Curve
 import qualified Trade.Report.Report as Report
 

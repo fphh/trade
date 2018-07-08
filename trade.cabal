@@ -64,7 +64,6 @@ library
                         Trade.Timeseries.Timeseries
                         Trade.Timeseries.Url
                         Trade.Trade.ImpulseSignal
-                        Trade.Trade.State
                         Trade.Trade.StateSignal
                         Trade.Trade.TradeList
                         Trade.TStatistics.SampleStatistics
@@ -77,6 +76,7 @@ library
                         Trade.Type.History
                         Trade.Type.OHLC
                         Trade.Type.PriceSignal
+                        Trade.Type.State
                         Trade.Type.StepFunc
                         Trade.Type.Yield
   -- other-modules:

@@ -13,13 +13,13 @@ import Data.Maybe (isNothing)
 
 import Trade.Timeseries.Algorithm.SyncZip
 
-import Trade.Type.Yield
+import Trade.Type.Yield (Yield(..))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.OHLC (UnOHLC, unOHLC)
 import Trade.Type.PriceSignal (PriceSignal(..))
+import Trade.Type.State (State(..))
 
 import Trade.Trade.ImpulseSignal
-import Trade.Trade.State
 
 import Trade.Help.SafeTail
 
