@@ -6,6 +6,7 @@ import Trade.Report.Pretty
 
 
 -- | The trader's state.
+-- TODO: Being short.
 data State =
   Long
   -- -- | Short
