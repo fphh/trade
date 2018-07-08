@@ -12,8 +12,8 @@ import Trade.Type.Commission (Commission(..))
 type StepFunc = Equity -> Yield -> Equity
 
 
--- | Genearal function which keeps track of commissions payed to the broker and
--- | uses only a fraction of your total equity.
+-- | Genearal function which pays commissions to the broker and
+-- uses only a fraction of your total equity.
 stepFunc :: Commission -> Fraction -> StepFunc
 stepFunc (Commission com) (Fraction frac) (Equity e) (Yield y) =
   let e0 = frac * e
