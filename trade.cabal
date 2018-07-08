@@ -67,7 +67,6 @@ library
                         Trade.Trade.State
                         Trade.Trade.StateSignal
                         Trade.Trade.TradeList
-                        Trade.TStatistics.RandomWalk
                         Trade.TStatistics.SampleStatistics
                         Trade.TStatistics.TradeStatistics
                         Trade.Type.Bars
