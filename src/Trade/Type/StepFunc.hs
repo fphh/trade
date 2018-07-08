@@ -1,15 +1,19 @@
 
 
-module Trade.Analysis.StepFunc where
+module Trade.Type.StepFunc where
 
 import Trade.Type.Fraction (Fraction(..))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Yield (Yield(..))
 import Trade.Type.Commission (Commission(..))
 
+
+-- | StepFunc takes a yield and an equity and returns the equity with the yield applied.
 type StepFunc = Equity -> Yield -> Equity
 
 
+-- | Genearal function which keeps track of commissions payed to the broker and
+-- | uses only a fraction of your total equity.
 stepFunc :: Commission -> Fraction -> StepFunc
 stepFunc (Commission com) (Fraction frac) (Equity e) (Yield y) =
   let e0 = frac * e

@@ -24,12 +24,8 @@ import Data.Time.Clock
 import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
 
-import Trade.Type.Equity (Equity)
-
 import Trade.Render.Common.Attr
 import Trade.Render.Common.Utils
-
-import Debug.Trace
 
 data AxisConfig a = AxisConfig {
   axisLayout :: E.LayoutAxis a
@@ -145,7 +141,7 @@ subheader =
         , "clear" .= "both" ]
   in Paragraph (toAs attrs)
 
-
+divTable :: Attrs
 divTable = toAs [
   "margin" .= "20px"
   , "margin-left" .= "60px"
@@ -155,30 +151,32 @@ divTable = toAs [
   , "float" .= "left"
   , "clear" .= "both" ]
 
+divTableRow :: Attrs
 divTableRow = toAs [
   "display" .= "table-row"
   , "width" .= "auto"
   , "clear" .= "both" ]
 
+divTableCol :: Attrs
 divTableCol = toAs [
   "float" .= "left"
   , "display" .= "table-column"
   , "width" .= "150px" ]
 
-
+hSplitTable :: Attrs
 hSplitTable = toAs [
   "clear" .= "both"
   ]
 
 mapCol :: Attrs -> [String] -> Builder
-mapCol as = mconcat . zipWith f [0..] 
+mapCol as = mconcat . zipWith f [0::Integer ..] 
   where f 0 = tag2 "div" (attr2str (Map.union divTableCol as)) . B.stringUtf8
-        f n = tag2 "div" (attr2str divTableCol) . B.stringUtf8
+        f _ = tag2 "div" (attr2str divTableCol) . B.stringUtf8
   
 mapRow :: Attrs -> Attrs -> [[String]] -> Builder
-mapRow ras cas = mconcat . zipWith f [0..]
+mapRow ras cas = mconcat . zipWith f [0::Integer ..]
   where f 0 = tag2 "div" (attr2str (Map.union ras divTableRow)) . mapCol cas
-        f n = tag2 "div" (attr2str divTableRow) . mapCol cas
+        f _ = tag2 "div" (attr2str divTableRow) . mapCol cas
         
 vtable :: [[String]] -> ReportItem
 vtable = Table emptyAttrs emptyAttrs (toAs [ "font-weight" .= "bold" ])
@@ -196,11 +194,11 @@ renderRep :: Report -> IO Builder
 renderRep (Report as is) = do
   items <- mapM renderItem is
   let docType = B.stringUtf8 "<!DOCTYPE html>"
-      html = tag2 "html" mempty (head <> body)
-      head = tag2 "head" mempty title
+      html = tag2 "html" mempty (hd <> bdy)
+      hd = tag2 "head" mempty title
       title = tag2 "title" mempty (B.stringUtf8 "Report")
-      body = tag2 "body" (attr2str as) (mconcat items)
-  return html
+      bdy = tag2 "body" (attr2str as) (mconcat items)
+  return (docType <> html)
 
 
 colors :: [E.AlphaColour Double]
@@ -211,7 +209,7 @@ chartSize = (1000, 520)
 
 lines2str :: (E.PlotValue x, E.PlotValue y) => AxisConfig x -> (AxisConfig y, [LineTy x y]) -> IO Builder
 lines2str acx (acy, ls) = do
-  let fstyle = E.FontStyle {
+  let fstyle = E.def {
         E._font_name = "monospace"
         , E._font_size = 24
         , E._font_weight = E.FontWeightNormal
@@ -246,7 +244,7 @@ lines2strLR ::
   , E.PlotValue y1, RealFloat y1, Show y1, Num y1) =>
   AxisConfig x -> (AxisConfig y0, [LineTyL x y0 y1]) -> (AxisConfig y1, [LineTyR x y0 y1]) -> IO Builder
 lines2strLR acx (acL, lsL) (acR, lsR) = do
-  let fstyle = E.FontStyle {
+  let fstyle = E.def {
         E._font_name = "monospace"
         , E._font_size = 24
         , E._font_weight = E.FontWeightNormal
@@ -286,7 +284,7 @@ lines2strLR acx (acL, lsL) (acR, lsR) = do
 toCandle :: String -> [[E.Candle UTCTime Double]] -> IO Builder
 toCandle label cs = do
   
-  let fstyle = E.FontStyle {
+  let fstyle = E.def {
         E._font_name = "monospace"
         , E._font_size = 24
         , E._font_weight = E.FontWeightNormal
@@ -309,7 +307,7 @@ toCandle label cs = do
         E.plot_candle_tick_length E..= 0
         E.plot_candle_width E..= 2
 
-        mapM (E.plot_candle_values E..=) cs
+        mapM_ (E.plot_candle_values E..=) cs
 
         E.plot_candle_title E..= label
     

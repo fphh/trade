@@ -27,7 +27,6 @@ library
                         Trade.Analysis.OffsettedNormTradeList
                         Trade.Analysis.Report
                         Trade.Analysis.Report2
-                        Trade.Analysis.StepFunc
                         Trade.Analysis.Yield
                         Trade.Test.Data
                         Trade.Timeseries.Algorithm.Intersection
@@ -73,11 +72,13 @@ library
                         Trade.TStatistics.SampleStatistics
                         Trade.TStatistics.TradeStatistics
                         Trade.Type.Bars
+                        Trade.Type.Broom
                         Trade.Type.Commission
                         Trade.Type.Fraction
                         Trade.Type.Equity
                         Trade.Type.History
                         Trade.Type.OHLC
+                        Trade.Type.StepFunc
                         Trade.Type.Yield
   -- other-modules:
   -- other-extensions:

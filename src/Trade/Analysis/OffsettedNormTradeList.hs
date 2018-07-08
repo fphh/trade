@@ -9,16 +9,11 @@ import qualified Data.Vector as Vec
 
 import Trade.Trade.TradeList
 import Trade.Trade.State
-import Trade.Trade.SafeTail
 
 import Trade.Type.Yield (Yield)
-import Trade.Type.Equity (Equity)
 import Trade.Type.Bars (Bars(..), BarNo(..))
-import Trade.Type.History
+import Trade.Type.History (History(..))
 
-import Trade.Analysis.StepFunc
-
-import Debug.Trace
 
 data OffsettedNormTradeList ohlc = OffsettedNormTradeList {
   offset :: Bars
@@ -37,12 +32,6 @@ offsettedNormTradeList2normHistory (Bars bs) (OffsettedNormTradeList (Bars offs)
                  NoPosition -> Vec.empty
                  _ -> Vec.imap (\i x -> (BarNo (o+i), x)) vs
              False -> Nothing
+      f _ = error "offsettedNormTradeList2normHistory"
 
   in History (Vec.concat (List.unfoldr f (offs, ntl)))
-
-normHistory2normEquity ::
-  StepFunc -> Equity -> History Yield -> History Equity
-normHistory2normEquity step eqty (History nhs) =
-  let f (_, e) (t1, y) = (t1, step e y)
-      (t0, y0) = shead "normHistory2normEquity" nhs      
-  in History (Vec.scanl' f (t0, step eqty y0) (stail "normHistory2normEquity" nhs))

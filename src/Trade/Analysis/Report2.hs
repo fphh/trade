@@ -2,18 +2,13 @@
 
 module Trade.Analysis.Report2 where
 
-import Data.Time.Clock (UTCTime)
+--import qualified Data.Vector as Vec
+--import Data.Vector (Vector)
 
-import qualified Data.Vector as Vec
-import Data.Vector (Vector)
-
-import qualified Data.ByteString.Lazy.Char8 as BSL
-
-import Text.Printf (printf)
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
-import qualified Trade.TStatistics.TradeStatistics as TS
+-- import qualified Trade.TStatistics.TradeStatistics as TS
 
 -- import Trade.Type.Equity ()
 -- import Trade.Type.Yield ()
@@ -22,6 +17,8 @@ import Trade.Type.Fraction (Fraction)
 import Trade.Type.Bars (Bars)
 import Trade.Type.Equity (Equity)
 import Trade.Type.History (History)
+import Trade.Type.Broom (Broom)
+import qualified Trade.Type.StepFunc as SF
 
 import Trade.Timeseries.Quandl.Database (Symbol)
 import Trade.Timeseries.Url (ToUrl, toUrl)
@@ -35,11 +32,9 @@ import Trade.Trade.PriceSignal
 import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom
-import Trade.Analysis.Broom (Broom)
 import Trade.Analysis.Backtest
 import qualified Trade.Analysis.MonteCarlo as MC
 
-import qualified Trade.Analysis.StepFunc as SF
 
 
 import qualified Trade.Report.Report as Report
@@ -54,7 +49,7 @@ data MCParams mcinput = MCParams {
   }
 
 data MCOutput ey = MCOutput {
-  broom :: Broom.Broom (History ey)
+  broom :: Broom (History ey)
   }
 
 type ImpulseGenerator ohlc = PriceSignal ohlc -> ImpulseSignal ohlc

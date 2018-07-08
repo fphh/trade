@@ -13,28 +13,23 @@ import Trade.Type.Equity (Equity(..))
 import Trade.Type.Fraction (Fraction)
 import Trade.Type.Bars (Bars)
 import Trade.Type.History (History(..))
+import Trade.Type.Broom (Broom(..))
 
 import Trade.Trade.TradeList
 import qualified Trade.Analysis.MonteCarlo as MC
 import Trade.Analysis.OffsettedNormTradeList
-import Trade.Analysis.StepFunc
-
-import Trade.Trade.SafeTail
 
 import Trade.Trade.State
 import Trade.Trade.Curve
 import qualified Trade.Report.Report as Report
 
 
-newtype Broom history = Broom {
-  unBroom :: [history]
-  } deriving (Show, Eq)
-
-
+-- | Turn a broom into a chart with `n` curves.
 broom2chart :: (Curve history) => Int -> Broom history -> [Report.LineTy Int Double]
 broom2chart n (Broom xs) =
   let f i x = Report.line (show i) (curve x)
   in zipWith f [0 :: Integer ..] (take n xs)
+
 
 normHistoryBroom :: Bars -> Int -> NormTradeList ohlc -> IO (Broom (History Yield))
 normHistoryBroom bs n ntl = do
@@ -50,19 +45,6 @@ normHistoryBroom bs n ntl = do
 
   return (Broom (map (offsettedNormTradeList2normHistory bs) offsTls))
 
-
-normEquityBroom ::
-  StepFunc -> Equity -> Broom (History Yield) -> Broom (History Equity)
-normEquityBroom step eqty (Broom bs) = Broom (map (normHistory2normEquity step eqty) bs)
-
-
-relativeBroom :: Broom (History Equity) -> Broom (History Yield)
-relativeBroom (Broom bs) =
-  let g (_, Equity old) (b, Equity new) = (b, Yield (new / old)) 
-      f (History vs) =
-        let start = fmap (const (Yield 1)) (Vec.head vs)
-        in History $ Vec.cons start (Vec.zipWith g vs (stail "relativeBroom" vs))
-  in Broom (map f bs)
 
 
 type Percent = Double
