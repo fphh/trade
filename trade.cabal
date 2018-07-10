@@ -63,7 +63,6 @@ library
                         Trade.Timeseries.Time
                         Trade.Timeseries.Timeseries
                         Trade.Timeseries.Url
-                        Trade.Trade.ImpulseSignal
                         Trade.Trade.StateSignal
                         Trade.Trade.TradeList
                         Trade.TStatistics.SampleStatistics
@@ -74,8 +73,11 @@ library
                         Trade.Type.Fraction
                         Trade.Type.Equity
                         Trade.Type.History
+                        Trade.Type.Impulse
                         Trade.Type.OHLC
-                        Trade.Type.PriceSignal
+                        Trade.Type.Signal
+                        Trade.Type.Signal.Impulse
+                        Trade.Type.Signal.Price
                         Trade.Type.State
                         Trade.Type.StepFunc
                         Trade.Type.Yield

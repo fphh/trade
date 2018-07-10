@@ -18,7 +18,9 @@ import Trade.Type.Bars (Bars)
 import Trade.Type.Equity (Equity)
 import Trade.Type.History (History)
 import Trade.Type.Broom (Broom)
-import Trade.Type.PriceSignal
+import Trade.Type.Signal (Signal (..))
+import Trade.Type.Signal.Price
+
 import qualified Trade.Type.StepFunc as SF
 
 import Trade.Timeseries.Quandl.Database (Symbol)
@@ -28,7 +30,7 @@ import Trade.Timeseries.OHLC
 
 import Trade.Render.Svg.Plot
 
-import Trade.Trade.ImpulseSignal
+import Trade.Type.Signal.Impulse (ImpulseSignal)
 import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom
@@ -52,7 +54,7 @@ data MCOutput ey = MCOutput {
   broom :: Broom (History ey)
   }
 
-type ImpulseGenerator ohlc = PriceSignal ohlc -> ImpulseSignal ohlc
+type ImpulseGenerator ohlc = PriceSignal ohlc -> ImpulseSignal
 
 
 data ReportInput mcinput mcoutput ohlc {- trdAt -} = ReportInput {

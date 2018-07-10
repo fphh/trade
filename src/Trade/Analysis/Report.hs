@@ -21,7 +21,9 @@ import Trade.Type.Yield ()
 import Trade.Type.Bars ()
 import Trade.Type.History
 import Trade.Type.Broom (Broom)
-import Trade.Type.PriceSignal (PriceSignal)
+import Trade.Type.Signal ()
+import Trade.Type.Signal.Price ()
+import Trade.Type.Signal.Impulse ()
 
 import Trade.Timeseries.Quandl.Database (Symbol)
 import Trade.Timeseries.Url (ToUrl, toUrl)
@@ -30,7 +32,6 @@ import Trade.Timeseries.OHLC
 
 import Trade.Render.Svg.Plot
 
-import Trade.Trade.ImpulseSignal
 import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom

@@ -1,18 +1,16 @@
 
-module Trade.Type.PriceSignal where
+module Trade.Type.Signal.Price where
 
 import Data.Time.Clock (UTCTime)
 
-import Data.Vector (Vector)
+import Trade.Type.Signal
 
-import Trade.Report.NumberedList
-import Trade.Report.Pretty
 
+type PriceSignal ohcl = Signal UTCTime ohcl
+
+{-
 
 newtype PriceSignal ohcl = PriceSignal {
   unPriceSignal :: Vector (UTCTime, ohcl)
   } deriving (Show, Read)
-
-instance (Pretty ohlc) => ToNumberedList (PriceSignal ohlc) where
-  toNumberedList (PriceSignal pps) = toNumberedList pps
-
+-}

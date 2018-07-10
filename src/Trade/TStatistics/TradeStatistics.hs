@@ -44,8 +44,8 @@ tradeStatistics extract tl =
 
       f = Vec.fromList . map (h . Vec.map (fmap extract) . ticker) . unTradeList
 
-      g st xs =
-        let (ts, qs) = Vec.unzip xs
+      g st zs =
+        let (ts, qs) = Vec.unzip zs
         in TradeStatistics {
           state = st
           , cnt = Vec.length qs

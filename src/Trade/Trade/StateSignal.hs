@@ -11,11 +11,12 @@ import Data.Vector (Vector)
 import Data.Maybe (catMaybes, isJust)
 
 import Trade.Type.State (State(..))
+import Trade.Type.Impulse (Impulse(..))
+import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal.Impulse (ImpulseSignal)
 
 import Trade.Report.NumberedList
 import Trade.Report.Pretty
-
-import Trade.Trade.ImpulseSignal
 
 import Trade.Help.SafeTail
 
@@ -36,8 +37,8 @@ instance ToNumberedList (StateSignal ohlc) where
   toNumberedList (StateSignal strt ss) = [show strt] : toNumberedList ss
 
 
-impulse2state :: ImpulseSignal ohlc -> StateSignal ohlc
-impulse2state (ImpulseSignal is) =
+impulse2state :: ImpulseSignal -> StateSignal ohlc
+impulse2state (Signal is) =
   let (s, _) = Vec.head is
   
       js = Vec.fromList

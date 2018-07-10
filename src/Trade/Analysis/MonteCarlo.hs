@@ -4,24 +4,17 @@ module Trade.Analysis.MonteCarlo where
 
 import qualified Data.Vector as Vec
 
-import qualified Data.List as List
-
 import qualified Data.Map.Strict as Map
-import Data.Map.Strict (Map)
 
 import System.Random
-
 
 import Trade.Type.Bars (Bars(..))
 
 import Trade.Trade.TradeList
 
-
-
 import Trade.Analysis.Yield
 import Trade.Analysis.OffsettedNormTradeList
 
-import Debug.Trace
 
 startingOffsets :: NormTradeList ohlc -> (Int -> Bars)
 startingOffsets (NormTradeList tl) =

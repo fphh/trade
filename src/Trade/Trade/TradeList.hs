@@ -16,10 +16,11 @@ import Trade.Timeseries.Algorithm.SyncZip
 import Trade.Type.Yield (Yield(..))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.OHLC (UnOHLC, unOHLC)
-import Trade.Type.PriceSignal (PriceSignal(..))
 import Trade.Type.State (State(..))
-
-import Trade.Trade.ImpulseSignal
+import Trade.Type.Impulse (Impulse(..))
+import Trade.Type.Signal (Signal (..))
+import Trade.Type.Signal.Price (PriceSignal)
+import Trade.Type.Signal.Impulse (ImpulseSignal)
 
 import Trade.Help.SafeTail
 
@@ -39,8 +40,8 @@ instance Functor TradeList where
   fmap f (TradeList tl) = TradeList (map (fmap f) tl)
 
 
-impulses2trades :: PriceSignal ohlc -> ImpulseSignal ohlc -> TradeList ohlc
-impulses2trades (PriceSignal ps) (ImpulseSignal is) =
+impulses2trades :: PriceSignal ohlc -> ImpulseSignal -> TradeList ohlc
+impulses2trades (Signal ps) (Signal is) =
   let ss = syncZip ps is
       impulse (_, (_, x)) = x
 
