@@ -1,5 +1,5 @@
 
-module Trade.Analysis.OffsettedNormTradeList where
+module Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList where
 
 import qualified Data.List as List
 

@@ -1,4 +1,6 @@
-
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 
 module Trade.Type.Signal.Impulse where
@@ -13,10 +15,28 @@ import Data.Time.Clock (UTCTime)
 import Trade.Type.Impulse (Impulse(..))
 import Trade.Type.Signal (Signal(..))
 
-import qualified Trade.Report.Report as Report
+-- import qualified Trade.Report.Report as Report
+
+import Trade.Report.Curve
 
 
 type ImpulseSignal = Signal UTCTime (Maybe Impulse)
+
+
+instance Curve ImpulseSignal where
+  type Ty ImpulseSignal = UTCTime
+  
+  curve (Signal is) =
+    let f (t, Just Sell) = [(t, 0), (t, 1), (t, 0)]
+        f (t, Just Buy) = [(t, 0), (t, -1), (t, 0)]
+        f _ = []
+    in head (sequence (Vec.map f is))
+
+
+
+-- impulse2line :: ImpulseArgs -> ImpulseSignal -> Report.LineTyR UTCTime z Double
+-- impulse2line args imps = Report.lineR "buy/sell" (impulse2line' args imps)
+
 
 
 toImpulseSignal ::
@@ -32,27 +52,6 @@ bhImpulse _ _ _ _ = Nothing
 
 bhImpulseSignal :: Vector (UTCTime, evt) -> ImpulseSignal
 bhImpulseSignal vs = toImpulseSignal (bhImpulse (Vec.length vs - 1)) vs
-
-
-data ImpulseArgs = ImpulseArgs {
-  middle :: Double
-  , spikeLength :: Double
-  } deriving (Show)
-
-
-impulse2line' :: ImpulseArgs -> ImpulseSignal -> Vector (UTCTime, Double)
-impulse2line' (ImpulseArgs m len) (Signal imps) =
-  let l = m-len
-      h = m+len
-      f (t, Just Sell) = [(t, m), (t, h), (t, m)]
-      f (t, Just Buy) = [(t, m), (t, l), (t, m)]
-      f _ = []
-  in Vec.fromList (concatMap f (Vec.toList imps))
-
-
-impulse2line :: ImpulseArgs -> ImpulseSignal -> Report.LineTyR UTCTime z Double
-impulse2line args imps = Report.lineR "buy/sell" (impulse2line' args imps)
-
 
 simplifyImpulseSignal :: ImpulseSignal -> ImpulseSignal
 simplifyImpulseSignal (Signal is) =

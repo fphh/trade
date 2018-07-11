@@ -1,6 +1,6 @@
 
 
-module Trade.Analysis.MonteCarlo where
+module Trade.MonteCarlo.ResampleTrades.MonteCarlo where
 
 import qualified Data.Vector as Vec
 
@@ -13,7 +13,7 @@ import Trade.Type.Bars (Bars(..))
 import Trade.Trade.TradeList
 
 import Trade.Analysis.Yield
-import Trade.Analysis.OffsettedNormTradeList
+import Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
 
 
 startingOffsets :: NormTradeList ohlc -> (Int -> Bars)

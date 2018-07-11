@@ -17,7 +17,7 @@ import Trade.Type.Fraction (Fraction)
 import Trade.Type.Bars (Bars)
 import Trade.Type.Equity (Equity)
 import Trade.Type.History (History)
-import Trade.Type.Broom (Broom)
+import Trade.Type.Broom (Broom, broom2chart)
 import Trade.Type.Signal (Signal (..))
 import Trade.Type.Signal.Price
 
@@ -35,7 +35,7 @@ import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom
 import Trade.Analysis.Backtest
-import qualified Trade.Analysis.MonteCarlo as MC
+import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
 
 
 
@@ -77,4 +77,4 @@ instance MCReport (MCOutput Equity) where
     let  axisTitle str =
            let al = E.laxis_title E..~ str $ E.def
            in Report.AxisConfig al E.def Nothing
-    in [Report.svg (axisTitle "Bars") (axisTitle "Equity", Broom.broom2chart 20 (broom mcout))]
+    in [Report.svg (axisTitle "Bars") (axisTitle "Equity", broom2chart 20 (broom mcout))]

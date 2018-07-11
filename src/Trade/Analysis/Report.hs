@@ -36,7 +36,7 @@ import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom
 import Trade.Analysis.Backtest
-import qualified Trade.Analysis.MonteCarlo as MC
+import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
 
 
 import qualified Trade.Report.Report as Report

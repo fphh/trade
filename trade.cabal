@@ -23,12 +23,12 @@ library
                         Trade.Algorithm.StochasticOscillator
                         Trade.Analysis.Backtest
                         Trade.Analysis.Broom
-                        Trade.Analysis.MonteCarlo
-                        Trade.Analysis.OffsettedNormTradeList
                         Trade.Analysis.Report
                         Trade.Analysis.Report2
                         Trade.Analysis.Yield
                         Trade.Help.SafeTail
+                        Trade.MonteCarlo.ResampleTrades.MonteCarlo
+                        Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color
                         Trade.Render.Common.Utils

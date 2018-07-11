@@ -17,18 +17,8 @@ import Trade.Type.Broom (Broom(..))
 import Trade.Type.State (State(..))
 
 import Trade.Trade.TradeList
-import qualified Trade.Analysis.MonteCarlo as MC
-import Trade.Analysis.OffsettedNormTradeList
-
-import Trade.Report.Curve
-import qualified Trade.Report.Report as Report
-
-
--- | Turn a broom into a chart with `n` curves.
-broom2chart :: (Curve history) => Int -> Broom history -> [Report.LineTy (Ty history) Double]
-broom2chart n (Broom xs) =
-  let f i x = Report.line (show i) (curve x)
-  in zipWith f [0 :: Integer ..] (take n xs)
+import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
+import Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
 
 
 normHistoryBroom :: Bars -> Int -> NormTradeList ohlc -> IO (Broom (History Yield))
