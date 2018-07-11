@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Trade.Type.History where
 
@@ -24,9 +25,11 @@ instance Functor History where
 
 
 instance Curve (History Yield) where
+  type Ty (History Yield) = Int
   curve = fmap (\(BarNo x, Yield y) -> (x, y)) . unHistory
 
 instance Curve (History Equity) where
+  type Ty (History Equity) = Int
   curve = fmap (\(BarNo x, Equity y) -> (x, y)) . unHistory
 
 

@@ -1,10 +1,10 @@
+{-# LANGUAGE TypeFamilies #-}
 
 
 module Trade.Report.Curve where
 
-import Data.Time.Clock (UTCTime)
-
 import Data.Vector (Vector)
 
 class Curve a where
-  curve :: a -> Vector (Int, Double)
+  type Ty a :: *
+  curve :: a -> Vector (Ty a, Double)
