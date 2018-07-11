@@ -23,8 +23,10 @@ library
                         Trade.Algorithm.StochasticOscillator
                         Trade.Analysis.Backtest
                         Trade.Analysis.Broom
+                        Trade.Analysis.TWR
                         Trade.Analysis.Report
                         Trade.Analysis.Report2
+                        Trade.Analysis.Risk
                         Trade.Analysis.Yield
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo
@@ -70,6 +72,7 @@ library
                         Trade.Type.Bars
                         Trade.Type.Broom
                         Trade.Type.Commission
+                        Trade.Type.Distribution
                         Trade.Type.Fraction
                         Trade.Type.Equity
                         Trade.Type.History
