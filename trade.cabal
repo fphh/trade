@@ -28,6 +28,7 @@ library
                         Trade.Analysis.Report2
                         Trade.Analysis.Risk
                         Trade.Analysis.Yield
+                        Trade.Example.Example0
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo
                         Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
@@ -65,7 +66,6 @@ library
                         Trade.Timeseries.Time
                         Trade.Timeseries.Timeseries
                         Trade.Timeseries.Url
-                        Trade.Trade.StateSignal
                         Trade.Trade.TradeList
                         Trade.TStatistics.SampleStatistics
                         Trade.TStatistics.TradeStatistics
