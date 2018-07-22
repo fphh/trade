@@ -6,8 +6,10 @@ import Data.Time.Clock (UTCTime)
 
 
 import qualified Data.Vector as Vec
-import Data.Vector (Vector)
+-- import Data.Vector (Vector)
 
+import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal.Equity (EquitySignal)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.OHLC (UnOHLC, unOHLC)
 import Trade.Type.State (State(..))
@@ -15,8 +17,7 @@ import Trade.Type.Trade (Trade(..), TradeList(..))
 
 import Trade.Help.SafeTail
 
-
-trade2equity :: (UnOHLC a) => (ohlc -> a) -> Equity -> TradeList ohlc -> Vector (UTCTime, Equity)
+trade2equity :: (UnOHLC a) => (ohlc -> a) -> Equity -> TradeList ohlc -> EquitySignal
 trade2equity tradeAt (Equity eqty) (TradeList tl) =
   let p (Trade NoPosition _) = False
       p _ = True
@@ -35,5 +36,5 @@ trade2equity tradeAt (Equity eqty) (TradeList tl) =
 
       ysNew = Vec.map Equity (stail "trade2equity" (Vec.scanl (*) eqty ys))
       
-  in Vec.zip ts ysNew
+  in Signal (Vec.zip ts ysNew)
 

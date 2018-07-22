@@ -82,6 +82,7 @@ library
                         Trade.Type.NormTrade
                         Trade.Type.OHLC
                         Trade.Type.Signal
+                        Trade.Type.Signal.Equity
                         Trade.Type.Signal.Impulse
                         Trade.Type.Signal.Price
                         Trade.Type.State
