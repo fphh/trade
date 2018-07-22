@@ -26,44 +26,6 @@ import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
 import Trade.Help.SafeTail
 
-impulses2trades :: PriceSignal ohlc -> ImpulseSignal -> TradeList ohlc
-impulses2trades (Signal ps) (Signal is) =
-  let ss = syncZip ps is
-      impulse (_, (_, x)) = x
-
-      go vs | Vec.null vs = []
-      go vs =
-        let (a, as) = (shead "impulses2trades (1)" vs, stail "impulses2trades" vs)
-
-            (xs, ys) = Vec.span (isNothing . impulse) as
-        in Vec.cons a xs : go ys
-
-      us = go (Vec.dropWhile (isNothing . impulse) ss)
-
-      f as bs = Vec.snoc as (shead "impulses2trades (2)" bs)
-      ns = zipWith f us (tail us)
-
-      g vs =
-        flip Trade (Vec.map (\(a, (b, _)) -> (a, b)) vs)
-        $ case Vec.head vs of
-            (_, (_, Just Buy)) -> Long
-            _ -> NoPosition
-          
-  in TradeList (map g ns)
-
-
-trades2normTrades :: (UnOHLC a) => TradeList a -> NormTradeList
-trades2normTrades (TradeList tl) =
-  let g (_, old) (_, new) = Yield (unOHLC new / unOHLC old)
-      
-      f (Trade st ts) =
-        let (t0, _) = shead "trades2normTrades" ts
-            (t1, _) = slast "trades2normTrades" ts
-            dur = t1 `diffUTCTime` t0
-        in NormTrade st dur
-           $ Vec.zipWith g ts (stail "trades2normTrades" ts)
-           
-  in NormTradeList (map f tl)
 
 
 trade2equity :: (UnOHLC a) => (ohlc -> a) -> Equity -> TradeList ohlc -> Vector (UTCTime, Equity)

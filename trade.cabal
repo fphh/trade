@@ -72,6 +72,8 @@ library
                         Trade.Type.Bars
                         Trade.Type.Broom
                         Trade.Type.Commission
+                        Trade.Type.Conversion.Impulse2Trade
+                        Trade.Type.Conversion.Trade2NormTrade
                         Trade.Type.Distribution
                         Trade.Type.Fraction
                         Trade.Type.Equity

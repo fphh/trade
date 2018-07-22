@@ -13,7 +13,6 @@ import qualified Data.List as List
 import Trade.Type.State (State)
 import Trade.Type.Trade (Trade(..), TradeList(..))
 import Trade.Type.NormTrade (NormTradeList(..), NormTrade(..))
-import Trade.Trade.TradeList
 
 -- import Trade.Type.Yield (Yield(..), forwardYield, ToYield)
 

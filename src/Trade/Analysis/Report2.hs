@@ -103,9 +103,6 @@ instance (ToUrl symbol, OHLCInterface ohlc) => MCReport (CandleBars mcinput mcou
     in [Report.candle (toUrl (symbol reportInput)) [toCandle (priceSignal reportInput)]]
 
 
-
-
-
 renderReport ::
   (MCReport (mcoutput Equity), OHLCInterface ohlc, ToUrl symbol) =>
   ReportInput mcinput mcoutput ohlc symbol -> IO BSL.ByteString
