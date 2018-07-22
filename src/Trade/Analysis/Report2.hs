@@ -35,7 +35,6 @@ import Trade.Timeseries.OHLC
 import Trade.Render.Svg.Plot
 
 import Trade.Type.Signal.Impulse (ImpulseSignal)
-import Trade.Trade.TradeList
 
 import qualified Trade.Analysis.Broom as Broom
 import Trade.Analysis.Backtest
