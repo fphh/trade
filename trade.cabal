@@ -66,13 +66,13 @@ library
                         Trade.Timeseries.Time
                         Trade.Timeseries.Timeseries
                         Trade.Timeseries.Url
-                        Trade.Trade.TradeList
                         Trade.TStatistics.SampleStatistics
                         Trade.TStatistics.TradeStatistics
                         Trade.Type.Bars
                         Trade.Type.Broom
                         Trade.Type.Commission
                         Trade.Type.Conversion.Impulse2Trade
+                        Trade.Type.Conversion.Trade2Equity
                         Trade.Type.Conversion.Trade2NormTrade
                         Trade.Type.Distribution
                         Trade.Type.Fraction
