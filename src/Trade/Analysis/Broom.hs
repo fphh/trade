@@ -15,13 +15,13 @@ import Trade.Type.Bars (Bars)
 import Trade.Type.History (History(..))
 import Trade.Type.Broom (Broom(..))
 import Trade.Type.State (State(..))
+import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
-import Trade.Trade.TradeList
 import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
 import Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
 
 
-normHistoryBroom :: Bars -> Int -> NormTradeList ohlc -> IO (Broom (History Yield))
+normHistoryBroom :: Bars -> Int -> NormTradeList -> IO (Broom (History Yield))
 normHistoryBroom bs n ntl = do
   let soffs = MC.startingOffsets ntl
       f (NormTrade NoPosition t vs) =

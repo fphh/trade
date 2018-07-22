@@ -9,14 +9,13 @@ import qualified Data.Map.Strict as Map
 import System.Random
 
 import Trade.Type.Bars (Bars(..))
-
-import Trade.Trade.TradeList
+import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
 import Trade.Analysis.Yield
 import Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
 
 
-startingOffsets :: NormTradeList ohlc -> (Int -> Bars)
+startingOffsets :: NormTradeList -> (Int -> Bars)
 startingOffsets (NormTradeList tl) =
   let f (NormTrade _ _ ys) = Vec.imap (\i _ -> Bars i) ys
         -- Vec.generate (Vec.length ys) (Bars . id)
@@ -25,7 +24,7 @@ startingOffsets (NormTradeList tl) =
   in \n -> table Vec.! (n `mod` len)
 
 
-randomYieldSignal' :: NormTradeList ohlc -> [Int] -> NormTradeList ohlc
+randomYieldSignal' :: NormTradeList -> [Int] -> NormTradeList
 randomYieldSignal' _ [] = error "randomYieldSignal': no random numbers"
 randomYieldSignal' ys (i:is) =
   let j = i `mod` 2
@@ -59,7 +58,7 @@ randomYieldSignal' ys (i:is) =
   in NormTradeList trades
 
 
-randomYieldSignal :: NormTradeList ohlc -> (Int -> Bars) -> IO (OffsettedNormTradeList ohlc)
+randomYieldSignal :: NormTradeList -> (Int -> Bars) -> IO OffsettedNormTradeList
 randomYieldSignal ys offsetTable = do
     gen <- newStdGen
     let i:is = map abs (randoms gen)

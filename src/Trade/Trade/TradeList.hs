@@ -18,27 +18,13 @@ import Trade.Type.Equity (Equity(..))
 import Trade.Type.OHLC (UnOHLC, unOHLC)
 import Trade.Type.State (State(..))
 import Trade.Type.Impulse (Impulse(..))
-import Trade.Type.Signal (Signal (..))
+import Trade.Type.Signal (Signal(..))
 import Trade.Type.Signal.Price (PriceSignal)
 import Trade.Type.Signal.Impulse (ImpulseSignal)
+import Trade.Type.Trade (Trade(..), TradeList(..))
+import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
 import Trade.Help.SafeTail
-
-data Trade ohlc = Trade {
-  tradeState :: State
-  , ticker :: Vector (UTCTime, ohlc)
-  } deriving (Show)
-
-instance Functor Trade where
-  fmap f (Trade ts vs) = Trade ts (Vec.map (fmap f) vs)
-
-newtype TradeList ohlc = TradeList {
-  unTradeList :: [Trade ohlc]
-  } deriving (Show)
-
-instance Functor TradeList where
-  fmap f (TradeList tl) = TradeList (map (fmap f) tl)
-
 
 impulses2trades :: PriceSignal ohlc -> ImpulseSignal -> TradeList ohlc
 impulses2trades (Signal ps) (Signal is) =
@@ -66,21 +52,7 @@ impulses2trades (Signal ps) (Signal is) =
   in TradeList (map g ns)
 
 
-
-data NormTrade ohlc = NormTrade {
-  normTradeState :: State
-  , normTradeDuration :: NominalDiffTime
-  , normedYield :: Vector Yield
-  } deriving (Show)
-
-
-newtype NormTradeList ohlc = NormTradeList {
-  unNormTradeList :: [NormTrade ohlc]
-  } deriving (Show)
-
-
-
-trades2normTrades :: (UnOHLC a) => TradeList a -> NormTradeList Yield
+trades2normTrades :: (UnOHLC a) => TradeList a -> NormTradeList
 trades2normTrades (TradeList tl) =
   let g (_, old) (_, new) = Yield (unOHLC new / unOHLC old)
       

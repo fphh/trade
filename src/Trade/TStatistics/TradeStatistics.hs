@@ -16,6 +16,7 @@ import Text.Printf (printf)
 
 import Trade.Type.OHLC (UnOHLC, unOHLC)
 import Trade.Type.State (State)
+import Trade.Type.Trade (TradeList(..), ticker)
 
 import Trade.Trade.TradeList
 import Trade.Analysis.Yield

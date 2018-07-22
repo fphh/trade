@@ -8,10 +8,13 @@ import qualified Data.Vector as Vec
 
 import qualified Trade.Report.Report as Report
 
-import Trade.Trade.TradeList
 
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.OHLC (UnOHLC)
+import Trade.Type.Trade (TradeList)
+
+
+import Trade.Trade.TradeList
 
 backtest :: (UnOHLC a) => (ohlc -> a) -> Equity -> TradeList ohlc -> Report.LineTyL UTCTime Double z
 backtest tradeAt eqty trades =

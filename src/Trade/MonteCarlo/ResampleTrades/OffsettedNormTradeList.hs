@@ -5,22 +5,21 @@ import qualified Data.List as List
 
 import qualified Data.Vector as Vec
 
-import Trade.Trade.TradeList
-
 import Trade.Type.Yield (Yield)
 import Trade.Type.Bars (Bars(..), BarNo(..))
 import Trade.Type.History (History(..))
 import Trade.Type.State (State(..))
+import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
 
-data OffsettedNormTradeList ohlc = OffsettedNormTradeList {
+data OffsettedNormTradeList = OffsettedNormTradeList {
   offset :: Bars
-  , tradeList :: NormTradeList ohlc
+  , tradeList :: NormTradeList
   } deriving (Show)
 
 
 offsettedNormTradeList2normHistory ::
-  Bars -> OffsettedNormTradeList ohcl -> History Yield
+  Bars -> OffsettedNormTradeList -> History Yield
 offsettedNormTradeList2normHistory (Bars bs) (OffsettedNormTradeList (Bars offs) (NormTradeList ntl)) =
   let f (o, NormTrade state _ vs : xs) =
         let len = o + Vec.length vs

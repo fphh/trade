@@ -77,12 +77,14 @@ library
                         Trade.Type.Equity
                         Trade.Type.History
                         Trade.Type.Impulse
+                        Trade.Type.NormTrade
                         Trade.Type.OHLC
                         Trade.Type.Signal
                         Trade.Type.Signal.Impulse
                         Trade.Type.Signal.Price
                         Trade.Type.State
                         Trade.Type.StepFunc
+                        Trade.Type.Trade
                         Trade.Type.Yield
   -- other-modules:
   -- other-extensions:
