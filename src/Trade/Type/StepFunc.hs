@@ -2,10 +2,10 @@
 
 module Trade.Type.StepFunc where
 
-import Trade.Type.Fraction (Fraction(..))
+import Trade.Type.Fraction (Fraction(..), fullFrac)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Yield (Yield(..))
-import Trade.Type.Commission (Commission(..))
+import Trade.Type.Commission (Commission(..), noCommission)
 
 
 -- | StepFunc takes a yield and an equity and returns the equity with the yield applied.
@@ -22,10 +22,10 @@ stepFunc (Commission com) (Fraction frac) (Equity e) (Yield y) =
 
 
 stepFuncNoCommission :: Fraction -> StepFunc
-stepFuncNoCommission = stepFunc (Commission id)
+stepFuncNoCommission = stepFunc noCommission
 
 stepFuncNoCommissionFullFraction :: StepFunc
-stepFuncNoCommissionFullFraction = stepFunc (Commission id) (Fraction 1)
+stepFuncNoCommissionFullFraction = stepFunc noCommission fullFrac
 
 stepFuncFixedPrice :: Double -> Fraction -> StepFunc
 stepFuncFixedPrice price = stepFunc (Commission (\x -> x-price))

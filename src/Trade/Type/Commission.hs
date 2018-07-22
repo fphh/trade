@@ -12,3 +12,6 @@ newtype Commission = Commission {
 instance Pretty Commission where
   pretty = ("comm. at $1=" ++) . show . ($ 1) . unCommission
 
+
+noCommission :: Commission
+noCommission = Commission id

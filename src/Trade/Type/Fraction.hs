@@ -6,3 +6,7 @@ module Trade.Type.Fraction where
 newtype Fraction = Fraction {
   unFraction :: Double
   } deriving (Show)
+
+
+fullFrac :: Fraction
+fullFrac = Fraction 1.0
