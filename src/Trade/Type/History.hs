@@ -45,3 +45,4 @@ equity2yield (History hist) =
   let g (_, Equity old) (b, Equity new) = (b, Yield (new / old))
       start = fmap (const (Yield 1)) (Vec.head hist)
   in History (Vec.cons start (Vec.zipWith g hist (stail "equity2yield" hist)))
+

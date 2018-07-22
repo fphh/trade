@@ -36,4 +36,3 @@ yield2equity step eqty = fmap (Hist.yield2equity step eqty)
 
 equity2yield :: Broom (History Equity) -> Broom (History Yield)
 equity2yield = fmap Hist.equity2yield
-

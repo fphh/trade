@@ -44,6 +44,7 @@ import Trade.Timeseries.OHLC
 import Trade.Timeseries.Algorithm.Intersection
 
 import Trade.Timeseries.Time
+import Trade.Timeseries.Url (ToUrl)
 
 import Trade.Timeseries.Quandl.Quandl
 import qualified Trade.Timeseries.Quandl.Database as DB
@@ -105,7 +106,7 @@ generateImpulseSignal2 (Signal ps) =
 
 
 mc ::
-  (OHLCInterface ohlc) => MCParams (PriceSignal ohlc) -> ImpulseGenerator ohlc -> IO (MCOutput Equity)
+  (OHLCInterface ohlc) => MCParams (PriceSignal ohlc) -> ImpulseGenerator ohlc -> IO MCOutput
 mc (MCParams simBars monteCarloN ps) gi = do
   let impulses = gi ps
       trades = impulse2trade ps impulses      
@@ -114,7 +115,7 @@ mc (MCParams simBars monteCarloN ps) gi = do
   return $ MCOutput (Broom.yield2equity (SF.stepFuncNoCommissionFullFraction) (Equity 100000) broom)
 
 
--- mainDoIt :: ToUrl symbol => symbol -> PriceSignal OHLC -> IO ()
+mainDoIt :: ToUrl symbol => symbol -> PriceSignal OHLC -> IO ()
 mainDoIt sym qs = do
   
   let mcParams = MCParams {
@@ -127,6 +128,8 @@ mainDoIt sym qs = do
         title = "This is the Report"
         , symbol = sym
         , priceSignal = qs
+        , tradeAt = _ohlcClose
+        , initialEquity = Equity 100000
         , mcParams = mcParams
         , generateImpulses = generateImpulseSignal 17 8
         , montecarlo = mc
@@ -135,7 +138,9 @@ mainDoIt sym qs = do
 
   -- mcout <- createMC inArgs
 
-  str <- renderReport inArgs
+  report <- analyze inArgs
+  
+  str <- render report
   
   BSL.putStrLn str
 

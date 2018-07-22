@@ -312,7 +312,8 @@ toCandle label cs = do
         E.plot_candle_title E..= label
     
   fmap B.lazyByteString (D.toBS df (E.plot diagram))
-  
+
+
 renderItem :: ReportItem -> IO Builder
 renderItem (SvgItem as acx ls) = lines2str acx ls >>= return . tag2 "div" (attr2str as) 
 renderItem (SvgItemLR as acy ls0 ls1) =
@@ -326,4 +327,3 @@ renderItem (HSplit as i0 i1) = do
   i0' <- renderItem i0
   i1' <- renderItem i1
   return (tag2 "div" (attr2str (Map.union hSplitTable as)) (i0' <> i1'))
-

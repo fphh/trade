@@ -25,7 +25,7 @@ import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 import Trade.Help.SafeTail
 
 
-trade2normTrade :: (UnOHLC a) => TradeList a -> NormTradeList
+trade2normTrade :: (UnOHLC ohlc) => TradeList ohlc -> NormTradeList
 trade2normTrade (TradeList tl) =
   let g (_, old) (_, new) = Yield (unOHLC new / unOHLC old)
       
