@@ -106,13 +106,13 @@ generateImpulseSignal2 (Signal ps) =
 
 
 mc ::
-  (OHLCInterface ohlc) => MCParams (PriceSignal ohlc) -> ImpulseGenerator ohlc -> IO MCOutput
+  (OHLCInterface ohlc) => MCParams (PriceSignal ohlc) -> ImpulseGenerator ohlc -> IO (MCOutput ())
 mc (MCParams simBars monteCarloN ps) gi = do
   let impulses = gi ps
       trades = impulse2trade ps impulses      
       ntrades = trade2normTrade (fmap ohlcClose trades)
   broom <- normHistoryBroom simBars monteCarloN ntrades
-  return $ MCOutput (Broom.yield2equity (SF.stepFuncNoCommissionFullFraction) (Equity 100000) broom)
+  return (MCOutput broom ()) -- (Broom.yield2equity (SF.stepFuncNoCommissionFullFraction) (Equity 100000) broom)
 
 
 mainDoIt :: ToUrl symbol => symbol -> PriceSignal OHLC -> IO ()
@@ -130,6 +130,7 @@ mainDoIt sym qs = do
         , priceSignal = qs
         , tradeAt = _ohlcClose
         , initialEquity = Equity 100000
+        , step = SF.stepFuncNoCommission
         , mcParams = mcParams
         , generateImpulses = generateImpulseSignal 17 8
         , montecarlo = mc

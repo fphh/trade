@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Trade.Analysis.Report2 where
 
@@ -16,9 +17,10 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 -- import Trade.Type.Equity ()
 -- import Trade.Type.Yield ()
 
-import Trade.Type.Fraction (Fraction)
+import Trade.Type.Fraction (Fraction, fullFrac)
 import Trade.Type.Bars (Bars)
 import Trade.Type.Equity (Equity)
+import Trade.Type.Yield (Yield)
 import Trade.Type.History (History)
 import qualified Trade.Type.Broom as Broom
 import Trade.Type.Broom (Broom)
@@ -57,15 +59,21 @@ data MCParams mcinput = MCParams {
   , input :: mcinput
   }
 
-data MCOutput = MCOutput {
-  _broom :: Broom (History Equity)
+data MCOutput rest = MCOutput {
+  mcbroom :: Broom (History Yield)
+  , mcrest :: rest
   }
 
-class MCOutputC a where
-  broom :: a -> Broom (History Equity)
+class GetRest a where
+  type RestTy a :: *
+  broom :: a -> Broom (History Yield)
+  rest :: a -> RestTy a
+  
 
-instance MCOutputC MCOutput where
-  broom = _broom
+instance GetRest (MCOutput rest) where
+  type RestTy (MCOutput rest) = rest
+  broom = mcbroom
+  rest = mcrest
 
 type ImpulseGenerator ohlc = PriceSignal ohlc -> ImpulseSignal
 
@@ -102,20 +110,21 @@ createMC :: ReportInput mcinput mcoutput ohlc symbol trdAt -> IO mcoutput
 createMC args = (montecarlo args) (mcParams args) (generateImpulses args)
 
 analyze ::
-  (UnOHLC trdAt) =>
+  (UnOHLC trdAt, GetRest mcoutput) =>
   ReportInput mcinput mcoutput ohlc symbol trdAt -> IO (Report mcinput mcoutput ohlc symbol trdAt)
 analyze repInp = do
   
   mcout <- createMC repInp
 
-  let qsTs = priceSignal repInp
-      impulses = (generateImpulses repInp) qsTs
-      trades = impulse2trade qsTs impulses
-      ntrades = trade2normTrade (fmap (tradeAt repInp) trades)
+  let -- qsTs = priceSignal repInp
+      -- impulses = (generateImpulses repInp) qsTs
+      -- trades = impulse2trade qsTs impulses
+      -- ntrades = trade2normTrade (fmap (tradeAt repInp) trades)
 
+      brm = broom mcout
       mcp = mcParams repInp
       
-  brm <- Broom.normHistoryBroom (simBars mcp) (monteCarloN mcp) ntrades
+  -- brm <- Broom.normHistoryBroom (simBars mcp) (monteCarloN mcp) ntrades
 
   let toTWR frac =
         let br = Broom.yield2equity ((step repInp) frac) (initialEquity repInp) brm
@@ -126,31 +135,43 @@ analyze repInp = do
   return $ Report {
     reportInput = repInp
     , reportOutput = ReportOutput {
-        impulseSignal = impulses
-        , tradeList = trades
+        -- impulseSignal = impulses
+        -- , tradeList = trades
+        montecarloOutput = mcout
         , riskByFraction = map (\(f, _, r) -> (f, r)) twrs
         , twrByFraction = map (\(f, t, _) -> (f, t)) twrs
-        , montecarloOutput = mcout
         }
     }
 
-class MCReport a where
-  toMCReport :: a -> [Report.ReportItem]
+class ToReport a where
+  toReport :: a -> [Report.ReportItem]
 
-instance MCReport MCOutput where
-  toMCReport mcout =
+instance ToReport () where
+  toReport _ = []
+
+instance (ToReport rest) => ToReport (MCOutput rest) where
+  toReport mcout =
     let n = 20
         axisTitle str =
           let al = E.laxis_title E..~ str $ E.def
           in Report.AxisConfig al E.def Nothing
-    in [Report.svg (axisTitle "Bars") (axisTitle "Equity", Broom.broom2chart n (broom mcout))]
+    in Report.svg (axisTitle "Bars") (axisTitle "Yield", Broom.broom2chart n (broom mcout))
+       : toReport (rest mcout)
+
+instance ToReport (Broom (History Equity)) where
+    toReport eqties =
+      let n = 20
+          axisTitle str =
+            let al = E.laxis_title E..~ str $ E.def
+            in Report.AxisConfig al E.def Nothing
+      in [Report.svg (axisTitle "Bars") (axisTitle "Equity", Broom.broom2chart n eqties)]
 
 newtype CandleBars mcinput mcoutput ohlc symbol trdAt = CandleBars {
   unCandleBars :: ReportInput mcinput mcoutput ohlc symbol trdAt
   }
 
-instance (ToUrl symbol, OHLCInterface ohlc) => MCReport (CandleBars mcinput mcoutput ohlc symbol trdAt) where
-  toMCReport (CandleBars repInp) =
+instance (ToUrl symbol, OHLCInterface ohlc) => ToReport (CandleBars mcinput mcoutput ohlc symbol trdAt) where
+  toReport (CandleBars repInp) =
     let toC (t, ohlc) =
           E.Candle t
           (unOHLC $ ohlcLow ohlc)
@@ -165,19 +186,30 @@ instance (ToUrl symbol, OHLCInterface ohlc) => MCReport (CandleBars mcinput mcou
 
 -- Remove IO from here (IO comes from charting lib because of reading fonts?) !!!
 render ::
-  (MCReport mcoutput, OHLCInterface ohlc, ToUrl symbol) =>
+  (ToReport mcoutput, GetRest mcoutput, OHLCInterface ohlc, ToUrl symbol) =>
   Report mcinput mcoutput ohlc symbol trdAt -> IO BSL.ByteString
 render report = do
   let repInp = reportInput report
       output = reportOutput report
   -- let bt = backtest () (initialEquity reportInput)
 
+      eqties = Broom.yield2equity (step repInp fullFrac) (initialEquity repInp) (broom (montecarloOutput output))
+
   let rep =
         Report.header (title repInp)
-        : toMCReport (CandleBars repInp)
-        ++ toMCReport (montecarloOutput output)
-  
+        : toReport (CandleBars repInp)
+        ++ toReport (montecarloOutput output)
+        ++ toReport eqties
+
   Report.renderReport (Report.report rep)
+
+
+
+
+
+
+
+
 
 
 {-
