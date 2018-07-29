@@ -31,6 +31,7 @@ library
                         Trade.Analysis.ToReport
                         Trade.Analysis.TWR
                         Trade.Analysis.Yield
+                        Trade.Example.EmptyReport
                         Trade.Example.Example0
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo

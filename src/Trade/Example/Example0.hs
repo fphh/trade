@@ -28,7 +28,7 @@ import Trade.Type.Yield
 import Trade.Type.Fraction
 import Trade.Type.Bars
 import Trade.Type.OHLC
-import Trade.Type.ImpulseGenerator (ImpulseGenerator)
+import Trade.Type.ImpulseGenerator (ImpulseGenerator, noImpulses)
 import Trade.Type.Signal (Signal (..), split)
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal.Price (PriceSignal)
@@ -118,9 +118,6 @@ generateImpulseSignal2 (Signal ps) =
 
   in Signal (Vec.map f ps)
 
-generateNoImpulses :: ImpulseGenerator (PriceSignal ohlc)
-generateNoImpulses (Signal ps) = Signal (Vec.map (fmap (const Nothing)) ps)
-
 {-
 mc ::
   (OHLCInterface ohlc) => MCParams (PriceSignal ohlc) -> ImpulseGenerator ohlc -> IO (MCOutput ())
@@ -137,7 +134,7 @@ mainDoIt :: ToUrl symbol => symbol -> PriceSignal OHLC -> IO ()
 mainDoIt sym qs = do
 
   let analysis = Analysis {
-        impulseGenerator = generateNoImpulses
+        impulseGenerator = noImpulses
         , optimizationInp = NoOptimization
         , backtestInp = NoBacktest
         }
