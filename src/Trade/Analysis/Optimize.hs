@@ -24,8 +24,9 @@ instance Optimize NoOptimization where
   optimize strat NoOptimization = (strat, NoOptimizationReport)
 
 instance ToReport NoOptimizationReport where
-  toReport _ = [ Report.subheader "Optimization Report"
-               , Report.text "No optimizations done." ]
+  toReport NoOptimizationReport =
+    [ Report.subheader "Optimization Report"
+    , Report.text "No optimizations done." ]
                
 
     
