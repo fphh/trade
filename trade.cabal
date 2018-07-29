@@ -21,12 +21,15 @@ library
                         Trade.Algorithm.Drawdown
                         Trade.Algorithm.MovingAverage
                         Trade.Algorithm.StochasticOscillator
+                        Trade.Analysis.Analysis
                         Trade.Analysis.Backtest
                         Trade.Analysis.Broom
-                        Trade.Analysis.TWR
+                        Trade.Analysis.Optimize
                         Trade.Analysis.Report
-                        Trade.Analysis.Report2
+                        -- Trade.Analysis.Report2
                         Trade.Analysis.Risk
+                        Trade.Analysis.ToReport
+                        Trade.Analysis.TWR
                         Trade.Analysis.Yield
                         Trade.Example.Example0
                         Trade.Help.SafeTail
@@ -79,6 +82,7 @@ library
                         Trade.Type.Equity
                         Trade.Type.History
                         Trade.Type.Impulse
+                        Trade.Type.ImpulseGenerator
                         Trade.Type.NormTrade
                         Trade.Type.OHLC
                         Trade.Type.Signal

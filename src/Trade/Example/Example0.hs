@@ -28,7 +28,9 @@ import Trade.Type.Yield
 import Trade.Type.Fraction
 import Trade.Type.Bars
 import Trade.Type.OHLC
-import Trade.Type.Signal (Signal (..))
+import Trade.Type.ImpulseGenerator (ImpulseGenerator)
+import Trade.Type.Signal (Signal (..), split)
+import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal.Price (PriceSignal)
 import qualified Trade.Type.History as NH
 import qualified Trade.Type.StepFunc as SF
@@ -60,10 +62,19 @@ import Trade.Timeseries.Timeseries
 
 import Trade.Algorithm.MovingAverage
 
-import Trade.Analysis.Report2
+-- import Trade.Analysis.Report2
 import Trade.Analysis.Broom (normHistoryBroom)
 
+import Trade.Analysis.Analysis (Analysis(..), analyze)
+import Trade.Analysis.Optimize (NoOptimization(..))
+import Trade.Analysis.Backtest (NoBacktest(..))
+
+
+
+
 import Trade.Test.Data
+
+import qualified Trade.Analysis.Analysis as Analysis
 
 import Debug.Trace
 
@@ -80,7 +91,8 @@ newRequest = do
     , DB.to = Just now
     }
 
-generateImpulseSignal :: (OHLCInterface ohlc) => Int -> Int -> PriceSignal ohlc -> ImpulseSignal
+-- generateImpulseSignal :: (OHLCInterface ohlc) => Int -> Int -> PriceSignal ohlc -> ImpulseSignal
+generateImpulseSignal :: (OHLCInterface ohlc) => Int -> Int -> ImpulseGenerator (PriceSignal ohlc)
 generateImpulseSignal j k (Signal ps) =
   let f (t, x) = (t, unClose $ ohlcClose x)
 
@@ -95,7 +107,9 @@ generateImpulseSignal j k (Signal ps) =
 
   in toImpulseSignal (\_ _ -> tradeSignal) (intersection avgJ avgK)
 
-generateImpulseSignal2 :: (OHLCInterface ohlc) => PriceSignal ohlc -> ImpulseSignal
+-- generateImpulseSignal2 :: (OHLCInterface ohlc) => PriceSignal ohlc -> ImpulseSignal
+
+generateImpulseSignal2 :: (OHLCInterface ohlc) => ImpulseGenerator (PriceSignal ohlc)
 generateImpulseSignal2 (Signal ps) =
   let g (Open o) (Close c)
         | o < c = Sell
@@ -104,7 +118,10 @@ generateImpulseSignal2 (Signal ps) =
 
   in Signal (Vec.map f ps)
 
+generateNoImpulses :: ImpulseGenerator (PriceSignal ohlc)
+generateNoImpulses (Signal ps) = Signal (Vec.map (fmap (const Nothing)) ps)
 
+{-
 mc ::
   (OHLCInterface ohlc) => MCParams (PriceSignal ohlc) -> ImpulseGenerator ohlc -> IO (MCOutput ())
 mc (MCParams simBars monteCarloN ps) gi = do
@@ -113,21 +130,38 @@ mc (MCParams simBars monteCarloN ps) gi = do
       ntrades = trade2normTrade (fmap ohlcClose trades)
   broom <- normHistoryBroom simBars monteCarloN ntrades
   return (MCOutput broom ()) -- (Broom.yield2equity (SF.stepFuncNoCommissionFullFraction) (Equity 100000) broom)
+-}
 
 
 mainDoIt :: ToUrl symbol => symbol -> PriceSignal OHLC -> IO ()
 mainDoIt sym qs = do
+
+  let analysis = Analysis {
+        impulseGenerator = generateNoImpulses
+        , optimizationInp = NoOptimization
+        , backtestInp = NoBacktest
+        }
+
+      rep = analyze analysis
+
+  t <- Report.renderReport (Report.report rep)
   
-  let mcParams = MCParams {
+  BSL.putStrLn t
+
+  
+  {-
+  let sample = split 0.75 qs
+
+      mcParams = MCParams {
         simBars = Bars 500
         , monteCarloN = 1000
-        , input = qs
+        , inSample = Signal.inSample sample
         }
 
       inArgs = ReportInput {
         title = "This is the Report"
         , symbol = sym
-        , priceSignal = qs
+        , outOfSample = Signal.outOfSample sample
         , tradeAt = _ohlcClose
         , initialEquity = Equity 100000
         , step = SF.stepFuncNoCommission
@@ -142,31 +176,6 @@ mainDoIt sym qs = do
   report <- analyze inArgs
   
   str <- render report
-  
-  BSL.putStrLn str
-
-{-
-mainDoIt :: (OHLCInterface ohlc, ToYield ohlc) => Symbol FSE -> PriceSignal ohlc -> IO ()
-mainDoIt sym qs = do
-  
-  let inArgs = ReportInput {
-        title = printf "Strategy Analysis"
-        , description = "Description (TODO)"
-        , symbol = sym
-        -- , simBars = Bars 500
-        , tradeAt = ohlcClose
-        , normEquityBroom = createBroom qs
-        -- , initialEquity = Equity 100000
-        -- , monteCarloN = 100
-        -- , generateImpulses = generateImpulseSignal 14 21
-        -- , step = stepFunc
-        , fractions = map Fraction (0.05 : [0.2, 0.4 .. 2])
-        }
-
-  report <- prepareReport qs inArgs
-  str <- renderReport report
-
-  -- str <- renderExtendedReport report
   
   BSL.putStrLn str
 -}
@@ -194,6 +203,7 @@ mainFile path = do
   -- BSL.putStrLn (renderStats reps)
 
   -- BSL.putStrLn (renderReport
+
 
 
 
@@ -255,3 +265,29 @@ stepFunc (Fraction frac) (Equity e) (Yield y) =
   in Equity (e1 + (e0*y))
 -}
 
+
+{-
+mainDoIt :: (OHLCInterface ohlc, ToYield ohlc) => Symbol FSE -> PriceSignal ohlc -> IO ()
+mainDoIt sym qs = do
+  
+  let inArgs = ReportInput {
+        title = printf "Strategy Analysis"
+        , description = "Description (TODO)"
+        , symbol = sym
+        -- , simBars = Bars 500
+        , tradeAt = ohlcClose
+        , normEquityBroom = createBroom qs
+        -- , initialEquity = Equity 100000
+        -- , monteCarloN = 100
+        -- , generateImpulses = generateImpulseSignal 14 21
+        -- , step = stepFunc
+        , fractions = map Fraction (0.05 : [0.2, 0.4 .. 2])
+        }
+
+  report <- prepareReport qs inArgs
+  str <- renderReport report
+
+  -- str <- renderExtendedReport report
+  
+  BSL.putStrLn str
+-}

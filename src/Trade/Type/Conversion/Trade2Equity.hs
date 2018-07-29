@@ -2,11 +2,8 @@
 
 module Trade.Type.Conversion.Trade2Equity where
 
-import Data.Time.Clock (UTCTime)
-
 
 import qualified Data.Vector as Vec
--- import Data.Vector (Vector)
 
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Signal.Equity (EquitySignal)

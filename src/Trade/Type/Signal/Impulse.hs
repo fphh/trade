@@ -5,6 +5,8 @@
 
 module Trade.Type.Signal.Impulse where
 
+import Control.Monad (join)
+
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
@@ -27,10 +29,10 @@ instance Curve ImpulseSignal where
   type Ty ImpulseSignal = UTCTime
   
   curve (Signal is) =
-    let f (t, Just Sell) = [(t, 0), (t, 1), (t, 0)]
-        f (t, Just Buy) = [(t, 0), (t, -1), (t, 0)]
-        f _ = []
-    in head (sequence (Vec.map f is))
+    let f (t, Just Sell) = Vec.fromList [(t, 0), (t, 1), (t, 0)]
+        f (t, Just Buy) = Vec.fromList [(t, 0), (t, -1), (t, 0)]
+        f _ = Vec.empty
+    in join (Vec.map f is)
 
 
 

@@ -2,23 +2,12 @@
 
 module Trade.Type.Conversion.Trade2NormTrade where
 
-import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime)
+import Data.Time.Clock (diffUTCTime)
 
 import qualified Data.Vector as Vec
-import Data.Vector (Vector)
-
-import Data.Maybe (isNothing)
-
-import Trade.Timeseries.Algorithm.SyncZip
 
 import Trade.Type.Yield (Yield(..))
-import Trade.Type.Equity (Equity(..))
 import Trade.Type.OHLC (UnOHLC, unOHLC)
-import Trade.Type.State (State(..))
-import Trade.Type.Impulse (Impulse(..))
-import Trade.Type.Signal (Signal(..))
-import Trade.Type.Signal.Price (PriceSignal)
-import Trade.Type.Signal.Impulse (ImpulseSignal)
 import Trade.Type.Trade (Trade(..), TradeList(..))
 import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
