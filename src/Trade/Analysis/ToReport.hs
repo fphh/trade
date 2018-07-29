@@ -23,9 +23,11 @@ instance (ToReport a) => ToReport [a] where
 
 report :: (ToReport optOut, ToReport backOut) => optOut -> backOut -> [Report.ReportItem]
 report opt back =
-  let optRep = toReport opt
+  let title = Report.header "Report"
+      optTitle = Report.subheader "Optimization Results"
+      backTitle = Report.subheader "Backtest Results"
+      optRep = toReport opt
       backRep = toReport back
-      title = Report.header "Report"
-  in title : (optRep ++ backRep)
+  in title : (optTitle : optRep) ++ (backTitle : backRep)
 
 

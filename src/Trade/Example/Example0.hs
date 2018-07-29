@@ -20,6 +20,7 @@ import Data.Time.Clock
 import Data.Time.Calendar.WeekDate
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import qualified Graphics.Rendering.Chart.Easy as E
 
 import Data.Maybe (fromJust)
 
@@ -46,7 +47,7 @@ import Trade.Timeseries.OHLC
 import Trade.Timeseries.Algorithm.Intersection
 
 import Trade.Timeseries.Time
-import Trade.Timeseries.Url (ToUrl)
+import Trade.Timeseries.Url (ToUrl, toUrl)
 
 import Trade.Timeseries.Quandl.Quandl
 import qualified Trade.Timeseries.Quandl.Database as DB
@@ -68,6 +69,8 @@ import Trade.Analysis.Broom (normHistoryBroom)
 import Trade.Analysis.Analysis (Analysis(..), analyze)
 import Trade.Analysis.Optimize (NoOptimization(..))
 import Trade.Analysis.Backtest (NoBacktest(..))
+import qualified Trade.Analysis.Backtest as BT
+import Trade.Analysis.ToReport (ToReport, toReport)
 
 
 
@@ -107,9 +110,8 @@ generateImpulseSignal j k (Signal ps) =
 
   in toImpulseSignal (\_ _ -> tradeSignal) (intersection avgJ avgK)
 
--- generateImpulseSignal2 :: (OHLCInterface ohlc) => PriceSignal ohlc -> ImpulseSignal
-
-generateImpulseSignal2 :: (OHLCInterface ohlc) => ImpulseGenerator (PriceSignal ohlc)
+-- generateImpulseSignal2 :: (OHLCInterface ohlc) => ImpulseGenerator (PriceSignal ohlc)
+generateImpulseSignal2 :: {- (OHLCInterface ohlc) => -} ImpulseGenerator (PriceSignal OHLC)
 generateImpulseSignal2 (Signal ps) =
   let g (Open o) (Close c)
         | o < c = Sell
@@ -129,14 +131,51 @@ mc (MCParams simBars monteCarloN ps) gi = do
   return (MCOutput broom ()) -- (Broom.yield2equity (SF.stepFuncNoCommissionFullFraction) (Equity 100000) broom)
 -}
 
+data CandleBars symbol ohlc = CandleBars {
+  sym :: symbol
+  , unCandleBars :: PriceSignal ohlc
+  }
+
+
+instance (ToUrl symbol, OHLCInterface ohlc) => ToReport (CandleBars symbol ohlc) where
+  toReport (CandleBars sym sample) =
+    let toC (t, ohlc) =
+          E.Candle t
+          (unOHLC $ ohlcLow ohlc)
+          (unOHLC $ ohlcOpen ohlc)
+          0
+          (unOHLC $ ohlcClose ohlc)
+          (unOHLC $ ohlcHigh ohlc)
+        toCandle (Signal ps) = Vec.map toC ps
+    in [Report.candle (toUrl sym) [toCandle sample]]
+
+
+
+data Backtest symbol ohlc = Backtest {
+  symbol :: symbol
+  , outOfSample :: PriceSignal ohlc
+  }
+
+instance BT.Backtest (Backtest symbol ohlc) where
+  type BackTy (Backtest symbol ohlc) = CandleBars symbol ohlc
+  backtest impGen (Backtest sym outOfSamp) = CandleBars sym outOfSamp
+
 
 mainDoIt :: ToUrl symbol => symbol -> PriceSignal OHLC -> IO ()
 mainDoIt sym qs = do
 
+  
+  let sample = split 0.75 qs
+
+      backtest = Backtest {
+        symbol = sym
+        , outOfSample = Signal.outOfSample sample
+        }
+
   let analysis = Analysis {
-        impulseGenerator = noImpulses
+        impulseGenerator = generateImpulseSignal2
         , optimizationInp = NoOptimization
-        , backtestInp = NoBacktest
+        , backtestInp = backtest
         }
 
       rep = analyze analysis

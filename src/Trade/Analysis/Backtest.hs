@@ -39,9 +39,7 @@ instance Backtest NoBacktest where
   backtest _ _ = NoBacktestReport
 
 instance ToReport NoBacktestReport where
-  toReport NoBacktestReport =
-    [ Report.subheader "Backtest Report"
-    , Report.text "No backtest done." ]
+  toReport NoBacktestReport = [ Report.text "No backtest done." ]
                
 
     

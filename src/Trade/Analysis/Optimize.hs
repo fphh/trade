@@ -25,8 +25,7 @@ instance Optimize NoOptimization where
 
 instance ToReport NoOptimizationReport where
   toReport NoOptimizationReport =
-    [ Report.subheader "Optimization Report"
-    , Report.text "No optimizations done." ]
+    [ Report.text "No optimizations done." ]
                
 
     
