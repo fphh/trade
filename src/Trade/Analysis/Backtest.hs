@@ -1,5 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 
 module Trade.Analysis.Backtest where
@@ -12,6 +13,7 @@ import Trade.Type.ImpulseGenerator (ImpulseGenerator)
 
 
 import Trade.Type.Signal (unSignal)
+import Trade.Type.Signal.Price (PriceSignal)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.OHLC (UnOHLC)
 import Trade.Type.Trade (TradeList)
@@ -27,8 +29,8 @@ backtest2 tradeAt eqty trades =
 
 class Backtest a where
   type BackTy a :: *
-  backtest :: forall inp. ImpulseGenerator inp -> a -> BackTy a
-
+  type ImpGenTy a :: *
+  backtest :: ImpulseGenerator (ImpGenTy a) -> a -> BackTy a
 
 data NoBacktest = NoBacktest
 
@@ -36,7 +38,8 @@ data NoBacktestReport = NoBacktestReport
 
 instance Backtest NoBacktest where
   type BackTy NoBacktest = NoBacktestReport
-  backtest _ _ = NoBacktestReport
+  type ImpGenTy NoBacktest = PriceSignal ()
+  backtest _ NoBacktest = NoBacktestReport
 
 instance ToReport NoBacktestReport where
   toReport NoBacktestReport = [ Report.text "No backtest done." ]

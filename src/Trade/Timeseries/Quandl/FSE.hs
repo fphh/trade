@@ -64,7 +64,7 @@ instance DateInterface Row where
 instance FromDatabase FSE where
   type Dataset FSE = FSECode
 
-data FSE = FSE deriving (Show, Eq, Ord)
+data FSE = FSE deriving (Show, Read, Eq, Ord)
 
 data FSECode =
   ALV_X    -- Allianz Se (ALV_X)
@@ -228,4 +228,4 @@ data FSECode =
   | ZO1_X    -- Zooplus (ZO1_X)
   | O2D_X    -- Telefónica Deutschland Holding AG (O2D_X)
   | EON_X    -- E.on Se (EON_X)
-  deriving (Show, Enum, Eq, Ord)
+  deriving (Show, Read, Enum, Eq, Ord)

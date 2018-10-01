@@ -23,6 +23,11 @@ deriving instance (Eq dbCode, Eq (Dataset dbCode)) => Eq (Symbol dbCode)
 
 deriving instance (Ord dbCode, Ord (Dataset dbCode)) => Ord (Symbol dbCode)
 
+deriving instance (Show dbCode, Show (Dataset dbCode)) => Show (Symbol dbCode)
+
+deriving instance (Read dbCode, Read (Dataset dbCode)) => Read (Symbol dbCode)
+
+
 instance (Show dbCode, Show (Dataset dbCode)) => ToUrl (Symbol dbCode) where
   toUrl (Symbol x y) = "/" ++ show x ++ "/" ++ show y
 

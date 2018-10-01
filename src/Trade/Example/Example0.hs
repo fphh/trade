@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Trade.Example.Example0 where
 
@@ -73,6 +74,7 @@ import qualified Trade.Analysis.Backtest as BT
 import Trade.Analysis.ToReport (ToReport, toReport)
 
 
+import Trade.Report.Curve (curve)
 
 
 import Trade.Test.Data
@@ -81,6 +83,7 @@ import qualified Trade.Analysis.Analysis as Analysis
 
 import Debug.Trace
 
+{-
 newRequest :: IO (DB.Symbol dbCode -> DB.RequestParams dbCode)
 newRequest = do
   now <- getCurrentTime
@@ -136,6 +139,10 @@ data CandleBars symbol ohlc = CandleBars {
   , unCandleBars :: PriceSignal ohlc
   }
 
+class ToCandleBars a where
+  type SymbolTy a :: *
+  type OhlcTy a :: *
+  toCandleBars :: a -> CandleBars (SymbolTy a) (OhlcTy a)
 
 instance (ToUrl symbol, OHLCInterface ohlc) => ToReport (CandleBars symbol ohlc) where
   toReport (CandleBars sym sample) =
@@ -149,21 +156,120 @@ instance (ToUrl symbol, OHLCInterface ohlc) => ToReport (CandleBars symbol ohlc)
         toCandle (Signal ps) = Vec.map toC ps
     in [Report.candle (toUrl sym) [toCandle sample]]
 
+-----------------------------------------------
+
+newtype RepString = RepString { str :: String }
+
+instance ToReport RepString where
+  toReport (RepString str) = [Report.text str]
 
 
+-----------------------------------------------
+
+ 
 data Backtest symbol ohlc = Backtest {
   symbol :: symbol
   , outOfSample :: PriceSignal ohlc
   }
 
-instance BT.Backtest (Backtest symbol ohlc) where
-  type BackTy (Backtest symbol ohlc) = CandleBars symbol ohlc
-  backtest impGen (Backtest sym outOfSamp) = CandleBars sym outOfSamp
+instance ToCandleBars (Backtest symbol ohlc) where
+  type SymbolTy (Backtest symbol ohlc) = symbol
+  type OhlcTy (Backtest symbol ohlc) = ohlc
+  toCandleBars bt = CandleBars (symbol bt) (outOfSample bt)
 
 
-mainDoIt :: ToUrl symbol => symbol -> PriceSignal OHLC -> IO ()
+instance (ToUrl symbol, OHLCInterface ohlc) => BT.Backtest (Backtest symbol ohlc) where
+  type BackTy (Backtest symbol ohlc) = BTResult symbol ohlc
+  type ImpGenTy (Backtest symbol ohlc) = PriceSignal ohlc
+  
+  backtest impGen bt =
+    let bla = 1
+
+    
+    in BTResult {
+      candles = toCandleBars bt
+      , test = RepString "Hi there, I'm Bobby Brown!"
+      , impulses = ImpulseDiagram impGen bt -- (impGen (outOfSample bt))
+      }
+
+---------------------------------------------------------
+
+data BTResult symbol ohlc = BTResult {
+  candles :: CandleBars symbol ohlc
+  , test :: RepString
+  , impulses :: ImpulseDiagram symbol ohlc
+  }
+  
+instance (ToUrl symbol, OHLCInterface ohlc) => ToReport (BTResult symbol ohlc) where
+  toReport res =
+    toReport (test res)
+    ++ toReport (candles res)
+    ++ toReport (impulses res)
+
+
+--------------------------------------------------------
+
+data ImpulseDiagram symbol ohlc = ImpulseDiagram {
+  impGen :: ImpulseGenerator ohlc
+  , impSig :: Backtest symbol ohlc
+  }
+
+axTitle :: (E.PlotValue a) => String -> Report.AxisConfig a
+axTitle str =
+  let al = E.laxis_title E..~ str $ E.def
+  in Report.AxisConfig al E.def Nothing
+
+
+impulseAxisConf :: Report.AxisConfig Double
+impulseAxisConf =
+  let al = E.laxis_style E..~ (E.axis_grid_style E..~ (E.line_width E..~ 0 $ E.def) $ E.axis_line_style E..~ (E.line_width E..~ 0 $ E.def) $ E.def)
+           $ E.def
+      av = E.axis_show_labels E..~ False
+           $ E.axis_show_ticks E..~ False
+           $ E.def
+      af = E.scaledAxis E.def (-1,10)
+  in Report.AxisConfig al av (Just af)
+
+
+{-
+instance ToReport ImpulseDiagram where
+  toReport (ImpulseDiagram is) =
+    let inters = Report.line "buy/sell" (curve is)
+    in [Report.svg (axTitle "T") (axTitle "X", [inters])]
+-}
+
+
+instance ToReport (ImpulseDiagram symbol ohlc) where
+  toReport (ImpulseDiagram impGen input) =
+    let oos = outOfSample input
+        impulses = impGen input oos
+        trades = impulse2trade oos impulses
+        bt = backtest (tradeAt input) (initialEquity input) trades
+
+        Equity ie = initialEquity input
+      
+        (_, firstPrice) = Vec.head (unSignal oos)
+        fp = unEquity (initialEquity input) / (unOHLC (tradeAt input firstPrice))
+      
+        tickerLine =
+          Report.lineL
+          (toUrl (symbol input))
+          (Vec.map (fmap ((fp*) . unOHLC . tradeAt input)) (unSignal oos))
+  
+        inters = Report.lineR "buy/sell" (curve impulses)
+        
+    in [Report.svgLR (axTitle "Time") (axTitle "Equity", [tickerLine, bt]) (impulseAxisConf, [inters])]
+
+
+
+--------------------------------------------------------
+
+
+
+mainDoIt :: (ToUrl symbol, Show symbol) => symbol -> PriceSignal OHLC -> IO ()
 mainDoIt sym qs = do
 
+  writeFile "/tmp/test.txt" (show (sym, qs))
   
   let sample = split 0.75 qs
 
@@ -219,28 +325,8 @@ mainDoIt sym qs = do
 
 mainFile :: FilePath -> IO ()
 mainFile path = do
-      
-  txt <- readFile path
-
-  let f :: String -> (UTCTime, OHLC)
-      f str =
-        let (t, _:c) = List.span (/=',') str
-            p = read c
-        in (read t, OHLC  (Open p) (High p) (Low p) (Close p) (Volume 100))
-
-      raa = Symbol FSE RAA_X
-
-  
-      vs = Signal $ Vec.fromList $ map f (lines txt)
-
-  mainDoIt raa vs
-
-
-  -- BSL.putStrLn (renderStats reps)
-
-  -- BSL.putStrLn (renderReport
-
-
+  (sym :: Symbol FSE, qs) <- fmap read (readFile path)
+  mainDoIt sym qs
 
 
 mainNetwork :: IO ()
@@ -269,6 +355,33 @@ example0 x =
 
 
 
+
+  
+
+{-
+mainFile :: FilePath -> IO ()
+mainFile path = do
+      
+  txt <- readFile path
+
+  let f :: String -> (UTCTime, OHLC)
+      f str =
+        let (t, _:c) = List.span (/=',') str
+            p = read c
+        in (read t, OHLC  (Open p) (High p) (Low p) (Close p) (Volume 100))
+
+      raa = Symbol FSE RAA_X
+
+  
+      vs = Signal $ Vec.fromList $ map f (lines txt)
+
+  mainDoIt raa vs
+
+
+  -- BSL.putStrLn (renderStats reps)
+
+  -- BSL.putStrLn (renderReport
+-}
 
 
 {-
@@ -326,4 +439,5 @@ mainDoIt sym qs = do
   -- str <- renderExtendedReport report
   
   BSL.putStrLn str
+-}
 -}

@@ -12,7 +12,7 @@ import Trade.Report.Pretty
 
 newtype Signal t x = Signal {
   unSignal :: Vector (t, x)
-  } deriving (Show)
+  } deriving (Show, Read)
 
 instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where
   toNumberedList (Signal pps) = toNumberedList pps
@@ -20,13 +20,13 @@ instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where
 data OffsettedSignal t x = OffsettedSignal {
   offset :: t
   , signal :: Signal t x
-  } deriving (Show)
+  } deriving (Show, Read)
 
 
 data Sample t x = Sample {
   inSample :: Signal t x
   , outOfSample :: Signal t x
-  } deriving (Show)
+  } deriving (Show, Read)
 
 split :: Double -> Signal t x -> Sample t x
 split q _ | q < 0 || q > 1 = error "Trade.Type.Signal.Price.split: q should be between 0 and 1"

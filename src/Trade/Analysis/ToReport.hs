@@ -17,6 +17,7 @@ instance (ToReport a) => ToReport (Maybe a) where
       Nothing -> []
       Just y -> toReport y
 
+
 instance (ToReport a) => ToReport [a] where
   toReport = concatMap toReport
 
