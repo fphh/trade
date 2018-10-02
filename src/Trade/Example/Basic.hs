@@ -31,25 +31,18 @@ instance Opt.Optimize OptimizationInput where
 
 --------------------------------------------------------
 
-data BacktestInput symbol ohlc = BacktestInput {
-  symbol :: symbol
-  , outOfSample :: PS.PriceSignal ohlc
-  }
+data BacktestInput = BacktestInput
 
-data BacktestResult symbol ohlc = BacktestResult
+data BacktestResult = BacktestResult
 
-instance TR.ToReport (BacktestResult symbol ohlc) where
+instance TR.ToReport BacktestResult where
   toReport BacktestResult = TR.toReport (TR.ReportString "Nothing to report.")
 
-instance BT.Backtest (BacktestInput symbol ohlc) where
-  type BackTy (BacktestInput symbol ohlc) = BacktestResult symbol ohlc
-  type ImpGenTy (BacktestInput symbol ohlc) = PS.PriceSignal ohlc
+instance BT.Backtest BacktestInput where
+  type BackTy BacktestInput = BacktestResult
+  type ImpGenTy BacktestInput = PS.PriceSignal ()
 
   backtest impGen bt = BacktestResult
-
---------------------------------------------------------
-
-data Symbol dbCode = Symbol
 
 --------------------------------------------------------
 
@@ -57,16 +50,11 @@ example :: IO ()
 example = do
   
 
-  let backtest = BacktestInput {
-        symbol = Symbol
-        , outOfSample = Signal.noSignal
-        }
-
-      analysis :: Ana.Analysis OptimizationInput (BacktestInput (Symbol dbCode) ())
+  let analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.impulseGenerator = IG.noImpulses
         , Ana.optimizationInput = OptimizationInput
-        , Ana.backtestInput = backtest
+        , Ana.backtestInput = BacktestInput
         }
 
       rep = Ana.analyze analysis
