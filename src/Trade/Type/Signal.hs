@@ -34,3 +34,9 @@ split q (Signal vs) =
   let n = floor (q * fromIntegral (Vec.length vs))
       (i, o) = Vec.splitAt n vs
   in Sample (Signal i) (Signal o)
+
+noSignal :: Signal t x
+noSignal = Signal (Vec.empty)
+
+noSample :: Sample t x
+noSample = Sample noSignal noSignal

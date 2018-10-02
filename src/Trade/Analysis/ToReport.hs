@@ -21,6 +21,13 @@ instance (ToReport a) => ToReport (Maybe a) where
 instance (ToReport a) => ToReport [a] where
   toReport = concatMap toReport
 
+newtype ReportString = ReportString {
+  reportString :: String
+  } deriving (Show)
+
+instance ToReport ReportString where
+  toReport (ReportString str) = [Report.text str]
+
 
 report :: (ToReport optOut, ToReport backOut) => optOut -> backOut -> [Report.ReportItem]
 report opt back =

@@ -15,8 +15,8 @@ import Trade.Analysis.ToReport (ToReport, report)
 
 data Analysis optInp backInp = Analysis {
   impulseGenerator :: ImpulseGenerator (ImpGenTy backInp)
-  , optimizationInp :: optInp
-  , backtestInp :: backInp
+  , optimizationInput :: optInp
+  , backtestInput :: backInp
   }
 
 

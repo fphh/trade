@@ -16,8 +16,8 @@ emptyReport = do
 
   let analysis = Analysis {
         impulseGenerator = noImpulses
-        , optimizationInp = NoOptimization
-        , backtestInp = NoBacktest
+        , optimizationInput = NoOptimization
+        , backtestInput = NoBacktest
         }
 
       rep = analyze analysis

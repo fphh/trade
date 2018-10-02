@@ -31,8 +31,8 @@ library
                         Trade.Analysis.ToReport
                         Trade.Analysis.TWR
                         Trade.Analysis.Yield
+                        Trade.Example.Basic
                         Trade.Example.EmptyReport
-                        Trade.Example.Example0
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo
                         Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
@@ -109,8 +109,8 @@ library
                      , cassava ==0.5.1.0
                      , statistics ==0.14.0.2
                      , mwc-random ==0.13.6.0
-                     , Chart ==1.8.3
-                     , Chart-diagrams ==1.8.3
+                     , Chart ==1.9
+                     , Chart-diagrams ==1.9
                      , aeson
                      , text
                      , scientific

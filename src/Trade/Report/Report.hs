@@ -200,6 +200,8 @@ renderRep (Report as is) = do
       bdy = tag2 "body" (attr2str as) (mconcat items)
   return (docType <> html)
 
+toBS :: D.FileOptions -> E.EC l () -> IO ByteString
+toBS = error "toBS is undefined"
 
 colors :: [E.AlphaColour Double]
 colors = map E.opaque [ E.red, E.blue, E.green, E.magenta, E.orange, E.darkcyan, E.black, E.gray, E.purple, E.pink ] ++ colors
@@ -215,9 +217,11 @@ lines2str acx (acy, ls) = do
         , E._font_weight = E.FontWeightNormal
         }
 
-      df = E.def { D._fo_format = D.SVG_EMBEDDED
-                 , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-                 , D._fo_size = chartSize }
+      df = E.def {
+        D._fo_format = D.SVG_EMBEDDED
+        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
+        , D._fo_size = chartSize
+        }
            
       diagram = do
         E.setColors colors
@@ -236,7 +240,7 @@ lines2str acx (acy, ls) = do
 
         mapM_ E.plot ls
   
-  fmap B.lazyByteString (D.toBS df diagram)
+  fmap B.lazyByteString (toBS df diagram)
 
 lines2strLR ::
   (E.PlotValue x
@@ -250,9 +254,11 @@ lines2strLR acx (acL, lsL) (acR, lsR) = do
         , E._font_weight = E.FontWeightNormal
         }
 
-      df = E.def { D._fo_format = D.SVG_EMBEDDED
-                 , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-                 , D._fo_size = chartSize }
+      df = E.def {
+        D._fo_format = D.SVG_EMBEDDED
+        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
+        , D._fo_size = chartSize
+        }
 
       diagram = do
         E.setColors colors
@@ -278,7 +284,7 @@ lines2strLR acx (acL, lsL) (acR, lsR) = do
         mapM_ E.plotLeft lsL
         mapM_ E.plotRight lsR
 
-  fmap B.lazyByteString (D.toBS df diagram)
+  fmap B.lazyByteString (toBS df diagram)
 
 
 toCandle :: String -> [[E.Candle UTCTime Double]] -> IO Builder
@@ -311,7 +317,7 @@ toCandle label cs = do
 
         E.plot_candle_title E..= label
     
-  fmap B.lazyByteString (D.toBS df (E.plot diagram))
+  fmap B.lazyByteString (toBS df (E.plot diagram))
 
 
 renderItem :: ReportItem -> IO Builder
