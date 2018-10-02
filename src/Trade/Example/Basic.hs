@@ -16,11 +16,6 @@ import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Report.Report as Report
 
 --------------------------------------------------------
-
-data OptimizationResult = OptimizationResult
-
-instance TR.ToReport OptimizationResult where
-  toReport OptimizationResult = TR.toReport (TR.ReportString "Nothing to optimize.")
   
 data OptimizationInput = OptimizationInput
 
@@ -28,20 +23,27 @@ instance Opt.Optimize OptimizationInput where
   type OptTy OptimizationInput = OptimizationResult
   optimize strat OptimizationInput = (strat, OptimizationResult)
 
+
+data OptimizationResult = OptimizationResult
+
+instance TR.ToReport OptimizationResult where
+  toReport OptimizationResult = TR.toReport (TR.ReportString "Nothing to optimize.")
+
 --------------------------------------------------------
 
 data BacktestInput = BacktestInput
-
-data BacktestResult = BacktestResult
-
-instance TR.ToReport BacktestResult where
-  toReport BacktestResult = TR.toReport (TR.ReportString "Nothing to report.")
 
 instance BT.Backtest BacktestInput where
   type BackTy BacktestInput = BacktestResult
   type ImpGenTy BacktestInput = PS.PriceSignal ()
 
   backtest impGen bt = BacktestResult
+
+
+data BacktestResult = BacktestResult
+
+instance TR.ToReport BacktestResult where
+  toReport BacktestResult = TR.toReport (TR.ReportString "Nothing to report.")
 
 --------------------------------------------------------
 
