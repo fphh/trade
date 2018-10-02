@@ -11,8 +11,8 @@ import Trade.Analysis.Backtest (NoBacktest(..))
 
 
 
-emptyReport :: IO ()
-emptyReport = do
+example :: IO ()
+example = do
 
   let analysis = Analysis {
         impulseGenerator = noImpulses

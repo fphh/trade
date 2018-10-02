@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 
-module Trade.Example.Example0 where
+module Trade.Example.Basic where
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
@@ -53,8 +53,8 @@ data Symbol dbCode = Symbol
 
 --------------------------------------------------------
 
-example0 :: IO ()
-example0 = do
+example :: IO ()
+example = do
   
 
   let backtest = BacktestInput {
