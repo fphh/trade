@@ -11,10 +11,11 @@ import Trade.Analysis.Backtest (Backtest, BackTy, ImpGenTy, backtest)
 
 import qualified Trade.Report.Report as Report
 
-import Trade.Analysis.ToReport (ToReport, report)
+import Trade.Analysis.ToReport (ToReport, report, Optimization(..))
 
 data Analysis optInp backInp = Analysis {
-  impulseGenerator :: ImpulseGenerator (ImpGenTy backInp)
+  title :: String
+  , impulseGenerator :: ImpulseGenerator (ImpGenTy backInp)
   , optimizationInput :: optInp
   , backtestInput :: backInp
   }
@@ -23,9 +24,9 @@ data Analysis optInp backInp = Analysis {
 -- ---------------------------------------------
 
 analyze ::
-  (Optimize optInp, ToReport (OptTy optInp), Backtest backInp, ToReport (BackTy backInp)) =>
+  (Optimize optInp, ToReport (Optimization optInp (OptTy optInp)), Backtest backInp, ToReport (BackTy backInp)) =>
   Analysis optInp backInp -> [Report.ReportItem]
-analyze (Analysis strat optInp backInp) =
+analyze (Analysis ttle strat optInp backInp) =
   let (optStrat, optOut) = optimize strat optInp
       backOut = backtest optStrat backInp
-  in report optOut backOut
+  in report ttle (Optimization optInp optOut) backOut

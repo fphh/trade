@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 
 
 module Trade.Analysis.ToReport where
@@ -31,13 +32,20 @@ instance ToReport ReportString where
   toReport (ReportString str) = [Report.text str]
 
 
-report :: (ToReport optOut, ToReport backOut) => optOut -> backOut -> [Report.ReportItem]
-report opt back =
-  let title = Report.header "Report"
-      optTitle = Report.subheader "Optimization Results"
-      backTitle = Report.subheader "Backtest Results"
+data Optimization optInp optOut = Optimization {
+  optimizationInput :: optInp
+  , optimizationOutput :: optOut
+  }
+
+-- data Backtest
+  
+report ::
+  (ToReport (Optimization optInp optOut), ToReport backOut) =>
+  String -> Optimization optInp optOut -> backOut -> [Report.ReportItem]
+report ttle opt back =
+  let title = Report.header ttle
       optRep = toReport opt
       backRep = toReport back
-  in title : (optTitle : optRep) ++ (backTitle : backRep)
+  in title : optRep ++ backRep
 
 

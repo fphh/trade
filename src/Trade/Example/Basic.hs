@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 module Trade.Example.Basic where
@@ -26,9 +27,11 @@ instance Opt.Optimize OptimizationInput where
 
 data OptimizationResult = OptimizationResult
 
-instance TR.ToReport OptimizationResult where
-  toReport OptimizationResult = TR.toReport (TR.ReportString "Nothing to optimize.")
-
+instance TR.ToReport (TR.Optimization OptimizationInput OptimizationResult) where
+  toReport _ =
+    Report.subheader "Optimization"
+    : TR.toReport (TR.ReportString "Nothing to optimize.")
+    
 --------------------------------------------------------
 
 data BacktestInput = BacktestInput
@@ -43,8 +46,10 @@ instance BT.Backtest BacktestInput where
 data BacktestResult = BacktestResult
 
 instance TR.ToReport BacktestResult where
-  toReport BacktestResult = TR.toReport (TR.ReportString "Nothing to report.")
-
+  toReport _ =
+    Report.subheader "Backtest"
+    : TR.toReport (TR.ReportString "Nothing to report.")
+    
 --------------------------------------------------------
 
 example :: IO ()
@@ -53,7 +58,8 @@ example = do
 
   let analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
-        Ana.impulseGenerator = IG.noImpulses
+        Ana.title = "Basic Report"
+        , Ana.impulseGenerator = IG.noImpulses
         , Ana.optimizationInput = OptimizationInput
         , Ana.backtestInput = BacktestInput
         }

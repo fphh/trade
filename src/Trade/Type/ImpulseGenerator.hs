@@ -35,17 +35,17 @@ buySell (Signal ps) =
   in Signal (Vec.imap f ps)
 
 -- | This impulse generator looks ahead in time, which is not possible in reality. It yields maximal profit.
-optimalBuySell :: (Ord ohlc) => ImpulseGenerator (PriceSignal ohlc)
-optimalBuySell (Signal ps) =
+optimalBuySell :: (Ord a) => (ohlc -> a) -> ImpulseGenerator (PriceSignal ohlc)
+optimalBuySell trdAt (Signal ps) =
   let qs = Vec.zipWith3 f ps (Vec.tail ps) (Vec.tail (Vec.tail ps))
       f (t0, p0) (t1, p1) (t2, p2)
-        | p0 < p1 && p1 > p2 = (t1, Just Sell)
-        | p0 > p1 && p1 < p2 = (t1, Just Buy)
+        | trdAt p0 < trdAt p1 && trdAt p1 > trdAt p2 = (t1, Just Sell)
+        | trdAt p0 > trdAt p1 && trdAt p1 < trdAt p2 = (t1, Just Buy)
         | otherwise = (t1, Nothing)
         
       (t0, p0) = ps Vec.! 0
       (t1, p1) = ps Vec.! 1
-      x = case p0 < p1 of
+      x = case trdAt p0 < trdAt p1 of
             True -> (t0, Just Buy)
             False -> (t0, Nothing)
 

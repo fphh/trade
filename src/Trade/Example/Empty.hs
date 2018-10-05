@@ -15,7 +15,8 @@ example :: IO ()
 example = do
 
   let analysis = Analysis {
-        impulseGenerator = noImpulses
+        title = "Empty Report"
+        , impulseGenerator = noImpulses
         , optimizationInput = NoOptimization
         , backtestInput = NoBacktest
         }

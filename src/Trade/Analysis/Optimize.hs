@@ -1,9 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Trade.Analysis.Optimize where
 
 import qualified Trade.Report.Report as Report
-import Trade.Analysis.ToReport (ToReport, toReport)
+import Trade.Analysis.ToReport (ToReport, toReport, Optimization(..))
 
 import Trade.Type.ImpulseGenerator (ImpulseGenerator)
 
@@ -23,9 +24,9 @@ instance Optimize NoOptimization where
   type OptTy NoOptimization = NoOptimizationReport
   optimize strat NoOptimization = (strat, NoOptimizationReport)
 
-instance ToReport NoOptimizationReport where
-  toReport NoOptimizationReport =
-    [ Report.text "No optimizations done." ]
+instance ToReport (Optimization NoOptimization NoOptimizationReport) where
+  toReport _ =
+    [ Report.text "No optimization was done." ]
                
 
     
