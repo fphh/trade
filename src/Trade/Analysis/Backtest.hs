@@ -1,6 +1,5 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 module Trade.Analysis.Backtest where
@@ -15,7 +14,7 @@ import Trade.Type.Conversion.Trade2Equity (trade2equity)
 import Trade.Type.Conversion.Impulse2Trade (impulse2trade)
 
 import qualified Trade.Report.Report as Report
-import Trade.Analysis.ToReport (ToReport, toReport)
+import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
 
 equitySignal ::
   UnOHLC a =>
@@ -38,8 +37,8 @@ instance Backtest NoBacktest where
   type ImpGenTy NoBacktest = PriceSignal ()
   backtest _ NoBacktest = NoBacktestReport
 
-instance ToReport NoBacktestReport where
-  toReport NoBacktestReport = [ Report.text "No backtest done." ]
+instance ToReport (BacktestData NoBacktest NoBacktestReport) where
+  toReport _ = [ Report.text "No backtest done." ]
                
 
     

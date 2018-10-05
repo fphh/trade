@@ -32,16 +32,19 @@ instance ToReport ReportString where
   toReport (ReportString str) = [Report.text str]
 
 
-data Optimization optInp optOut = Optimization {
-  optimizationInput :: optInp
-  , optimizationOutput :: optOut
+data OptimizationData optInput optOutput = OptimizationData {
+  optimizationInput :: optInput
+  , optimizationOutput :: optOutput
   }
 
--- data Backtest
+data BacktestData backtestInput backtestOutput = BacktestData {
+  backtestInput :: backtestInput
+  , backtestOutput :: backtestOutput
+  }
   
 report ::
-  (ToReport (Optimization optInp optOut), ToReport backOut) =>
-  String -> Optimization optInp optOut -> backOut -> [Report.ReportItem]
+  (ToReport (OptimizationData optInp optOut), ToReport (BacktestData backInp backOut)) =>
+  String -> OptimizationData optInp optOut -> BacktestData backInp backOut -> [Report.ReportItem]
 report ttle opt back =
   let title = Report.header ttle
       optRep = toReport opt

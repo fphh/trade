@@ -27,7 +27,7 @@ instance Opt.Optimize OptimizationInput where
 
 data OptimizationResult = OptimizationResult
 
-instance TR.ToReport (TR.Optimization OptimizationInput OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
   toReport _ =
     Report.subheader "Optimization"
     : TR.toReport (TR.ReportString "Nothing to optimize.")
@@ -45,7 +45,7 @@ instance BT.Backtest BacktestInput where
 
 data BacktestResult = BacktestResult
 
-instance TR.ToReport BacktestResult where
+instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
   toReport _ =
     Report.subheader "Backtest"
     : TR.toReport (TR.ReportString "Nothing to report.")
