@@ -48,6 +48,13 @@ test2 =
   in Vec.zip (Vec.fromList (jan++feb++mar++apr++may)) (Vec.fromList ys)
 
 
+test_up_down :: Vector (UTCTime, Double)
+test_up_down =
+  let ds = Vec.fromList (jan)
+      ys = take (Vec.length ds) (cycle [1, 2])
+  in Vec.zip ds (Vec.fromList ys)
+
+
 
 test3 :: Vector (UTCTime, Double)
 test3 =
