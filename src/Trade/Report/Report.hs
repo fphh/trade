@@ -8,10 +8,19 @@
 
 module Trade.Report.Report where
 
+import GHC.IO.Handle (hClose)
+
+import qualified Data.UUID as UUID
+import qualified Data.UUID.V4 as UUIDV4
+
+import qualified System.Posix.Files as PosixFiles
+import qualified System.IO.Temp as Temp
+
 import qualified Data.ByteString.Builder as B
 import Data.ByteString.Builder (Builder)
 
 import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Lazy as BSL
 
 import qualified Data.Map as Map
 
@@ -200,8 +209,20 @@ renderRep (Report as is) = do
       bdy = tag2 "body" (attr2str as) (mconcat items)
   return (docType <> html)
 
-toBS :: D.FileOptions -> E.EC l () -> IO ByteString
-toBS = error "toBS is undefined"
+tmpFileName :: IO FilePath
+tmpFileName = UUID.toString <$> UUIDV4.nextRandom
+
+
+
+-- | TODO: use sockets or pipes?
+toBS :: (E.Default l, E.ToRenderable l) => D.FileOptions -> E.EC l () -> IO ByteString
+toBS fopts diagram = Temp.withSystemTempFile "svg-" $
+  \file h -> do
+    hClose h
+    D.toFile fopts file diagram
+    BSL.readFile file
+
+
 
 colors :: [E.AlphaColour Double]
 colors = map E.opaque [ E.red, E.blue, E.green, E.magenta, E.orange, E.darkcyan, E.black, E.gray, E.purple, E.pink ] ++ colors

@@ -17,9 +17,11 @@ instance (ToReport a) => ToReport (Maybe a) where
       Nothing -> []
       Just y -> toReport y
 
-
 instance (ToReport a) => ToReport [a] where
   toReport = concatMap toReport
+
+instance (ToReport a, ToReport b) => ToReport (a, b) where
+  toReport (x, y) = toReport x ++ toReport y
 
 newtype ReportString = ReportString {
   reportString :: String
