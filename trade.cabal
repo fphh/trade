@@ -26,7 +26,6 @@ library
                         Trade.Analysis.Broom
                         Trade.Analysis.Optimize
                         Trade.Analysis.Report
-                        -- Trade.Analysis.Report2
                         Trade.Analysis.Risk
                         Trade.Analysis.ToReport
                         Trade.Analysis.TWR
