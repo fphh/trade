@@ -38,16 +38,16 @@ buySell (Signal ps) =
 optimalBuySell :: (Ord a) => (ohlc -> a) -> ImpulseGenerator (PriceSignal ohlc)
 optimalBuySell trdAt (Signal ps) =
   let qs = Vec.zipWith3 f ps (Vec.tail ps) (Vec.tail (Vec.tail ps))
-      f (t0, p0) (t1, p1) (t2, p2)
+      f (_, p0) (t1, p1) (_, p2)
         | trdAt p0 < trdAt p1 && trdAt p1 > trdAt p2 = (t1, Just Sell)
         | trdAt p0 > trdAt p1 && trdAt p1 < trdAt p2 = (t1, Just Buy)
         | otherwise = (t1, Nothing)
         
-      (t0, p0) = ps Vec.! 0
-      (t1, p1) = ps Vec.! 1
-      x = case trdAt p0 < trdAt p1 of
-            True -> (t0, Just Buy)
-            False -> (t0, Nothing)
+      (ti0, pr0) = ps Vec.! 0
+      (_, pr1) = ps Vec.! 1
+      x = case trdAt pr0 < trdAt pr1 of
+            True -> (ti0, Just Buy)
+            False -> (ti0, Nothing)
 
       (tn, _) = ps Vec.! (Vec.length ps - 1)
       y = (tn, Just Sell)

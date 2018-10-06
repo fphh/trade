@@ -43,6 +43,7 @@ library
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Report
+                        Trade.Report.Style
                         Trade.Test.Data
                         Trade.Timeseries.Algorithm.Intersection
                         Trade.Timeseries.Algorithm.SyncZip

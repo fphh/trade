@@ -32,6 +32,7 @@ import qualified Trade.Report.Curve as Curve
 
 import qualified Trade.Test.Data as TD
 
+import qualified Trade.Report.Style as Style
 
 
 ticker :: PS.PriceSignal OHLC.OHLC
@@ -69,21 +70,6 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
 
 --------------------------------------------------------
 
-axTitle :: (E.PlotValue a) => String -> Report.AxisConfig a
-axTitle str =
-  let al = E.laxis_title E..~ str $ E.def
-  in Report.AxisConfig al E.def Nothing
-  
-impulseAxisConf :: Report.AxisConfig Double
-impulseAxisConf =
-  let al = E.laxis_style E..~ (E.axis_grid_style E..~ (E.line_width E..~ 0 $ E.def) $ E.axis_line_style E..~ (E.line_width E..~ 0 $ E.def) $ E.def)
-           $ E.def
-      av = E.axis_show_labels E..~ False
-           $ E.axis_show_ticks E..~ False
-           $ E.def
-      af = E.scaledAxis E.def (-1,10)
-  in Report.AxisConfig al av (Just af)
-
 data BacktestInput = BacktestInput {
   tradeAt :: OHLC.OHLC -> O.Close
   , initialEquity :: Eqty.Equity
@@ -108,11 +94,11 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) =
     let bts = Vec.map (fmap Eqty.unEquity) (Signal.unSignal es)
         ps' = Vec.map (fmap (O.unOHLC . trdAt)) (Signal.unSignal ps)
-        left = (axTitle "Equity", [Report.lineL "Symbol at Close" ps', Report.lineL "Backtest" bts])
-        right = (impulseAxisConf, [Report.lineR "down buy / up sell" (Curve.curve impSig)])
+        left = (Style.axTitle "Equity", [Report.lineL "Symbol at Close" ps', Report.lineL "Backtest" bts])
+        right = (Style.impulseAxisConf, [Report.lineR "down buy / up sell" (Curve.curve impSig)])
 
     in Report.subheader "Backtest Result"
-       : Report.svgLR (axTitle "Time") left right
+       : Report.svgLR (Style.axTitle "Time") left right
        : TR.toReport (TR.ReportString ("Initial Equity: " ++ show inEq))
        ++ TR.toReport (TR.ReportString ("Starting with equity " ++ show (Vec.head bts)))
        ++ TR.toReport (TR.ReportString ("Ending with equity " ++ show (Vec.last bts)))
