@@ -33,7 +33,7 @@ library
                         Trade.Analysis.Yield
                         Trade.Example.Basic
                         Trade.Example.Empty
-                        Trade.Example.ZigZag
+                        Trade.Example.Simple
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo
                         Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
