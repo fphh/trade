@@ -8,7 +8,7 @@ import Data.Vector (Vector)
 
 import Trade.Algorithm.MovingAverage
 
-import Trade.Render.Svg.Plot
+-- import Trade.Render.Svg.Plot
 
 
 -- Probably slow implementation
@@ -45,9 +45,10 @@ oscillator l v =
     , signal = undefined
     }
 
+{-
 oscillator2Lines :: String -> Int -> Vector Double -> [PlotItem Vector Double]
 oscillator2Lines str l v =
   let StochasticOscillator o tp sig = oscillator l v
   in [ Line (str ++ " osc") o
      , Line (str ++ " tp") tp ]
-
+-}

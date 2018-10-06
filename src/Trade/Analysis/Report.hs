@@ -30,7 +30,6 @@ import Trade.Timeseries.Url (ToUrl, toUrl)
 -- import Trade.Timeseries.Row (RowInterface, closeR)
 import Trade.Timeseries.OHLC
 
-import Trade.Render.Svg.Plot
 
 
 import qualified Trade.Analysis.Broom as Broom

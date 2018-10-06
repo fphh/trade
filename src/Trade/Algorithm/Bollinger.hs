@@ -7,7 +7,7 @@ import Data.Vector (Vector)
 
 import Statistics.Sample (mean, stdDev)
 
-import Trade.Render.Svg.Plot
+-- import Trade.Render.Svg.Plot
 
 import Debug.Trace
 
@@ -41,7 +41,7 @@ bollinger :: BolK -> BolWin -> Vector Double -> Bollinger
 bollinger k n = uncurry (Bollinger n k) . meanStDev n
 
 
-
+{-
 bollinger2Lines :: String -> BolK -> BolWin -> Vector Double -> [PlotItem Vector Double]
 bollinger2Lines str k@(BolK j) n v =
   let Bollinger _ _ ms ss = bollinger k n v
@@ -50,4 +50,4 @@ bollinger2Lines str k@(BolK j) n v =
   in [ Line (str ++ " &mu;") ms
      , Line (str ++ " " ++ show j ++ "&sigma;") (Vec.zipWith (f k') ms ss)
      , Line (str ++ " " ++ show j ++ "&sigma;") (Vec.zipWith (f (-k')) ms ss) ]
-
+-}

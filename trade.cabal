@@ -40,14 +40,6 @@ library
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color
                         Trade.Render.Common.Utils
-                        Trade.Render.Svg.AxisTicks.Real
-                        Trade.Render.Svg.AxisTicks.Time
-                        Trade.Render.Svg.AxisTicks
-                        Trade.Render.Svg.DrawingVec
-                        Trade.Render.Svg.Extent
-                        Trade.Render.Svg.Layout
-                        Trade.Render.Svg.Plot
-                        Trade.Render.Svg.Svg
                         Trade.Report.Curve
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
