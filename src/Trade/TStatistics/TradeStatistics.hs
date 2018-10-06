@@ -20,7 +20,7 @@ import Trade.Type.Trade (TradeList(..), ticker)
 
 import Trade.Analysis.Yield
 
-import Trade.Report.Report
+import qualified Trade.Report.Report as Rep
 
 
 data TradeStatistics = TradeStatistics {
@@ -60,9 +60,9 @@ tradeStatistics extract tl =
   in Map.elems xs
 
 
-stats2para :: TradeStatistics -> ReportItem
+stats2para :: TradeStatistics -> Rep.HtmlIO
 stats2para stats =
-  vtable $
+  Rep.vtable $
   [ "state", show $ state stats]
   : ["cnt", show $ cnt stats]
   : ["mean", printf "%.4f log yield" $ mean stats]

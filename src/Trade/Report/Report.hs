@@ -4,9 +4,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module Trade.Report.Report where
+
+import Control.Monad (liftM, liftM2, ap)
 
 import GHC.IO.Handle (hClose)
 
@@ -29,6 +33,11 @@ import qualified Data.Vector as Vec
 
 import Data.Time.Clock
 
+import qualified Text.Blaze.Html5 as H5
+import Text.Blaze.Html5 (Html, (!))
+import qualified Text.Blaze.Html.Renderer.Utf8 as HtmlBSL
+import qualified Text.Blaze.Html5.Attributes as H5A
+import Text.Blaze.Internal (MarkupM(..))
 
 import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
@@ -37,10 +46,50 @@ import Trade.Render.Common.Attr
 import Trade.Render.Common.Utils
 import Trade.Report.Style
 
+markupValue :: MarkupM a -> a
+markupValue m0 = case m0 of
+  Parent _ _ _ m1           -> markupValue m1
+  CustomParent _ m1         -> markupValue m1
+  Leaf _ _ _ x              -> x
+  CustomLeaf _ _ x          -> x
+  Content _ x               -> x
+  Comment _ x               -> x
+  Append _ m1               -> markupValue m1
+  AddAttribute _ _ _ m1     -> markupValue m1
+  AddCustomAttribute _ _ m1 -> markupValue m1
+  Empty x                   -> x
+
+newtype HtmlT m a = HtmlT { runHtmlT :: m (MarkupM a) }
+
+instance (Monad m) => Functor (HtmlT m) where
+  fmap = liftM
+
+instance (Monad m) => Applicative (HtmlT m) where
+  pure = return
+  (<*>) = ap
+
+instance Monad m => Monad (HtmlT m) where
+  return = HtmlT . return . Empty
+
+  (>>=) :: HtmlT m a -> (a -> HtmlT m b) -> HtmlT m b
+  x >>= f = HtmlT $ do
+    y <- runHtmlT x
+    z <- runHtmlT (f (markupValue y))
+    return (Append y z)
+    
+instance (Monoid (m (MarkupM a))) => Monoid (HtmlT m a) where
+  mempty = HtmlT mempty
+  mappend (HtmlT x) (HtmlT y) = HtmlT (mappend x y)
+  mconcat = HtmlT . mconcat . map runHtmlT
+
+instance (Monoid (m (MarkupM a))) => Semigroup (HtmlT m a) where
+  (<>) = mappend
+
 type LineTy x y = E.EC (E.Layout x y) (E.PlotLines x y)
 type LineTyL x y0 y1 = E.EC (E.LayoutLR x y0 y1) (E.PlotLines x y0)
 type LineTyR x y0 y1 = E.EC (E.LayoutLR x y0 y1) (E.PlotLines x y1)
 
+{-
 data ReportItem =
   forall x y. (E.PlotValue x, E.PlotValue y) => SvgItem Attrs (AxisConfig x) (AxisConfig y, [LineTy x y])
   | forall x y0 y1. (E.PlotValue x, E.PlotValue y0,  RealFloat y0, Show y0, E.PlotValue y1, RealFloat y1, Show y1) => SvgItemLR Attrs (AxisConfig x) (AxisConfig y0, [LineTyL x y0 y1]) (AxisConfig y1, [LineTyR x y0 y1])
@@ -50,21 +99,32 @@ data ReportItem =
   | HSplit Attrs ReportItem ReportItem
   
 data Report = Report Attrs [ReportItem]
+-}
 
-report :: [ReportItem] -> Report
-report = Report (toAs [ "font-family" .= "monospace" ])
+type HtmlIO = HtmlT IO ()
 
+header :: String -> HtmlIO
+header = HtmlT . return . H5.h1 . H5.toHtml
 
-svg :: (E.PlotValue x, E.PlotValue y) => (AxisConfig x) -> (AxisConfig y, [LineTy x y]) -> ReportItem
-svg = SvgItem (toAs [ "clear" .= "both" ])
+subheader :: String -> HtmlIO
+subheader = HtmlT . return . H5.h2 . H5.toHtml
 
-svgLR ::
-  (E.PlotValue x, E.PlotValue y0, RealFloat y0, Show y0, E.PlotValue y1, RealFloat y1, Show y1) =>
-  (AxisConfig x) -> (AxisConfig y0, [LineTyL x y0 y1]) -> (AxisConfig y1, [LineTyR x y0 y1]) -> ReportItem
-svgLR = SvgItemLR (toAs [ "clear" .= "both" ])
+text :: String -> HtmlIO
+text = HtmlT . return . H5.p . H5.toHtml
 
-candle :: String -> [Vector (E.Candle UTCTime Double)] -> ReportItem
-candle str = SvgCandle (toAs [ "clear" .= "both" ]) str . map Vec.toList
+vtable :: [[String]] -> HtmlIO
+vtable _ = HtmlT (return (H5.p (H5.toHtml "vtable not yet implemented")))
+
+renderReport :: HtmlIO -> IO ByteString
+renderReport html = do
+  html' <- runHtmlT html
+  let sty = H5A.style (H5.stringValue "font-family:monospace;padding:20px;")
+      doc = do
+        H5.docType
+        H5.html ! sty $ do
+          H5.body html'
+  return (HtmlBSL.renderHtml doc)
+
 
 class Line a where
   type TyX a :: *
@@ -86,6 +146,71 @@ instance Line ([] (x, y)) where
   line str vs = E.line str [vs]
   lineL str vs = E.line str [vs]
   lineR str vs = E.line str [vs]
+
+
+chartSize :: (Double, Double)
+chartSize = (1000, 520)
+
+
+-- | TODO: use sockets or pipes?
+toBS :: (E.Default l, E.ToRenderable l) => D.FileOptions -> E.EC l () -> IO ByteString
+toBS fopts diagram = Temp.withSystemTempFile "svg-" $
+  \file h -> do
+    hClose h
+    D.toFile fopts file diagram
+    BSL.readFile file
+
+
+candle :: String -> [Vector (E.Candle UTCTime Double)] -> HtmlIO -- IO Builder
+candle label cs = HtmlT $ do
+  
+  let fstyle = E.def {
+        E._font_name = "monospace"
+        , E._font_size = 24
+        , E._font_weight = E.FontWeightNormal
+        }
+
+      df = E.def { D._fo_format = D.SVG_EMBEDDED
+                 , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
+                 , D._fo_size = chartSize }
+
+      lineStyle n colour = E.line_width E..~ n
+                           $ E.line_color E..~ E.opaque colour
+                           $ E.def
+
+      diagram :: E.EC (E.Layout UTCTime Double) (E.PlotCandle UTCTime Double)
+      diagram = E.liftEC $ do
+        E.plot_candle_line_style  E..= lineStyle 1 E.darkblue
+        E.plot_candle_fill E..= True
+        E.plot_candle_rise_fill_style E..= E.solidFillStyle (E.opaque E.white)
+        E.plot_candle_fall_fill_style E..= E.solidFillStyle (E.opaque E.red)
+        E.plot_candle_tick_length E..= 0
+        E.plot_candle_width E..= 2
+
+        mapM_ ((E.plot_candle_values E..=) . Vec.toList) cs
+
+        E.plot_candle_title E..= label
+    
+  fmap H5.unsafeLazyByteString (toBS df (E.plot diagram))
+
+
+
+{-
+
+report :: [ReportItem] -> Report
+report = Report (toAs [ "font-family" .= "monospace" ])
+
+
+svg :: (E.PlotValue x, E.PlotValue y) => (AxisConfig x) -> (AxisConfig y, [LineTy x y]) -> ReportItem
+svg = SvgItem (toAs [ "clear" .= "both" ])
+
+svgLR ::
+  (E.PlotValue x, E.PlotValue y0, RealFloat y0, Show y0, E.PlotValue y1, RealFloat y1, Show y1) =>
+  (AxisConfig x) -> (AxisConfig y0, [LineTyL x y0 y1]) -> (AxisConfig y1, [LineTyR x y0 y1]) -> ReportItem
+svgLR = SvgItemLR (toAs [ "clear" .= "both" ])
+
+candle :: String -> [Vector (E.Candle UTCTime Double)] -> ReportItem
+candle str = SvgCandle (toAs [ "clear" .= "both" ]) str . map Vec.toList
 
 
 class (Show a) => ToText a where
@@ -327,3 +452,6 @@ renderItem (HSplit as i0 i1) = do
   i0' <- renderItem i0
   i1' <- renderItem i1
   return (tag2 "div" (attr2str (Map.union hSplitTable as)) (i0' <> i1'))
+
+-}
+

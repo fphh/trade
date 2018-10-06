@@ -14,7 +14,7 @@ import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.ToReport as TR
 import qualified Trade.Analysis.Optimize as Opt
 
-import qualified Trade.Report.Report as Report
+import qualified Trade.Report.Report as Rep
 
 --------------------------------------------------------
   
@@ -28,9 +28,9 @@ instance Opt.Optimize OptimizationInput where
 data OptimizationResult = OptimizationResult
 
 instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
-  toReport _ =
-    Report.subheader "Optimization"
-    : TR.toReport (TR.ReportString "Nothing to optimize.")
+  toReport _ = do
+    Rep.subheader "Optimization"
+    Rep.text "Nothing to optimize."
     
 --------------------------------------------------------
 
@@ -46,9 +46,9 @@ instance BT.Backtest BacktestInput where
 data BacktestResult = BacktestResult
 
 instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
-  toReport _ =
-    Report.subheader "Backtest"
-    : TR.toReport (TR.ReportString "Nothing to report.")
+  toReport _ = do
+    Rep.subheader "Backtest"
+    Rep.text "Nothing to report."
     
 --------------------------------------------------------
 
@@ -66,7 +66,7 @@ example = do
 
       rep = Ana.analyze analysis
 
-  t <- Report.renderReport (Report.report rep)
+  t <- Rep.renderReport rep
   
   BSL.putStrLn t
 

@@ -13,7 +13,7 @@ import Trade.Type.OHLC (UnOHLC)
 import Trade.Type.Conversion.Trade2Equity (trade2equity)
 import Trade.Type.Conversion.Impulse2Trade (impulse2trade)
 
-import qualified Trade.Report.Report as Report
+import qualified Trade.Report.Report as Rep
 import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
 
 equitySignal ::
@@ -38,7 +38,7 @@ instance Backtest NoBacktest where
   backtest _ NoBacktest = NoBacktestReport
 
 instance ToReport (BacktestData NoBacktest NoBacktestReport) where
-  toReport _ = [ Report.text "No backtest done." ]
-               
+  toReport _ = Rep.text "No backtest done."
+  
 
     

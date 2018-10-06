@@ -23,7 +23,7 @@ example = do
 
       rep = analyze analysis
 
-  t <- Report.renderReport (Report.report rep)
+  t <- Report.renderReport rep
   
   BSL.putStrLn t
   

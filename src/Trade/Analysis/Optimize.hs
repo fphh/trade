@@ -3,7 +3,7 @@
 
 module Trade.Analysis.Optimize where
 
-import qualified Trade.Report.Report as Report
+import qualified Trade.Report.Report as Rep
 import Trade.Analysis.ToReport (ToReport, toReport, OptimizationData(..))
 
 import Trade.Type.ImpulseGenerator (ImpulseGenerator)
@@ -25,8 +25,5 @@ instance Optimize NoOptimization where
   optimize strat NoOptimization = (strat, NoOptimizationReport)
 
 instance ToReport (OptimizationData NoOptimization NoOptimizationReport) where
-  toReport _ =
-    [ Report.text "No optimization was done." ]
-               
-
+  toReport _ = Rep.text "No optimization was done."
     

@@ -8,9 +8,8 @@ import qualified Data.Vector as Vec
 
 import qualified Statistics.Sample as Sample
 
-import qualified Trade.Report.Report as R
+import qualified Trade.Report.Report as Rep
 
-import Debug.Trace
 
 dds :: [Double] -> [(Int, Double)]
 dds xs =
@@ -78,10 +77,10 @@ drawdownStats xs =
     , stdDevDrawdown = Sample.stdDev vlosses
     }
 
-reportDrawdownStats :: [Double] -> R.ReportItem
+reportDrawdownStats :: [Double] -> Rep.HtmlIO
 reportDrawdownStats xs =
   let DrawdownStatistics{..} = drawdownStats xs
-  in R.vtable $
+  in Rep.vtable $
      ["Number of wins", show numOfWins]
      : ["Win max", show maxWin]
      : ["Win mean", show meanWin]

@@ -27,7 +27,7 @@ import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.ToReport as TR
 import qualified Trade.Analysis.Optimize as Opt
 
-import qualified Trade.Report.Report as Report
+import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Curve as Curve
 
 import qualified Trade.Test.Data as TD
@@ -51,7 +51,7 @@ instance Opt.Optimize OptimizationInput where
 data OptimizationResult = OptimizationResult
 
 instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
-  toReport (TR.OptimizationData (OptimizationInput ps) OptimizationResult) =
+  toReport (TR.OptimizationData (OptimizationInput ps) OptimizationResult) = do
     let toC (t, ohlc) =
           let c = E.Candle t
                 (O.unOHLC $ OHLC.ohlcLow ohlc)
@@ -62,10 +62,12 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
           in c
         toCandle (Signal.Signal cs) = Vec.map toC cs
 
-    in Report.subheader "Optimization Input"
-       : Report.candle "Symbol" [toCandle ps]
-       : Report.subheader "Optimization Result"
-       : TR.toReport (TR.ReportString "No optimization has been done.")
+
+    
+    Rep.subheader "Optimization Input"
+    Rep.candle "Symbol" [toCandle ps]
+    Rep.subheader "Optimization Result"
+    Rep.text "No optimization has been done."
 
 
 --------------------------------------------------------
@@ -91,17 +93,17 @@ data BacktestResult = BacktestResult {
   }
 
 instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
-  toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) =
+  toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let bts = Vec.map (fmap Eqty.unEquity) (Signal.unSignal es)
         ps' = Vec.map (fmap (O.unOHLC . trdAt)) (Signal.unSignal ps)
-        left = (Style.axTitle "Equity", [Report.lineL "Symbol at Close" ps', Report.lineL "Backtest" bts])
-        right = (Style.impulseAxisConf, [Report.lineR "down buy / up sell" (Curve.curve impSig)])
+        -- left = (Style.axTitle "Equity", [Rep.lineL "Symbol at Close" ps', Rep.lineL "Backtest" bts])
+        -- right = (Style.impulseAxisConf, [Rep.lineR "down buy / up sell" (Curve.curve impSig)])
 
-    in Report.subheader "Backtest Result"
-       : Report.svgLR (Style.axTitle "Time") left right
-       : TR.toReport (TR.ReportString ("Initial Equity: " ++ show inEq))
-       ++ TR.toReport (TR.ReportString ("Starting with equity " ++ show (Vec.head bts)))
-       ++ TR.toReport (TR.ReportString ("Ending with equity " ++ show (Vec.last bts)))
+    Rep.subheader "Backtest Result"
+    -- Report.svgLR (Style.axTitle "Time") left right
+    Rep.text ("Initial Equity: " ++ show inEq)
+    Rep.text ("Starting with equity " ++ show (Vec.head bts))
+    Rep.text ("Ending with equity " ++ show (Vec.last bts))
 
 --------------------------------------------------------
 
@@ -122,7 +124,6 @@ example = do
 
       rep = Ana.analyze analysis
 
-  t <- Report.renderReport (Report.report rep)
+  t <- Rep.renderReport rep
   
   BSL.putStrLn t
-

@@ -3,33 +3,29 @@
 
 module Trade.Analysis.ToReport where
 
-import qualified Trade.Report.Report as Report
+import Control.Monad
 
+import qualified Trade.Report.Report as Rep
+
+import Data.Monoid ((<>), mempty)
 
 class ToReport a where
-  toReport :: a -> [Report.ReportItem]
+  toReport :: a -> Rep.HtmlIO
 
 instance ToReport () where
-  toReport _ = []
+  toReport _ = mempty
 
 instance (ToReport a) => ToReport (Maybe a) where
   toReport x =
     case x of
-      Nothing -> []
+      Nothing -> mempty
       Just y -> toReport y
 
 instance (ToReport a) => ToReport [a] where
-  toReport = concatMap toReport
+  toReport = mconcat . map toReport
 
 instance (ToReport a, ToReport b) => ToReport (a, b) where
-  toReport (x, y) = toReport x ++ toReport y
-
-newtype ReportString = ReportString {
-  reportString :: String
-  } deriving (Show)
-
-instance ToReport ReportString where
-  toReport (ReportString str) = [Report.text str]
+  toReport (x, y) = toReport x <> toReport y
 
 
 data OptimizationData optInput optOutput = OptimizationData {
@@ -44,11 +40,10 @@ data BacktestData backtestInput backtestOutput = BacktestData {
   
 report ::
   (ToReport (OptimizationData optInp optOut), ToReport (BacktestData backInp backOut)) =>
-  String -> OptimizationData optInp optOut -> BacktestData backInp backOut -> [Report.ReportItem]
+  String -> OptimizationData optInp optOut -> BacktestData backInp backOut -> Rep.HtmlIO
 report ttle opt back =
-  let title = Report.header ttle
+  let title = Rep.header ttle
       optRep = toReport opt
       backRep = toReport back
-  in title : optRep ++ backRep
-
+  in liftM3 (\a b c -> a <> b <> c) title optRep backRep
 

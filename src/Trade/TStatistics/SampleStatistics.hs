@@ -13,7 +13,7 @@ import qualified Statistics.Sample as Sample
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Report.Report
+import qualified Trade.Report.Report as Rep
 
 import Prelude hiding (maximum, minimum)
 
@@ -58,9 +58,9 @@ sampleStatistics as =
     }
 
 
-stats2para :: SampleStatistics -> ReportItem
+stats2para :: SampleStatistics -> Rep.HtmlIO
 stats2para stats =
-  vtable $
+  Rep.vtable $
   ["mean", show $ mean stats]
   : ["stdDev", show $ stdDev stats]
   : ["variance", show $ variance stats]
