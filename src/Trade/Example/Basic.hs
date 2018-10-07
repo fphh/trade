@@ -40,7 +40,7 @@ instance BT.Backtest BacktestInput where
   type BackTy BacktestInput = BacktestResult
   type ImpGenTy BacktestInput = PS.PriceSignal ()
 
-  backtest impGen bt = BacktestResult
+  backtest _ _ = BacktestResult
 
 
 data BacktestResult = BacktestResult

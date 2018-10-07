@@ -39,7 +39,6 @@ library
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color
                         Trade.Render.Common.Utils
-                        Trade.Report.Backend
                         Trade.Report.Curve
                         Trade.Report.NumberedList
                         Trade.Report.Pretty

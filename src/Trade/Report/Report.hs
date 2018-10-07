@@ -1,11 +1,6 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 module Trade.Report.Report where
@@ -71,7 +66,7 @@ instance (Monad m) => Applicative (HtmlT m) where
 instance Monad m => Monad (HtmlT m) where
   return = HtmlT . return . Empty
 
-  (>>=) :: HtmlT m a -> (a -> HtmlT m b) -> HtmlT m b
+  -- (>>=) :: HtmlT m a -> (a -> HtmlT m b) -> HtmlT m b
   x >>= f = HtmlT $ do
     y <- runHtmlT x
     z <- runHtmlT (f (markupValue y))
@@ -84,22 +79,6 @@ instance (Monoid (m (MarkupM a))) => Monoid (HtmlT m a) where
 
 instance (Monoid (m (MarkupM a))) => Semigroup (HtmlT m a) where
   (<>) = mappend
-
-type LineTy x y = E.EC (E.Layout x y) (E.PlotLines x y)
-type LineTyL x y0 y1 = E.EC (E.LayoutLR x y0 y1) (E.PlotLines x y0)
-type LineTyR x y0 y1 = E.EC (E.LayoutLR x y0 y1) (E.PlotLines x y1)
-
-{-
-data ReportItem =
-  forall x y. (E.PlotValue x, E.PlotValue y) => SvgItem Attrs (AxisConfig x) (AxisConfig y, [LineTy x y])
-  | forall x y0 y1. (E.PlotValue x, E.PlotValue y0,  RealFloat y0, Show y0, E.PlotValue y1, RealFloat y1, Show y1) => SvgItemLR Attrs (AxisConfig x) (AxisConfig y0, [LineTyL x y0 y1]) (AxisConfig y1, [LineTyR x y0 y1])
-  | SvgCandle Attrs String [[E.Candle UTCTime Double]]
-  | Paragraph Attrs String
-  | Table Attrs Attrs Attrs [[String]]
-  | HSplit Attrs ReportItem ReportItem
-  
-data Report = Report Attrs [ReportItem]
--}
 
 type HtmlIO = HtmlT IO ()
 
@@ -125,32 +104,29 @@ renderReport html = do
           H5.body html'
   return (HtmlBSL.renderHtml doc)
 
+data L a = L String a
 
 class Line a where
   type TyX a :: *
   type TyY a :: *
-  line :: String -> a -> LineTy (TyX a) (TyY a)
-  lineL :: String -> a -> LineTyL (TyX a) (TyY a) z
-  lineR :: String -> a -> LineTyR (TyX a) z (TyY a)
+  line :: String -> a -> L [(TyX a, TyY a)]
 
 instance Line (Vector (x, y)) where
   type TyX (Vector (x, y)) = x
   type TyY (Vector (x, y)) = y
-  line str vs = E.line str [Vec.toList vs]
-  lineL str vs = E.line str [Vec.toList vs]
-  lineR str vs = E.line str [Vec.toList vs]
+  line str vs = L str (Vec.toList vs)
 
-instance Line ([] (x, y)) where
-  type TyX ([] (x, y)) = x
-  type TyY ([] (x, y)) = y
-  line str vs = E.line str [vs]
-  lineL str vs = E.line str [vs]
-  lineR str vs = E.line str [vs]
-
+instance Line [(x, y)] where
+  type TyX [(x, y)] = x
+  type TyY [(x, y)] = y
+  line str vs = L str vs
 
 chartSize :: (Double, Double)
 chartSize = (1000, 520)
 
+
+colors :: [E.AlphaColour Double]
+colors = map E.opaque [ E.red, E.blue, E.green, E.magenta, E.orange, E.darkcyan, E.black, E.gray, E.purple, E.pink ] ++ colors
 
 -- | TODO: use sockets or pipes?
 toBS :: (E.Default l, E.ToRenderable l) => D.FileOptions -> E.EC l () -> IO ByteString
@@ -161,7 +137,7 @@ toBS fopts diagram = Temp.withSystemTempFile "svg-" $
     BSL.readFile file
 
 
-candle :: String -> [Vector (E.Candle UTCTime Double)] -> HtmlIO -- IO Builder
+candle :: String -> [Vector (E.Candle UTCTime Double)] -> HtmlIO
 candle label cs = HtmlT $ do
   
   let fstyle = E.def {
@@ -194,6 +170,53 @@ candle label cs = HtmlT $ do
   fmap H5.unsafeLazyByteString (toBS df (E.plot diagram))
 
 
+chartLR ::
+  (E.PlotValue x0, E.PlotValue y1, E.PlotValue y2) =>
+  AxisConfig x0 ->
+  (AxisConfig y1, [L [(x0, y1)]]) ->
+  (AxisConfig y2, [L [(x0, y2)]]) ->
+  HtmlIO
+chartLR acx (acL, lsL) (acR, lsR) = HtmlT $ do
+  let fstyle = E.def {
+        E._font_name = "monospace"
+        , E._font_size = 24
+        , E._font_weight = E.FontWeightNormal
+        }
+
+      df = E.def {
+        D._fo_format = D.SVG_EMBEDDED
+        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
+        , D._fo_size = chartSize
+        }
+
+      diagram = do
+        E.setColors colors
+
+        E.layoutlr_x_axis E..= axisLayout acx
+        E.layoutlr_bottom_axis_visibility E..= axisVisibility acx
+        case axisFn acx of
+          Just x -> E.layoutlr_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        E.layoutlr_left_axis E..= axisLayout acL
+        E.layoutlr_left_axis_visibility E..= axisVisibility acL
+        case axisFn acL of
+          Just x -> E.layoutlr_left_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        E.layoutlr_right_axis E..= axisLayout acR
+        E.layoutlr_right_axis_visibility E..= axisVisibility acR
+        case axisFn acR of
+          Just x -> E.layoutlr_right_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        let toLine (L str vs) = E.line str [vs]
+  
+        mapM_ E.plotLeft (map toLine lsL)
+        mapM_ E.plotRight (map toLine lsR)
+
+  fmap H5.unsafeLazyByteString (toBS df diagram)
+
 
 {-
 
@@ -203,15 +226,6 @@ report = Report (toAs [ "font-family" .= "monospace" ])
 
 svg :: (E.PlotValue x, E.PlotValue y) => (AxisConfig x) -> (AxisConfig y, [LineTy x y]) -> ReportItem
 svg = SvgItem (toAs [ "clear" .= "both" ])
-
-svgLR ::
-  (E.PlotValue x, E.PlotValue y0, RealFloat y0, Show y0, E.PlotValue y1, RealFloat y1, Show y1) =>
-  (AxisConfig x) -> (AxisConfig y0, [LineTyL x y0 y1]) -> (AxisConfig y1, [LineTyR x y0 y1]) -> ReportItem
-svgLR = SvgItemLR (toAs [ "clear" .= "both" ])
-
-candle :: String -> [Vector (E.Candle UTCTime Double)] -> ReportItem
-candle str = SvgCandle (toAs [ "clear" .= "both" ]) str . map Vec.toList
-
 
 class (Show a) => ToText a where
   toText :: a -> ReportItem
@@ -307,26 +321,6 @@ renderRep (Report as is) = do
       bdy = tag2 "body" (attr2str as) (mconcat items)
   return (docType <> html)
 
-tmpFileName :: IO FilePath
-tmpFileName = UUID.toString <$> UUIDV4.nextRandom
-
-
-
--- | TODO: use sockets or pipes?
-toBS :: (E.Default l, E.ToRenderable l) => D.FileOptions -> E.EC l () -> IO ByteString
-toBS fopts diagram = Temp.withSystemTempFile "svg-" $
-  \file h -> do
-    hClose h
-    D.toFile fopts file diagram
-    BSL.readFile file
-
-
-
-colors :: [E.AlphaColour Double]
-colors = map E.opaque [ E.red, E.blue, E.green, E.magenta, E.orange, E.darkcyan, E.black, E.gray, E.purple, E.pink ] ++ colors
-
-chartSize :: (Double, Double)
-chartSize = (1000, 520)
 
 lines2str :: (E.PlotValue x, E.PlotValue y) => AxisConfig x -> (AxisConfig y, [LineTy x y]) -> IO Builder
 lines2str acx (acy, ls) = do
@@ -360,98 +354,6 @@ lines2str acx (acy, ls) = do
         mapM_ E.plot ls
   
   fmap B.lazyByteString (toBS df diagram)
-
-lines2strLR ::
-  (E.PlotValue x
-  , E.PlotValue y0, RealFloat y0, Show y0, Num y0
-  , E.PlotValue y1, RealFloat y1, Show y1, Num y1) =>
-  AxisConfig x -> (AxisConfig y0, [LineTyL x y0 y1]) -> (AxisConfig y1, [LineTyR x y0 y1]) -> IO Builder
-lines2strLR acx (acL, lsL) (acR, lsR) = do
-  let fstyle = E.def {
-        E._font_name = "monospace"
-        , E._font_size = 24
-        , E._font_weight = E.FontWeightNormal
-        }
-
-      df = E.def {
-        D._fo_format = D.SVG_EMBEDDED
-        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-        , D._fo_size = chartSize
-        }
-
-      diagram = do
-        E.setColors colors
-
-        E.layoutlr_x_axis E..= axisLayout acx
-        E.layoutlr_bottom_axis_visibility E..= axisVisibility acx
-        case axisFn acx of
-          Just x -> E.layoutlr_x_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-
-        E.layoutlr_left_axis E..= axisLayout acL
-        E.layoutlr_left_axis_visibility E..= axisVisibility acL
-        case axisFn acL of
-          Just x -> E.layoutlr_left_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-
-        E.layoutlr_right_axis E..= axisLayout acR
-        E.layoutlr_right_axis_visibility E..= axisVisibility acR
-        case axisFn acR of
-          Just x -> E.layoutlr_right_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-
-        mapM_ E.plotLeft lsL
-        mapM_ E.plotRight lsR
-
-  fmap B.lazyByteString (toBS df diagram)
-
-
-toCandle :: String -> [[E.Candle UTCTime Double]] -> IO Builder
-toCandle label cs = do
-  
-  let fstyle = E.def {
-        E._font_name = "monospace"
-        , E._font_size = 24
-        , E._font_weight = E.FontWeightNormal
-        }
-
-      df = E.def { D._fo_format = D.SVG_EMBEDDED
-                 , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-                 , D._fo_size = chartSize }
-
-      lineStyle n colour = E.line_width E..~ n
-                           $ E.line_color E..~ E.opaque colour
-                           $ E.def
-
-      diagram :: E.EC (E.Layout UTCTime Double) (E.PlotCandle UTCTime Double)
-      diagram = E.liftEC $ do
-        E.plot_candle_line_style  E..= lineStyle 1 E.darkblue
-        E.plot_candle_fill E..= True
-        E.plot_candle_rise_fill_style E..= E.solidFillStyle (E.opaque E.white)
-        E.plot_candle_fall_fill_style E..= E.solidFillStyle (E.opaque E.red)
-        E.plot_candle_tick_length E..= 0
-        E.plot_candle_width E..= 2
-
-        mapM_ (E.plot_candle_values E..=) cs
-
-        E.plot_candle_title E..= label
-    
-  fmap B.lazyByteString (toBS df (E.plot diagram))
-
-
-renderItem :: ReportItem -> IO Builder
-renderItem (SvgItem as acx ls) = lines2str acx ls >>= return . tag2 "div" (attr2str as) 
-renderItem (SvgItemLR as acy ls0 ls1) =
-  lines2strLR acy ls0 ls1 >>= return . tag2 "div" (attr2str as)
-renderItem (SvgCandle as label ls) = toCandle label ls >>= return . tag2 "div" (attr2str as) 
-renderItem (Paragraph as str) =
-  return (tag2 "div" (attr2str as) (B.stringUtf8 str))
-renderItem (Table tas ras cas table) =
-  return (tag2 "div" (attr2str (Map.union divTable tas)) (mapRow ras cas table))
-renderItem (HSplit as i0 i1) = do
-  i0' <- renderItem i0
-  i1' <- renderItem i1
-  return (tag2 "div" (attr2str (Map.union hSplitTable as)) (i0' <> i1'))
 
 -}
 

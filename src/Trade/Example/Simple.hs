@@ -96,11 +96,11 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let bts = Vec.map (fmap Eqty.unEquity) (Signal.unSignal es)
         ps' = Vec.map (fmap (O.unOHLC . trdAt)) (Signal.unSignal ps)
-        -- left = (Style.axTitle "Equity", [Rep.lineL "Symbol at Close" ps', Rep.lineL "Backtest" bts])
-        -- right = (Style.impulseAxisConf, [Rep.lineR "down buy / up sell" (Curve.curve impSig)])
+        left = (Style.axTitle "Equity", [Rep.line "Symbol at Close" ps', Rep.line "Backtest" bts])
+        right = (Style.impulseAxisConf, [Rep.line "down buy / up sell" (Curve.curve impSig)])
 
     Rep.subheader "Backtest Result"
-    -- Report.svgLR (Style.axTitle "Time") left right
+    Rep.chartLR (Style.axTitle "Time") left right
     Rep.text ("Initial Equity: " ++ show inEq)
     Rep.text ("Starting with equity " ++ show (Vec.head bts))
     Rep.text ("Ending with equity " ++ show (Vec.last bts))
