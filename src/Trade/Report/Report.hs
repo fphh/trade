@@ -6,6 +6,7 @@
 module Trade.Report.Report where
 
 import Control.Monad (liftM, liftM2, ap)
+import Control.Monad.Trans (MonadIO, MonadTrans, liftIO, lift)
 
 import GHC.IO.Handle (hClose)
 
@@ -79,6 +80,12 @@ instance (Monoid (m (MarkupM a))) => Monoid (HtmlT m a) where
 
 instance (Monoid (m (MarkupM a))) => Semigroup (HtmlT m a) where
   (<>) = mappend
+
+instance MonadTrans HtmlT where
+    lift = HtmlT . (liftM Empty)
+
+instance MonadIO m => MonadIO (HtmlT m) where
+    liftIO = lift . liftIO
 
 type HtmlIO = HtmlT IO ()
 
@@ -171,10 +178,10 @@ candle label cs = HtmlT $ do
 
 
 chartLR ::
-  (E.PlotValue x0, E.PlotValue y1, E.PlotValue y2) =>
-  AxisConfig x0 ->
-  (AxisConfig y1, [L [(x0, y1)]]) ->
-  (AxisConfig y2, [L [(x0, y2)]]) ->
+  (E.PlotValue x, E.PlotValue y1, E.PlotValue y2) =>
+  AxisConfig x ->
+  (AxisConfig y1, [L [(x, y1)]]) ->
+  (AxisConfig y2, [L [(x, y2)]]) ->
   HtmlIO
 chartLR acx (acL, lsL) (acR, lsR) = HtmlT $ do
   let fstyle = E.def {
@@ -217,6 +224,41 @@ chartLR acx (acL, lsL) (acR, lsR) = HtmlT $ do
 
   fmap H5.unsafeLazyByteString (toBS df diagram)
 
+
+chart :: (E.PlotValue x, E.PlotValue y) => AxisConfig x -> (AxisConfig y, [L [(x, y)]]) -> HtmlIO
+chart acx (acy, ls) = HtmlT $ do
+  let fstyle = E.def {
+        E._font_name = "monospace"
+        , E._font_size = 24
+        , E._font_weight = E.FontWeightNormal
+        }
+
+      df = E.def {
+        D._fo_format = D.SVG_EMBEDDED
+        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
+        , D._fo_size = chartSize
+        }
+           
+      diagram = do
+        E.setColors colors
+        
+        E.layout_x_axis E..= axisLayout acx
+        E.layout_bottom_axis_visibility E..= axisVisibility acx
+        case axisFn acx of
+          Just x -> E.layout_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        E.layout_y_axis E..= axisLayout acy
+        E.layout_left_axis_visibility E..= axisVisibility acy
+        case axisFn acy of
+          Just x -> E.layout_y_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+          
+        let toLine (L str vs) = E.line str [vs]
+
+        mapM_ (E.plot . toLine) ls
+        
+  fmap H5.unsafeLazyByteString (toBS df diagram)
 
 {-
 
