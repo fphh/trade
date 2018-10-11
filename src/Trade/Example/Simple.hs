@@ -42,15 +42,15 @@ ticker =
   
 --------------------------------------------------------
 
-data OptimizationInput = OptimizationInput (PS.PriceSignal OHLC.OHLC)
+data OptimizationInput ohlc = OptimizationInput (PS.PriceSignal ohlc)
 
 instance Opt.Optimize OptimizationInput where
-  type OptTy OptimizationInput = OptimizationResult
-  optimize strat (OptimizationInput _) = (strat, OptimizationResult)
+  type OptReportTy OptimizationInput = OptimizationResult
+  optimize strat optInput = (strat optInput, OptimizationResult)
 
 data OptimizationResult = OptimizationResult
 
-instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData OHLC.OHLC OptimizationInput OptimizationResult) where
   toReport (TR.OptimizationData (OptimizationInput ps) OptimizationResult) = do
     let toC (t, ohlc) =
           let c = E.Candle t
@@ -72,15 +72,14 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
 
 --------------------------------------------------------
 
-data BacktestInput = BacktestInput {
-  tradeAt :: OHLC.OHLC -> O.Close
+data BacktestInput ohlc = BacktestInput {
+  tradeAt :: ohlc -> O.Close
   , initialEquity :: Eqty.Equity
-  , pricesInput :: PS.PriceSignal OHLC.OHLC
+  , pricesInput :: PS.PriceSignal ohlc
   }
     
 instance BT.Backtest BacktestInput where
-  type BackTy BacktestInput = BacktestResult
-  type ImpGenTy BacktestInput = PS.PriceSignal OHLC.OHLC
+  type BacktestReportTy BacktestInput = BacktestResult
 
   backtest optStrat (BacktestInput trdAt initEqty ps) =
     let impSig = optStrat ps
@@ -92,7 +91,7 @@ data BacktestResult = BacktestResult {
   , eqties :: ES.EquitySignal
   }
 
-instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData OHLC.OHLC BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let bts = Vec.map (fmap Eqty.unEquity) (Signal.unSignal es)
         ps' = Vec.map (fmap (O.unOHLC . trdAt)) (Signal.unSignal ps)
@@ -114,10 +113,10 @@ example = do
   let equity = Eqty.Equity 1
       trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis OptimizationInput BacktestInput
+      analysis :: Ana.Analysis OHLC.OHLC OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optimalBuySell trdAt
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput trdAt equity ticker
         }

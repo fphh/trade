@@ -32,6 +32,7 @@ library
                         Trade.Analysis.Yield
                         Trade.Example.Basic
                         Trade.Example.Empty
+                        Trade.Example.ReplayingTrades
                         Trade.Example.Simple
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo
@@ -44,7 +45,10 @@ library
                         Trade.Report.Pretty
                         Trade.Report.Report
                         Trade.Report.Style
+                        Trade.Test.BlackScholes
                         Trade.Test.Data
+                        Trade.Test.Time
+                        Trade.Test.Wiener
                         Trade.Timeseries.Algorithm.Intersection
                         Trade.Timeseries.Algorithm.SyncZip
                         Trade.Timeseries.Binance.Binance

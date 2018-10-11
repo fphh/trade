@@ -18,34 +18,32 @@ import qualified Trade.Report.Report as Rep
 
 --------------------------------------------------------
   
-data OptimizationInput = OptimizationInput
+data OptimizationInput ohlc = OptimizationInput
 
 instance Opt.Optimize OptimizationInput where
-  type OptTy OptimizationInput = OptimizationResult
-  optimize strat OptimizationInput = (strat, OptimizationResult)
+  type OptReportTy OptimizationInput = OptimizationResult
+  optimize strat OptimizationInput = (strat OptimizationInput, OptimizationResult)
 
 
 data OptimizationResult = OptimizationResult
 
-instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData ohlc OptimizationInput OptimizationResult) where
   toReport _ = do
     Rep.subheader "Optimization"
     Rep.text "Nothing to optimize."
     
 --------------------------------------------------------
 
-data BacktestInput = BacktestInput
+data BacktestInput ohlc = BacktestInput
 
 instance BT.Backtest BacktestInput where
-  type BackTy BacktestInput = BacktestResult
-  type ImpGenTy BacktestInput = PS.PriceSignal ()
-
+  type BacktestReportTy BacktestInput = BacktestResult
   backtest _ _ = BacktestResult
 
 
 data BacktestResult = BacktestResult
 
-instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
   toReport _ = do
     Rep.subheader "Backtest"
     Rep.text "Nothing to report."
@@ -56,10 +54,10 @@ example :: IO ()
 example = do
   
 
-  let analysis :: Ana.Analysis OptimizationInput BacktestInput
+  let analysis :: Ana.Analysis () OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "Basic Report"
-        , Ana.impulseGenerator = IG.noImpulses
+        , Ana.impulseGenerator = IG.optImpGen2impGen IG.noImpulses
         , Ana.optimizationInput = OptimizationInput
         , Ana.backtestInput = BacktestInput
         }

@@ -4,7 +4,7 @@
 
 module Trade.Analysis.Backtest where
 
-import Trade.Type.ImpulseGenerator (ImpulseGenerator)
+import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator)
 import Trade.Type.Signal.Price (PriceSignal)
 import Trade.Type.Signal.Impulse (ImpulseSignal)
 import Trade.Type.Signal.Equity (EquitySignal)
@@ -23,21 +23,20 @@ equitySignal tradeAt eqty impSig qs =
   let ts = impulse2trade qs impSig
   in trade2equity tradeAt eqty ts
   
-class Backtest a where
-  type BackTy a :: *
-  type ImpGenTy a :: *
-  backtest :: ImpulseGenerator (ImpGenTy a) -> a -> BackTy a
+class Backtest btInput where
+  type BacktestReportTy btInput :: *
+  
+  backtest :: OptimizedImpulseGenerator ohlc -> btInput ohlc -> BacktestReportTy btInput
 
-data NoBacktest = NoBacktest
+data NoBacktest ohlc = NoBacktest
 
 data NoBacktestReport = NoBacktestReport
 
 instance Backtest NoBacktest where
-  type BackTy NoBacktest = NoBacktestReport
-  type ImpGenTy NoBacktest = PriceSignal ()
+  type BacktestReportTy NoBacktest = NoBacktestReport
   backtest _ NoBacktest = NoBacktestReport
 
-instance ToReport (BacktestData NoBacktest NoBacktestReport) where
+instance ToReport (BacktestData ohlc NoBacktest NoBacktestReport) where
   toReport _ = Rep.text "No backtest done."
   
 
