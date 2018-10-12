@@ -5,7 +5,7 @@
 
 module Trade.Analysis.Analysis where
 
--- import Text.Blaze.Html5 (Html)
+import Control.Monad.Trans (liftIO)
 
 import Trade.Type.ImpulseGenerator (ImpulseGenerator)
 
@@ -26,20 +26,12 @@ data Analysis ohlc optInp backInp = Analysis {
 
 -- ---------------------------------------------
 
-{-
-analyze ::
-  (Optimize (optInp ohlc), Backtest (backInp ohlc)
-  , ToReport (OptimizationData (optInp ohlc) (OptReportTy (optInp ohlc)))
-  , ToReport (BacktestData (backInp ohlc) (BacktestReportTy (backInp ohlc)) ohlc)) =>
-  Analysis ohlc optInp backInp -> Rep.HtmlIO
-  -}
-
 analyze ::
   (Optimize optInp, Backtest backInp
   , ToReport (OptimizationData ohlc optInp (OptReportTy optInp))
   , ToReport (BacktestData ohlc backInp (BacktestReportTy backInp))) =>
   Analysis ohlc optInp backInp -> Rep.HtmlIO
-analyze (Analysis ttle strat optInp backInp) =
-  let (optStrat, optOut) = optimize strat optInp
-      backOut = backtest optStrat backInp
-  in report ttle (OptimizationData optInp optOut) (BacktestData backInp backOut)
+analyze (Analysis ttle strat optInp backInp) = do
+  (optStrat, optOut) <- liftIO (optimize strat optInp)
+  let backOut = backtest optStrat backInp
+  report ttle (OptimizationData optInp optOut) (BacktestData backInp backOut)

@@ -22,7 +22,7 @@ data OptimizationInput ohlc = OptimizationInput
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  optimize strat OptimizationInput = (strat OptimizationInput, OptimizationResult)
+  optimize strat OptimizationInput = return (strat OptimizationInput, OptimizationResult)
 
 
 data OptimizationResult = OptimizationResult

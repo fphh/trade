@@ -46,7 +46,7 @@ data OptimizationInput ohlc = OptimizationInput (PS.PriceSignal ohlc)
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  optimize strat optInput = (strat optInput, OptimizationResult)
+  optimize strat optInput = return (strat optInput, OptimizationResult)
 
 data OptimizationResult = OptimizationResult
 

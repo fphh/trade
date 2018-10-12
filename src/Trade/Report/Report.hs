@@ -95,11 +95,23 @@ header = HtmlT . return . H5.h1 . H5.toHtml
 subheader :: String -> HtmlIO
 subheader = HtmlT . return . H5.h2 . H5.toHtml
 
+subsubheader :: String -> HtmlIO
+subsubheader = HtmlT . return . H5.h3 . H5.toHtml
+
 text :: String -> HtmlIO
 text = HtmlT . return . H5.p . H5.toHtml
 
+htable :: [[String]] -> HtmlIO
+htable ss = (HtmlT . return) $
+  let sty = H5A.style (H5.stringValue "min-width:200px;text-align:left;")
+  in H5.table $ do
+       H5.thead $ do
+         H5.tr $ mapM_ ((H5.th ! sty) . H5.toHtml) (head ss)
+       H5.tbody $ do
+         mapM_ (H5.tr . mapM_ (H5.td . H5.toHtml)) (tail ss)
+  
 vtable :: [[String]] -> HtmlIO
-vtable _ = HtmlT (return (H5.p (H5.toHtml "vtable not yet implemented")))
+vtable _ = HtmlT $ return $ H5.p (H5.toHtml "vtable not yet implemented")
 
 renderReport :: HtmlIO -> IO ByteString
 renderReport html = do
@@ -127,6 +139,7 @@ instance Line [(x, y)] where
   type TyX [(x, y)] = x
   type TyY [(x, y)] = y
   line str vs = L str vs
+
 
 chartSize :: (Double, Double)
 chartSize = (1000, 520)

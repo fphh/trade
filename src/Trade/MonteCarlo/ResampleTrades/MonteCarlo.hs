@@ -14,7 +14,6 @@ import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 import Trade.Analysis.Yield
 import Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
 
-
 startingOffsets :: NormTradeList -> (Int -> Bars)
 startingOffsets (NormTradeList tl) =
   let f (NormTrade _ _ ys) = Vec.imap (\i _ -> Bars i) ys

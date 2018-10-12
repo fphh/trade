@@ -13,7 +13,7 @@ import Trade.Type.Impulse (Impulse(..))
 
 type OptimizedImpulseGenerator ohlc = PriceSignal ohlc -> ImpulseSignal
 
-type ImpulseGenerator inp ohlc = inp ohlc -> OptimizedImpulseGenerator ohlc
+type ImpulseGenerator optInput ohlc = optInput ohlc -> OptimizedImpulseGenerator ohlc
 
 optImpGen2impGen :: OptimizedImpulseGenerator ohlc -> ImpulseGenerator inp ohlc
 optImpGen2impGen ig = \_ -> ig

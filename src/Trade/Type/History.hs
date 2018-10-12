@@ -25,16 +25,17 @@ instance Functor History where
 
 
 instance Curve (History Yield) where
-  type Ty (History Yield) = Int
+  type CurveTy (History Yield) = Int
   curve = fmap (\(BarNo x, Yield y) -> (x, y)) . unHistory
 
 instance Curve (History Equity) where
-  type Ty (History Equity) = Int
+  type CurveTy (History Equity) = Int
   curve = fmap (\(BarNo x, Equity y) -> (x, y)) . unHistory
 
 
 -- | TODO: Testing (yield2equity . equity2yield) == id
 yield2equity :: StepFunc -> Equity -> History Yield -> History Equity
+-- yield2equity _ _ (History []) = error "Trade.Type.History.yield2equity: empty History"
 yield2equity step eqty (History hist) =
   let f (_, e) (t1, y) = (t1, step e y)
       (t0, y0) = shead "normHistory2normEquity" hist

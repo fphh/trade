@@ -2,6 +2,9 @@
 
 module Trade.Type.Broom where
 
+
+import Data.Vector (Vector)
+
 import Trade.Type.Yield (Yield)
 import Trade.Type.Equity (Equity)
 import Trade.Type.History (History)
@@ -22,13 +25,11 @@ instance Functor Broom where
 
 
 -- | Turn a broom into a chart with `n` curves.
-broom2chart :: (Curve history) => Int -> Broom history -> a -- [Rep.LineTy (Ty history) Double]
-broom2chart = error "broom2chart: not defined"
-{-
+broom2chart :: (Curve history) => Int -> Broom history -> [Report.L [(CurveTy history, Double)]]
 broom2chart n (Broom xs) =
   let f i x = Report.line (show i) (curve x)
   in zipWith f [0 :: Integer ..] (take n xs)
--}
+
 
 -- | TODO: Testing (yield2equity . equity2yield) == id
 yield2equity ::

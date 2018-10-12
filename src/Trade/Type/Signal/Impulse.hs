@@ -26,7 +26,7 @@ type ImpulseSignal = Signal UTCTime (Maybe Impulse)
 
 
 instance Curve ImpulseSignal where
-  type Ty ImpulseSignal = UTCTime
+  type CurveTy ImpulseSignal = UTCTime
   
   curve (Signal is) =
     let f (t, Just Sell) = Vec.fromList [(t, 0), (t, 1), (t, 0)]
