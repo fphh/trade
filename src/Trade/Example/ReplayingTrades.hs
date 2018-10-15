@@ -69,7 +69,6 @@ import qualified Trade.Report.Curve as Curve
 
 import qualified Trade.Test.Time as T
 import qualified Trade.Test.Data as TD
-import qualified Trade.Test.Wiener as Wiener
 
 import qualified Trade.Report.Style as Style
 

@@ -11,12 +11,6 @@ import Data.Word (Word32)
 
 import Trade.Type.Equity (Equity(..))
 
-
-import Trade.Test.Time (year)
-
-import Trade.Test.Wiener (wienerDt, wienerDtDeterministic, Dt(..))
-
-
 import qualified System.Random.MWC as MWC
 import qualified System.Random.MWC.Distributions as Dist
 
