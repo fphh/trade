@@ -48,7 +48,6 @@ library
                         Trade.Test.BlackScholes
                         Trade.Test.Data
                         Trade.Test.Time
-                        Trade.Test.Wiener
                         Trade.Timeseries.Algorithm.Intersection
                         Trade.Timeseries.Algorithm.SyncZip
                         Trade.Timeseries.Binance.Binance

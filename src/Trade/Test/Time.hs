@@ -4,6 +4,7 @@
 module Trade.Test.Time where
 
 import Data.Time.Clock (UTCTime)
+import Data.Time.Calendar (isLeapYear)
 
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
@@ -17,25 +18,29 @@ import Debug.Trace
 
 
 
-months :: [Vector UTCTime]
-months@([jan, feb, mar, apr, may, jun, jul, aug, sept, okt, nov, dez]) =
+months :: Integer -> [Vector UTCTime]
+months y =
   let f m d =
-        let g d = parseDate (printf "2017-%02d-%02d" m d)
+        let g d = parseDate (printf "%d-%02d-%02d" y m d)
         in case Vec.sequence (Vec.map g (Vec.generate d (+1))) of
              Nothing -> error "Trade.Test.Time.months"
              Just xs -> xs
-  in zipWith f [1::Int ..12] [31 :: Int, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-year :: Vector UTCTime
-year = Vec.concat months
-
-days :: Int -> Vector UTCTime
-days n | n <= 365 = Vec.take n year
-days _ = error "Trade.Test.Time.days: not enough days in year"
+      febN = case isLeapYear y of
+               True -> 29
+               False -> 28
+               
+  in zipWith f [1::Int ..12] [31 :: Int, febN, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 
---jan = Vec.fromList $ map ((\(Just t) -> t) . parseDate . ("2019-01-"++) . printf "%02d") [1 :: Integer .. 31]
---feb = Vec.fromList $ map ((\(Just t) -> t) . parseDate . ("2019-02-"++) . printf "%02d") [1 :: Integer .. 28]
---mar = Vec.fromList $ map ((\(Just t) -> t) . parseDate . ("2019-03-"++) . printf "%02d") [1 :: Integer .. 31]
---apr = Vec.fromList $ map ((\(Just t) -> t) . parseDate . ("2019-04-"++) . printf "%02d") [1 :: Integer .. 30]
---may = Vec.fromList $ map ((\(Just t) -> t) . parseDate . ("2019-05-"++) . printf "%02d") [1 :: Integer .. 31]
+months2017 :: [Vector UTCTime]
+months2017@([jan2017, feb2017, mar2017, apr2017, may2017, jun2017, jul2017, aug2017, sept2017, okt2017, nov2017, dez2017]) = months 2017
+
+year :: Integer -> Vector UTCTime
+year y = Vec.concat (months y)
+
+years :: Vector UTCTime
+years = Vec.concat (map year [2010 .. 2017])
+
+yearsN :: Integer -> Vector UTCTime
+yearsN n = Vec.concat (map year [2017-n+1 .. 2017])

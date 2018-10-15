@@ -7,11 +7,8 @@ import Data.Time.Clock (UTCTime)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Timeseries.Time
+import Trade.Test.Time (jan2017, feb2017, mar2017, apr2017, may2017)
 
-import Trade.Test.Time (jan, feb, mar, apr, may)
-
-import Debug.Trace
 
 test1 :: Vector (UTCTime, Double)
 test1 =
@@ -19,13 +16,13 @@ test1 =
       down = [18, 17 .. 5]
       up2 = [4 .. 14]
       down2 = [15, 14 .. 2]
-      -- up3 = [3 .. 20]
-      -- down3 = [21, 20 .. 1]
+      up3 = [3 .. 20]
+      down3 = [21, 20 .. 1]
 
 
       
-      ys = up ++ down -- ++ up2 ++ down2 -- ++ up3 ++ down3
-  in Vec.zip (Vec.concat [jan, feb, mar, apr, may]) (Vec.fromList ys)
+      ys = up ++ down ++ up2 ++ down2 ++ up3 ++ down3
+  in Vec.zip (Vec.concat [jan2017, feb2017, mar2017, apr2017, may2017]) (Vec.fromList ys)
 
 test2 :: Vector (UTCTime, Double)
 test2 =
@@ -39,24 +36,20 @@ test2 =
       down4 = [ 18, 17 .. 10]
       
       ys = up ++ down ++ up2 ++ down2 ++ up3 ++ down3 ++ up4 ++ down4
-  in Vec.zip (Vec.concat [jan, feb, mar, apr, may]) (Vec.fromList ys)
+  in Vec.zip (Vec.concat [jan2017, feb2017, mar2017, apr2017, may2017]) (Vec.fromList ys)
 
 
 test_up_down :: Vector (UTCTime, Double)
 test_up_down =
-  let ys = take (Vec.length jan) (cycle [1, 2])
-  in Vec.zip jan (Vec.fromList ys)
+  let ys = take (Vec.length jan2017) (cycle [1::Double, 2])
+  in Vec.zip jan2017 (Vec.fromList ys)
 
 
 
 test3 :: Vector (UTCTime, Double)
 test3 =
-  let up = [5 .. 15]
-      down = [15, 14 .. 1]
+  let down = [15 , 14 .. 1]
       up2 = [1 .. 10]
       down2 = [10, 9 .. 2]
-
-
-      
-      ys = down ++ up2 ++ down2 ++ up2 -- ++ down2 -- ++ up3 ++ down3
-  in Vec.zip (Vec.concat [jan, feb, mar, apr, may]) (Vec.fromList ys)
+      ys = down ++ up2 ++ down2 ++ up2
+  in Vec.zip (Vec.concat [jan2017, feb2017, mar2017, apr2017, may2017]) (Vec.fromList ys)

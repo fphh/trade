@@ -1,12 +1,15 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module Trade.Report.Report where
 
-import Control.Monad (liftM, liftM2, ap)
+import Control.Monad (liftM, liftM2, ap, join, void)
 import Control.Monad.Trans (MonadIO, MonadTrans, liftIO, lift)
+
+import Control.Applicative (liftA2)
 
 import GHC.IO.Handle (hClose)
 
@@ -111,7 +114,20 @@ htable ss = (HtmlT . return) $
          mapM_ (H5.tr . mapM_ (H5.td . H5.toHtml)) (tail ss)
   
 vtable :: [[String]] -> HtmlIO
-vtable _ = HtmlT $ return $ H5.p (H5.toHtml "vtable not yet implemented")
+vtable ss = (HtmlT . return) $
+  let sty = H5A.style (H5.stringValue "min-width:200px;text-align:left;")
+  in H5.table $ do
+       H5.thead $ do
+         return ()
+       H5.tbody $ do
+         mapM_ (H5.tr . mapM_ ((H5.td ! sty) . H5.toHtml)) ss
+
+divs :: [HtmlIO] -> HtmlIO
+divs ps =
+  let sty = H5A.style (H5.stringValue "margin-bottom:16px;")
+      f (HtmlT p) = HtmlT $ p >>= return . (H5.div ! sty)
+  in mapM_ f ps
+
 
 renderReport :: HtmlIO -> IO ByteString
 renderReport html = do
