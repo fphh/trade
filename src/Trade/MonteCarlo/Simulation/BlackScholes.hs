@@ -1,6 +1,6 @@
 
 
-module Trade.Test.BlackScholes where
+module Trade.MonteCarlo.Simulation.BlackScholes where
 
 import Data.Time.Clock (UTCTime)
 

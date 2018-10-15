@@ -37,6 +37,7 @@ library
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo
                         Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
+                        Trade.MonteCarlo.Simulation.BlackScholes
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color
                         Trade.Render.Common.Utils
@@ -45,7 +46,6 @@ library
                         Trade.Report.Pretty
                         Trade.Report.Report
                         Trade.Report.Style
-                        Trade.Test.BlackScholes
                         Trade.Test.Data
                         Trade.Test.Time
                         Trade.Timeseries.Algorithm.Intersection

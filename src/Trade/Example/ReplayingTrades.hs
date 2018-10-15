@@ -62,13 +62,13 @@ import qualified Trade.TStatistics.TradeStatistics as TStat
 
 import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
 import qualified Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList as ONTL
+import qualified Trade.MonteCarlo.Simulation.BlackScholes as Black
 
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Curve as Curve
 
 import qualified Trade.Test.Time as T
 import qualified Trade.Test.Data as TD
-import qualified Trade.Test.BlackScholes as Black
 import qualified Trade.Test.Wiener as Wiener
 
 import qualified Trade.Report.Style as Style
@@ -248,8 +248,8 @@ example = do
   
   let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
 
-  let mu = Black.Mu 0.1
-      sigma = Black.Sigma 0.5
+  let mu = Black.Mu (0.1)
+      sigma = Black.Sigma 0.1
       start = Eqty.Equity 100
       seed = 53
 
