@@ -160,10 +160,11 @@ instance (OHLC.OHLCInterface ohlc) =>
         showFrac (F.Fraction fr) = printf "Frac %.02f" fr
 
 
-        g (F.Fraction fr, Dist.CDF vs) =
-          [printf "%.02f" fr, maybe "n/a" (printf "%.02f%%" . (100*) . fst)  (Vec.find ((>1) . snd) vs)]
-        twrTable = ["Fraction f", "P(TWR <= 1)"] : map g twrs
-
+        g mdf cmp (F.Fraction fr, Dist.CDF vs) =
+          [printf "%.02f" fr, maybe "n/a" (printf "%.02f%%" . (100*) . mdf . fst)  (Vec.find (cmp . snd) vs)]
+        twrTable10 = ["Fraction f", "P(TWR <= 1)"] : map (g id (not . (<= 1.0))) twrs
+        twrTable12 = ["Fraction f", "P(TWR > 1.2)"] : map (g (1-) (> 1.2)) twrs
+    
         h (F.Fraction fr, Dist.CDF vs) =
           [printf "%.02f" fr, maybe "n/a" (printf "%.02f%%" . (100*) . (1-) . fst)  (Vec.find ((>0.2) . snd) vs)]
         riskTable = ["Fraction f", "P(max. drawdown > 20%)"] : map h rsks
@@ -189,10 +190,12 @@ instance (OHLC.OHLCInterface ohlc) =>
 
     Rep.subsubheader "Terminal wealth relative"
     Rep.chart (Style.axTitle "Percent") (Style.axTitle "TWR", map (\(fr, cdf) -> Rep.line (showFrac fr) cdf) twrs)
-    Rep.text ("The probability that terminal wealth relative is less than factor 1.0 at fraction f:")
-    Rep.htable twrTable
+    Rep.text ("The probability that terminal wealth relative is less than factor 1.0, respectivly greater than 1.2, at fraction f:")
+    Rep.horizontal $ do
+      Rep.floatLeft $ Rep.htable twrTable10
+      Rep.floatLeft $ Rep.htable twrTable12
 
-    Rep.subsubheader "Risk"
+    Rep.subsubheader "Risk of Drawdown"
     Rep.chart (Style.axTitle "Percent") (Style.axTitle "Drawdown", map (\(fr, cdf) -> Rep.line (showFrac fr) cdf) rsks)
     Rep.text ("Risk of max. drawdown greater than 20% at fraction f:")
     Rep.htable riskTable
@@ -247,8 +250,8 @@ example = do
   
   let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
 
-  let mu = Black.Mu (0.1)
-      sigma = Black.Sigma 0.1
+  let mu = Black.Mu 0.1
+      sigma = Black.Sigma 0.15
       start = Eqty.Equity 100
       seed = 53
 

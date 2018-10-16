@@ -92,14 +92,20 @@ instance MonadIO m => MonadIO (HtmlT m) where
 
 type HtmlIO = HtmlT IO ()
 
+liftHtml :: (MarkupM a -> MarkupM b) -> HtmlT IO a -> HtmlT IO b
+liftHtml f (HtmlT h) = HtmlT $ h >>= return . f
+
+clear :: H5.Attribute
+clear = H5A.style (H5.stringValue "") -- "clear:both;")
+
 header :: String -> HtmlIO
-header = HtmlT . return . H5.h1 . H5.toHtml
+header = HtmlT . return . (H5.h1 ! clear) . H5.toHtml
 
 subheader :: String -> HtmlIO
-subheader = HtmlT . return . H5.h2 . H5.toHtml
+subheader = HtmlT . return . (H5.h2 ! clear) . H5.toHtml
 
 subsubheader :: String -> HtmlIO
-subsubheader = HtmlT . return . H5.h3 . H5.toHtml
+subsubheader = HtmlT . return . (H5.h3 ! clear) . H5.toHtml
 
 text :: String -> HtmlIO
 text = HtmlT . return . H5.p . H5.toHtml
@@ -125,9 +131,22 @@ vtable ss = (HtmlT . return) $
 divs :: [HtmlIO] -> HtmlIO
 divs ps =
   let sty = H5A.style (H5.stringValue "margin-bottom:16px;")
-      f (HtmlT p) = HtmlT $ p >>= return . (H5.div ! sty)
+      f = liftHtml (H5.div ! sty)
   in mapM_ f ps
 
+
+horizontal :: HtmlIO -> HtmlIO
+horizontal = liftHtml $ \x -> do
+  let sty = H5A.style (H5.stringValue "clear:both")
+  H5.div x
+  H5.div ! sty $ mempty
+
+
+floatLeft :: HtmlIO -> HtmlIO
+floatLeft = liftHtml $
+  let sty = H5A.style (H5.stringValue "float:left;")
+  in H5.div ! sty
+  
 
 renderReport :: HtmlIO -> IO ByteString
 renderReport html = do
