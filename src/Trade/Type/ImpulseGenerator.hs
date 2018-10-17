@@ -27,9 +27,11 @@ type ImpulseGenerator optInput ohlc = optInput ohlc -> OptimizedImpulseGenerator
 optImpGen2impGen :: OptimizedImpulseGenerator ohlc -> ImpulseGenerator inp ohlc
 optImpGen2impGen ig = \_ -> ig
 
+-- | Do nothing
 noImpulses :: OptimizedImpulseGenerator ohlc
 noImpulses (Signal ps) = Signal (Vec.map (fmap (const Nothing)) ps)
 
+-- | Classic buy and hold
 buyAndHold :: OptimizedImpulseGenerator ohlc
 buyAndHold (Signal ps) =
   let f 0 = Just Buy
