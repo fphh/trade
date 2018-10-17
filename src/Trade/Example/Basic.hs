@@ -6,7 +6,6 @@ module Trade.Example.Basic where
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
-import qualified Trade.Type.Signal.Price as PS
 import qualified Trade.Type.ImpulseGenerator as IG
 
 import qualified Trade.Analysis.Backtest as BT

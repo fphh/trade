@@ -4,12 +4,21 @@ module Trade.Type.ImpulseGenerator where
 
 import qualified Data.Vector as Vec
 
+import qualified Trade.Type.OHLC as O
 
 import Trade.Type.Signal.Price (PriceSignal)
 import Trade.Type.Signal.Impulse (ImpulseSignal)
 import Trade.Type.Signal (Signal(..))
 
+import qualified Trade.Type.Signal.Impulse as IS
+
 import Trade.Type.Impulse (Impulse(..))
+
+import qualified Trade.Timeseries.Algorithm.Intersection as Inter
+import qualified Trade.Timeseries.OHLC as OHLC
+
+import qualified Trade.Algorithm.MovingAverage as MAvg
+
 
 type OptimizedImpulseGenerator ohlc = PriceSignal ohlc -> ImpulseSignal
 
@@ -58,3 +67,19 @@ optimalBuySell trdAt (Signal ps) =
 
                         
   in Signal (Vec.snoc (Vec.cons x qs) y)
+
+impulsesFromMovingAverages ::
+  (OHLC.OHLCInterface ohlc) => Int -> Int -> OptimizedImpulseGenerator ohlc
+impulsesFromMovingAverages j k (Signal ps) =
+  let f (t, x) = (t, O.unClose $ OHLC.ohlcClose x)
+
+      qs = Vec.map f ps
+
+      avgJ = MAvg.mavgTime j qs
+      avgK = MAvg.mavgTime k qs
+
+      tradeSignal Inter.Down = Just Buy
+      tradeSignal Inter.Up = Just Sell
+      tradeSignal Inter.NoIntersection = Nothing
+
+  in IS.toImpulseSignal (\_ _ -> tradeSignal) (Inter.intersection avgJ avgK)

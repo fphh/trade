@@ -23,13 +23,13 @@ normTrade2stats (NormTradeList tl) =
   in TS.tradeStatistics (Vec.fromList (map f tl))
 -}
 
-sortTradeByState :: TradeList ohlc -> Map State (TradeList ohlc)
-sortTradeByState (TradeList tl) =
+sortTradesByState :: TradeList ohlc -> Map State (TradeList ohlc)
+sortTradesByState (TradeList tl) =
   let f acc t@(Trade stat _) = Map.insertWith (++) stat [t] acc 
   in fmap TradeList (List.foldl' f Map.empty tl)
 
-sortNormTradeByState :: NormTradeList -> Map State NormTradeList
-sortNormTradeByState (NormTradeList tl) =
+sortNormTradesByState :: NormTradeList -> Map State NormTradeList
+sortNormTradesByState (NormTradeList tl) =
   let f acc t@(NormTrade stat _ _) = Map.insertWith (++) stat [t] acc 
   in fmap NormTradeList (List.foldl' f Map.empty tl)
 

@@ -35,7 +35,6 @@ library
                         Trade.Example.Simple
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.Broom
-                        Trade.MonteCarlo.ResampleTrades.MonteCarlo
                         Trade.MonteCarlo.Simulation.BlackScholes
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color

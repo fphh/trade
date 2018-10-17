@@ -18,7 +18,7 @@ import Trade.Type.OHLC (UnOHLC, unOHLC)
 import Trade.Type.State (State)
 import Trade.Type.Trade (TradeList(..), ticker)
 
-import Trade.Analysis.Yield
+import Trade.Analysis.Yield (sortTradesByState)
 
 import qualified Trade.Report.Report as Rep
 
@@ -35,7 +35,7 @@ data TradeStatistics = TradeStatistics {
 
 tradeStatistics :: (UnOHLC b) => (ohlc -> b) -> TradeList ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
-  let m = sortTradeByState tl
+  let m = sortTradesByState tl
 
       day = 60*60*24
 

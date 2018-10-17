@@ -29,8 +29,8 @@ import qualified Trade.Type.Trade as Trade
 
 import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.Signal.Price as PS
-import qualified Trade.Type.Signal.Impulse as IS
 import qualified Trade.Type.Signal.Equity as ES
+import qualified Trade.Type.Signal.Impulse as IS
 
 
 import qualified Trade.Type.Conversion.Impulse2Trade as I2T
@@ -39,9 +39,6 @@ import qualified Trade.Type.Conversion.Trade2NormTrade as T2NT
 import qualified Trade.Type.ImpulseGenerator as IG
 
 import qualified Trade.Timeseries.OHLC as OHLC
-import qualified Trade.Timeseries.Algorithm.Intersection as Inter
-
-import qualified Trade.Algorithm.MovingAverage as MAvg
 
 import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.Analysis as Ana
@@ -69,23 +66,6 @@ import qualified Trade.Report.Style as Style
 import Debug.Trace
 
 --------------------------------------------------------
-
-generateImpulseSignal ::
-  (OHLC.OHLCInterface ohlc) =>
-  Int -> Int -> PS.PriceSignal ohlc -> IS.ImpulseSignal
-generateImpulseSignal j k (Signal.Signal ps) =
-  let f (t, x) = (t, O.unClose $ OHLC.ohlcClose x)
-
-      qs = Vec.map f ps
-
-      avgJ = MAvg.mavgTime j qs
-      avgK = MAvg.mavgTime k qs
-
-      tradeSignal Inter.Down = Just Imp.Buy
-      tradeSignal Inter.Up = Just Imp.Sell
-      tradeSignal Inter.NoIntersection = Nothing
-
-  in IS.toImpulseSignal (\_ _ -> tradeSignal) (Inter.intersection avgJ avgK)
 
 data OptimizationInput ohlc = OptimizationInput {
   optSample :: PS.PriceSignal ohlc
@@ -258,7 +238,7 @@ example = do
       analysis :: Ana.Analysis OHLC.OHLC OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (generateImpulseSignal 19 5)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromMovingAverages 19 5)
         , Ana.optimizationInput = OptimizationInput {
             optSample = sample
             , optTradeAt = trdAt

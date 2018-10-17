@@ -62,7 +62,6 @@ import qualified Trade.Analysis.Risk as Risk
 import qualified Trade.TStatistics.SampleStatistics as SStat
 import qualified Trade.TStatistics.TradeStatistics as TStat
 
-import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
 import qualified Trade.MonteCarlo.ResampleTrades.Broom as RTBroom
 
 
