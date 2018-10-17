@@ -38,6 +38,7 @@ buyAndHold (Signal ps) =
   in Signal (Vec.imap (\i -> fmap (const (f i))) ps)
 
 
+-- | Buy if index in signal is even, sell if odd
 buySell :: OptimizedImpulseGenerator ohlc
 buySell (Signal ps) =
   let f i (t, _) =
@@ -68,6 +69,7 @@ optimalBuySell trdAt (Signal ps) =
                         
   in Signal (Vec.snoc (Vec.cons x qs) y)
 
+-- | Constuct impulses with crossing of two moving averages
 impulsesFromMovingAverages ::
   (OHLC.OHLCInterface ohlc) => Int -> Int -> OptimizedImpulseGenerator ohlc
 impulsesFromMovingAverages j k (Signal ps) =
@@ -85,7 +87,7 @@ impulsesFromMovingAverages j k (Signal ps) =
   in IS.toImpulseSignal (\_ _ -> tradeSignal) (Inter.intersection avgJ avgK)
 
 
-
+-- | Buy after n times up, sell after m times down.
 buySellAfterNM ::
   (OHLC.OHLCInterface ohlc) => Int -> Int -> OptimizedImpulseGenerator ohlc
 buySellAfterNM b s (Signal ps) =
