@@ -60,8 +60,6 @@ import qualified Trade.Analysis.Risk as Risk
 import qualified Trade.TStatistics.SampleStatistics as SStat
 import qualified Trade.TStatistics.TradeStatistics as TStat
 
-import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
-import qualified Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList as ONTL
 import qualified Trade.MonteCarlo.Simulation.BlackScholes as Black
 
 import qualified Trade.Report.Report as Rep
@@ -258,6 +256,7 @@ example = do
   samp <- Black.blackScholesDet seed (T.yearsN 4) start mu sigma
   
   let sample = Signal.Signal (Vec.map (fmap f) samp)
+  -- let sample = Signal.Signal (Vec.map (fmap f) TD.test2)
 
   let trdAt = OHLC.ohlcClose
   
@@ -274,7 +273,7 @@ example = do
             , stepFunc = SF.stepFuncNoCommission -- stepFuncNoCommissionFullFraction
             , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0] -- [0.1, 0.2 .. 2]
             }
-        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 100) sample
+        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 10) sample
         }
 
       rep = Ana.analyze analysis

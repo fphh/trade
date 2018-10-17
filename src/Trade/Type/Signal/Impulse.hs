@@ -35,12 +35,6 @@ instance Curve ImpulseSignal where
     in join (Vec.map f is)
 
 
-
--- impulse2line :: ImpulseArgs -> ImpulseSignal -> Report.LineTyR UTCTime z Double
--- impulse2line args imps = Report.lineR "buy/sell" (impulse2line' args imps)
-
-
-
 toImpulseSignal ::
   (Int -> UTCTime -> evt -> Maybe Impulse)
   -> Vector (UTCTime, evt)
@@ -55,7 +49,10 @@ bhImpulse _ _ _ _ = Nothing
 bhImpulseSignal :: Vector (UTCTime, evt) -> ImpulseSignal
 bhImpulseSignal vs = toImpulseSignal (bhImpulse (Vec.length vs - 1)) vs
 
+
+-- | TODO: This is not very correct!
 simplifyImpulseSignal :: ImpulseSignal -> ImpulseSignal
+simplifyImpulseSignal _ = error "Trade.Type.Signal.Impulse.simplifyImpulseSignal is not very correct"
 simplifyImpulseSignal (Signal is) =
   let js = Vec.toList is
       cs = List.groupBy (\x y -> snd x == snd y) js

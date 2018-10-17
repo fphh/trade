@@ -18,7 +18,7 @@ import Trade.Type.State (State(..))
 import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
 import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
-import Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
+import qualified Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList as ONTL
 
 
 normHistoryBroom :: Bars -> Int -> NormTradeList -> IO (Broom (History Yield))
@@ -33,5 +33,5 @@ normHistoryBroom bs n ntl = do
       
   offsTls <- replicateM n (MC.randomYieldSignal ntl' soffs)
 
-  return (Broom (map (offsettedNormTradeList2normHistory bs) offsTls))
+  return (Broom (map (ONTL.offsettedNormTradeList2normHistory bs) offsTls))
 
