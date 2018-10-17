@@ -23,9 +23,7 @@ library
                         Trade.Algorithm.StochasticOscillator
                         Trade.Analysis.Analysis
                         Trade.Analysis.Backtest
-                        Trade.Analysis.Broom
                         Trade.Analysis.Optimize
-                        Trade.Analysis.Report
                         Trade.Analysis.Risk
                         Trade.Analysis.ToReport
                         Trade.Analysis.TWR
@@ -36,6 +34,7 @@ library
                         Trade.Example.ReplayingTrades
                         Trade.Example.Simple
                         Trade.Help.SafeTail
+                        Trade.MonteCarlo.ResampleTrades.Broom
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo
                         Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
                         Trade.MonteCarlo.Simulation.BlackScholes

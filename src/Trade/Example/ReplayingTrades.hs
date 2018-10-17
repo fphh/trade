@@ -53,12 +53,13 @@ import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.ToReport as TR
 import qualified Trade.Analysis.Optimize as Opt
-import qualified Trade.Analysis.Broom as ABroom
 import qualified Trade.Analysis.TWR as TWR
 import qualified Trade.Analysis.Risk as Risk
 
 import qualified Trade.TStatistics.SampleStatistics as SStat
 import qualified Trade.TStatistics.TradeStatistics as TStat
+
+import qualified Trade.MonteCarlo.ResampleTrades.Broom as RTBroom
 
 import qualified Trade.MonteCarlo.Simulation.BlackScholes as Black
 
@@ -110,7 +111,7 @@ instance Opt.Optimize OptimizationInput where
     let optStrat = strat optInp
         ts = I2T.impulse2trade (optSample optInp) (optStrat (optSample optInp))
         nts = T2NT.trade2normTrade (fmap (optTradeAt optInp) ts)
-    yieldHistBroom <- ABroom.normHistoryBroom (forcastHorizon optInp) (mcN optInp) nts
+    yieldHistBroom <- RTBroom.normHistoryBroom (forcastHorizon optInp) (mcN optInp) nts
 
     let sf = stepFunc optInp
         eq = optInitialEquity optInp

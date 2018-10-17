@@ -1,5 +1,5 @@
 
-module Trade.Analysis.Broom where
+module Trade.MonteCarlo.ResampleTrades.Broom where
 
 import qualified Data.List as List
 
