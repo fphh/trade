@@ -12,7 +12,7 @@ import Trade.Type.StepFunc (StepFunc)
 import qualified Trade.Type.History as Hist
 
 import Trade.Report.Curve -- (Curve, curve)
-import qualified Trade.Report.Report as Report
+import qualified Trade.Report.Line as Line
 
 -- | A broom is a list of histories that we can analyse for profit and risk.
 newtype Broom history = Broom {
@@ -25,9 +25,9 @@ instance Functor Broom where
 
 
 -- | Turn a broom into a chart with `n` curves.
-broom2chart :: (Curve history) => Int -> Broom history -> [Report.L [(CurveTy history, Double)]]
+broom2chart :: (Curve history) => Int -> Broom history -> [Line.L [(CurveTy history, Double)]]
 broom2chart n (Broom xs) =
-  let f i x = Report.line (show i) (curve x)
+  let f i x = Line.line (show i) (curve x)
   in zipWith f [0 :: Integer ..] (take n xs)
 
 

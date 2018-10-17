@@ -40,6 +40,7 @@ library
                         Trade.Render.Common.Color
                         Trade.Render.Common.Utils
                         Trade.Report.Curve
+                        Trade.Report.Line
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Report
@@ -104,6 +105,7 @@ library
                      , cassava
                      , statistics
                      , mwc-random
+                     , primitive
                      , Chart
                      , Chart-diagrams
                      , uuid

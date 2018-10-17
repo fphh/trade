@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 module Trade.Type.Signal where
@@ -5,14 +7,24 @@ module Trade.Type.Signal where
 import Data.Vector (Vector)
 import qualified Data.Vector as Vec
 
-import Trade.Report.NumberedList
-import Trade.Report.Pretty
+import Trade.Report.NumberedList (ToNumberedList, toNumberedList)
+import Trade.Report.Pretty (Pretty)
+import Trade.Report.Line (Line(..), L(..))
 
 
 
-newtype Signal t x = Signal {
-  unSignal :: Vector (t, x)
+newtype Signal t y = Signal {
+  unSignal :: Vector (t, y)
   } deriving (Show, Read)
+
+instance Functor (Signal t) where
+  fmap f (Signal ps) = Signal (Vec.map (fmap f) ps)
+
+instance Line (Signal x y) where
+  type TyX (Signal x y) = x
+  type TyY (Signal x y) = y
+  line str (Signal ps) = L str (Vec.toList ps)
+  
 
 instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where
   toNumberedList (Signal pps) = toNumberedList pps

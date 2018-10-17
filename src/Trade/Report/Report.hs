@@ -6,34 +6,24 @@
 
 module Trade.Report.Report where
 
-import Control.Monad (liftM, liftM2, ap, join, void)
+import Control.Monad (liftM, ap)
 import Control.Monad.Trans (MonadIO, MonadTrans, liftIO, lift)
-
-import Control.Applicative (liftA2)
 
 import GHC.IO.Handle (hClose)
 
-import qualified Data.UUID as UUID
-import qualified Data.UUID.V4 as UUIDV4
-
-import qualified System.Posix.Files as PosixFiles
 import qualified System.IO.Temp as Temp
-
-import qualified Data.ByteString.Builder as B
-import Data.ByteString.Builder (Builder)
 
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BSL
 
-import qualified Data.Map as Map
 
-import Data.Vector (Vector)
 import qualified Data.Vector as Vec
+import Data.Vector (Vector)
 
 import Data.Time.Clock
 
 import qualified Text.Blaze.Html5 as H5
-import Text.Blaze.Html5 (Html, (!))
+import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html.Renderer.Utf8 as HtmlBSL
 import qualified Text.Blaze.Html5.Attributes as H5A
 import Text.Blaze.Internal (MarkupM(..))
@@ -41,9 +31,8 @@ import Text.Blaze.Internal (MarkupM(..))
 import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
 
-import Trade.Render.Common.Attr
-import Trade.Render.Common.Utils
 import Trade.Report.Style
+import Trade.Report.Line (L(..))
 
 markupValue :: MarkupM a -> a
 markupValue m0 = case m0 of
@@ -157,24 +146,6 @@ renderReport html = do
         H5.html ! sty $ do
           H5.body html'
   return (HtmlBSL.renderHtml doc)
-
-data L a = L String a
-
-class Line a where
-  type TyX a :: *
-  type TyY a :: *
-  line :: String -> a -> L [(TyX a, TyY a)]
-
-instance Line (Vector (x, y)) where
-  type TyX (Vector (x, y)) = x
-  type TyY (Vector (x, y)) = y
-  line str vs = L str (Vec.toList vs)
-
-instance Line [(x, y)] where
-  type TyX [(x, y)] = x
-  type TyY [(x, y)] = y
-  line str vs = L str vs
-
 
 chartSize :: (Double, Double)
 chartSize = (1000, 520)

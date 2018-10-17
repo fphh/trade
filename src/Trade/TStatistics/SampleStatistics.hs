@@ -1,4 +1,6 @@
-
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Trade.TStatistics.SampleStatistics where
 
@@ -7,6 +9,8 @@ import Text.Printf (printf)
 
 import Data.Time.Clock (UTCTime)
 
+import Trade.Type.Signal.Price (PriceSignal)
+import Trade.Type.Signal (Signal(..))
 
 import qualified Statistics.Sample as Sample
 
@@ -18,7 +22,7 @@ import qualified Trade.Report.Report as Rep
 import Prelude hiding (maximum, minimum)
 
 
-data SampleStatistics = SampleStatistics {
+data SampleStatistics t = SampleStatistics {
   mean :: !Double
   , stdDev :: !Double
   , variance :: !Double
@@ -30,14 +34,14 @@ data SampleStatistics = SampleStatistics {
   , maximum :: !Double
   , range :: !Double
   , count :: !Int
-  , from :: !UTCTime
+  , from :: t
   , startValue :: !Double
-  , to :: !UTCTime
+  , to :: t
   , endValue :: !Double
   } deriving (Show)
 
-sampleStatistics :: Vector (UTCTime, Double) -> SampleStatistics
-sampleStatistics as =
+sampleStatistics' :: Vector (t, Double) -> SampleStatistics t
+sampleStatistics' as =
   let ts = Vec.map snd as
   in SampleStatistics {
     mean = Sample.mean ts
@@ -58,7 +62,19 @@ sampleStatistics as =
     }
 
 
-stats2para :: SampleStatistics -> Rep.HtmlIO
+class SampleStats a where
+  type SampleStatsTy a :: *
+  sampleStatistics :: a -> SampleStatistics (SampleStatsTy a)
+
+instance SampleStats (Vector (t, Double)) where
+  type SampleStatsTy (Vector (t, Double)) = t
+  sampleStatistics = sampleStatistics'
+
+instance SampleStats (PriceSignal Double) where
+  type SampleStatsTy (PriceSignal Double) = UTCTime
+  sampleStatistics = sampleStatistics' . unSignal
+
+stats2para :: SampleStatistics UTCTime -> Rep.HtmlIO
 stats2para stats =
   Rep.vtable $
   ["mean", show $ mean stats]
@@ -77,6 +93,3 @@ stats2para stats =
   : ["minimum", printf "%.2f" $ minimum stats]
   : ["maximum", printf "%.2f" $ maximum stats]
   : []
-
-
-  

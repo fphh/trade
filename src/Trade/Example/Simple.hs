@@ -29,6 +29,7 @@ import qualified Trade.Analysis.Optimize as Opt
 
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Curve as Curve
+import qualified Trade.Report.Line as Line
 
 import qualified Trade.Test.Data as TD
 
@@ -93,16 +94,16 @@ data BacktestResult = BacktestResult {
 
 instance TR.ToReport (TR.BacktestData OHLC.OHLC BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
-    let bts = Vec.map (fmap Eqty.unEquity) (Signal.unSignal es)
-        ps' = Vec.map (fmap (O.unOHLC . trdAt)) (Signal.unSignal ps)
-        left = (Style.axTitle "Equity", [Rep.line "Symbol at Close" ps', Rep.line "Backtest" bts])
-        right = (Style.impulseAxisConf, [Rep.line "down buy / up sell" (Curve.curve impSig)])
+    let bts = fmap Eqty.unEquity es
+        ps' = fmap (O.unOHLC . trdAt) ps
+        left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
+        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (Curve.curve impSig)])
 
     Rep.subheader "Backtest Result"
     Rep.chartLR (Style.axTitle "Time") left right
     Rep.text ("Initial Equity: " ++ show inEq)
-    Rep.text ("Starting with equity " ++ show (Vec.head bts))
-    Rep.text ("Ending with equity " ++ show (Vec.last bts))
+    Rep.text ("Starting with equity " ++ show (Vec.head $ Signal.unSignal bts))
+    Rep.text ("Ending with equity " ++ show (Vec.last $ Signal.unSignal bts))
 
 --------------------------------------------------------
 

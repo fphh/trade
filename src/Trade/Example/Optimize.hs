@@ -69,6 +69,7 @@ import qualified Trade.MonteCarlo.Simulation.BlackScholes as Black
 
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Curve as Curve
+import qualified Trade.Report.Line as Line
 
 import qualified Trade.Test.Time as T
 import qualified Trade.Test.Data as TD
@@ -97,40 +98,22 @@ instance Opt.Optimize OptimizationInput where
   
   optimize strat optInp = do
     let optStrat = strat optInp
-        ts = I2T.impulse2trade (optSample optInp) (optStrat (optSample optInp))
-        nts = T2NT.trade2normTrade (fmap (optTradeAt optInp) ts)
-    yieldHistBroom <- RTBroom.normHistoryBroom (forcastHorizon optInp) (mcN optInp) nts
+        sample = fmap (O.unOHLC . (optTradeAt optInp)) (optSample optInp)
+        sampleStats = SStat.sampleStatistics sample
 
-    let sf = stepFunc optInp
-        eq = optInitialEquity optInp
-
-        eqtyBroom = Broom.yield2equity (sf (F.Fraction 1)) eq yieldHistBroom
-    
-        f fr (ts, rs) =
-          let eb = Broom.yield2equity (sf fr) eq yieldHistBroom
-              twr = TWR.terminalWealthRelative eq eb
-              risk = Risk.risk eb
-          in ((fr, twr):ts, (fr, risk):rs)
-
-    
-        (twrs, rsks) = List.foldr f ([], []) (fractions optInp)
-
-        tl = fmap (optTradeAt optInp) ts
-    
-    return (optStrat, OptimizationResult eqtyBroom tl twrs rsks)
+    brm <- Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) (Black.Mu 0.2) (Black.Sigma 0.15)
+      
+    return (optStrat, OptimizationResult (fmap (fmap Eqty.Equity) brm))
 
     
 
 data OptimizationResult = OptimizationResult {
-  eqtyBroom :: Broom.Broom (Hist.History Eqty.Equity)
-  , tradeList :: Trade.TradeList O.Close
-  , twr :: [(F.Fraction, Dist.CDF TWR.TWR)]
-  , risk :: [(F.Fraction, Dist.CDF Risk.Risk)]
+  broom :: Broom.Broom (Hist.History Eqty.Equity)
   }
 
 instance (OHLC.OHLCInterface ohlc) =>
          TR.ToReport (TR.OptimizationData ohlc OptimizationInput OptimizationResult) where
-  toReport (TR.OptimizationData optInp (OptimizationResult brm trdList twrs rsks)) = do
+  toReport (TR.OptimizationData optInp (OptimizationResult brm)) = do
     let toC (t, ohlc) =
           let c = E.Candle t
                   (O.unOHLC $ OHLC.ohlcLow ohlc)
@@ -142,6 +125,10 @@ instance (OHLC.OHLCInterface ohlc) =>
         toCandle (Signal.Signal cs) = Vec.map toC cs
 
         nOfSamp = 20
+        
+        signal = Vec.map (fmap (O.unClose . optTradeAt optInp)) (Signal.unSignal (optSample optInp))
+
+{-
 
         showFrac :: F.Fraction -> String
         showFrac (F.Fraction fr) = printf "Frac %.02f" fr
@@ -157,14 +144,21 @@ instance (OHLC.OHLCInterface ohlc) =>
         riskTable = ["Fraction f", "P(max. drawdown > 20%)"] : map h rsks
 
         signal = Vec.map (fmap (O.unClose . optTradeAt optInp)) (Signal.unSignal (optSample optInp))
-
+-}
+    
     Rep.subheader "Optimization Input"
     Rep.candle "Symbol" [toCandle (optSample optInp)]
 
-
     Rep.subsubheader "Sample Statistics"
     SStat.stats2para (SStat.sampleStatistics signal)
+    
+    Rep.subsubheader "Generated Broom"
+    Rep.text ("Number of Monte Carlo samples: " ++ show (mcN optInp) ++ ", showing " ++ show nOfSamp)
+    Rep.chart (Style.axTitle "Bars") (Style.axTitle "Equity", Broom.broom2chart nOfSamp brm)
 
+
+    
+{-
     Rep.subheader "Optimization Result"
 
     Rep.subsubheader "Trade Statistics"
@@ -177,16 +171,17 @@ instance (OHLC.OHLCInterface ohlc) =>
     Rep.chart (Style.axTitle "Bars") (Style.axTitle "Equity", Broom.broom2chart nOfSamp brm)
 
     Rep.subsubheader "Terminal wealth relative"
-    Rep.chart (Style.axTitle "Percent") (Style.axTitle "TWR", map (\(fr, cdf) -> Rep.line (showFrac fr) cdf) twrs)
+    Rep.chart (Style.axTitle "Percent") (Style.axTitle "TWR", map (\(fr, cdf) -> Line.line (showFrac fr) cdf) twrs)
     Rep.text ("The probability that terminal wealth relative is less than factor 1.0, respectivly greater than 1.2, at fraction f:")
     Rep.horizontal $ do
       Rep.floatLeft $ Rep.htable twrTable10
       Rep.floatLeft $ Rep.htable twrTable12
 
     Rep.subsubheader "Risk of Drawdown"
-    Rep.chart (Style.axTitle "Percent") (Style.axTitle "Drawdown", map (\(fr, cdf) -> Rep.line (showFrac fr) cdf) rsks)
+    Rep.chart (Style.axTitle "Percent") (Style.axTitle "Drawdown", map (\(fr, cdf) -> Line.line (showFrac fr) cdf) rsks)
     Rep.text ("Risk of max. drawdown greater than 20% at fraction f:")
     Rep.htable riskTable
+-}
 
 
 
@@ -213,10 +208,10 @@ data BacktestResult = BacktestResult {
 
 instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
-    let bts = Vec.map (fmap Eqty.unEquity) (Signal.unSignal es)
-        ps' = Vec.map (fmap (O.unOHLC . trdAt)) (Signal.unSignal ps)
-        left = (Style.axTitle "Equity", [Rep.line "Symbol at Close" ps', Rep.line "Backtest" bts])
-        right = (Style.impulseAxisConf, [Rep.line "down buy / up sell" (Curve.curve impSig)])
+    let Signal.Signal bts = fmap Eqty.unEquity es
+        ps' = fmap (O.unOHLC . trdAt) ps
+        left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
+        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (Curve.curve impSig)])
 
     Rep.subheader "Backtest Result"
 
@@ -235,18 +230,18 @@ instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
 
 example :: IO ()
 example = do
-  
-  let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
 
+  let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
+  
   let mu = Black.Mu 0.2
       sigma = Black.Sigma 0.15
       start = Eqty.Equity 100
       seed = 53
 
-  -- samp <- Black.blackScholesDet seed (T.yearsN 1) start mu sigma
+  samp <- Black.blackScholesDet seed (T.yearsN 1) start mu sigma
   
-  let sample = Signal.Signal (Vec.map (fmap f) TD.test2)
-  -- let sample = Signal.Signal (Vec.map (fmap f) samp)
+  -- let sample = Signal.Signal (Vec.map (fmap f) TD.test2)
+  let sample = Signal.Signal (Vec.map (fmap f) samp)
 
   let trdAt = OHLC.ohlcClose
   
@@ -261,7 +256,7 @@ example = do
             , optInitialEquity = Eqty.Equity 1000
             , forcastHorizon = B.Bars 1000
             , stepFunc = SF.stepFuncNoCommission -- stepFuncNoCommissionFullFraction
-            , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0] -- [0.1, 0.2 .. 2]
+            , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0]
             }
         , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 10) sample
         }
