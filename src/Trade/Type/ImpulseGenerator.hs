@@ -83,3 +83,30 @@ impulsesFromMovingAverages j k (Signal ps) =
       tradeSignal Inter.NoIntersection = Nothing
 
   in IS.toImpulseSignal (\_ _ -> tradeSignal) (Inter.intersection avgJ avgK)
+
+
+
+buySellAfterNM ::
+  (OHLC.OHLCInterface ohlc) => Int -> Int -> OptimizedImpulseGenerator ohlc
+buySellAfterNM b s (Signal ps) =
+  let f (t, x) = O.unClose (OHLC.ohlcClose x)
+      qs = Vec.toList (Vec.map f ps)
+
+      sell xs | length (take s xs) < s = map (const Nothing) xs 
+      sell xs@(_:as) =
+        let (y:ys, zs) = splitAt s xs
+        in case all (<y) ys of
+             True -> map (const Nothing) ys ++ [Just Sell] ++ buy zs
+             False -> Nothing : sell as
+
+      buy xs | length (take b xs) < b = map (const Nothing) xs
+      buy xs@(_:as) =
+        let (y:ys, zs) = splitAt b xs
+        in case all (>y) ys of
+             True -> map (const Nothing) ys ++ [Just Buy] ++ sell zs
+             False -> Nothing : buy as
+             
+      g i x = (fst (ps Vec.! i), x)
+      res = Vec.imap g (Vec.fromList (buy qs))
+
+  in Signal res

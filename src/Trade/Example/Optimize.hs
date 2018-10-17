@@ -80,32 +80,6 @@ import Debug.Trace
 
 --------------------------------------------------------
 
-generateImpulseSignal ::
-  (OHLC.OHLCInterface ohlc) =>
-  Int -> Int -> PS.PriceSignal ohlc -> IS.ImpulseSignal
-generateImpulseSignal s b (Signal.Signal ps) =
-  let f (t, x) = O.unClose (OHLC.ohlcClose x)
-      qs = Vec.toList (Vec.map f ps)
-
-      sell xs | length (take s xs) < s = map (const Nothing) xs 
-      sell xs@(_:as) =
-        let (y:ys, zs) = splitAt s xs
-        in case all (<y) ys of
-             True -> map (const Nothing) ys ++ [Just Imp.Sell] ++ buy zs
-             False -> Nothing : sell as
-
-      buy xs | length (take b xs) < b = map (const Nothing) xs
-      buy xs@(_:as) =
-        let (y:ys, zs) = splitAt b xs
-        in case all (>y) ys of
-             True -> map (const Nothing) ys ++ [Just Imp.Buy] ++ sell zs
-             False -> Nothing : buy as
-             
-      g i x = (fst (ps Vec.! i), x)
-      res = Vec.imap g (Vec.fromList (buy qs))
-
-  in Signal.Signal res
-
 
 data OptimizationInput ohlc = OptimizationInput {
   optSample :: PS.PriceSignal ohlc
@@ -279,7 +253,7 @@ example = do
       analysis :: Ana.Analysis OHLC.OHLC OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (generateImpulseSignal 3 2)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.buySellAfterNM 2 3)
         , Ana.optimizationInput = OptimizationInput {
             optSample = sample
             , optTradeAt = trdAt
