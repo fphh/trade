@@ -1,24 +1,22 @@
 
 module Trade.MonteCarlo.ResampleTrades.Broom where
 
-import qualified Data.List as List
 
 import qualified Data.Vector as Vec
-import Data.Vector (Vector)
 
 import Control.Monad (replicateM)
 
 import Trade.Type.Yield (Yield(..))
-import Trade.Type.Equity (Equity(..))
-import Trade.Type.Fraction (Fraction)
 import Trade.Type.Bars (Bars)
 import Trade.Type.History (History(..))
 import Trade.Type.Broom (Broom(..))
 import Trade.Type.State (State(..))
 import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
+import Trade.Type.Conversion.OffsettedNormTradeList2NormHistory (offsettedNormTradeList2normHistory)
+  
+
 import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
-import qualified Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList as ONTL
 
 
 normHistoryBroom :: Bars -> Int -> NormTradeList -> IO (Broom (History Yield))
@@ -33,5 +31,5 @@ normHistoryBroom bs n ntl = do
       
   offsTls <- replicateM n (MC.randomYieldSignal ntl' soffs)
 
-  return (Broom (map (ONTL.offsettedNormTradeList2normHistory bs) offsTls))
+  return (Broom (map (offsettedNormTradeList2normHistory bs) offsTls))
 

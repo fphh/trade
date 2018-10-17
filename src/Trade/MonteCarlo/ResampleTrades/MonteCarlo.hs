@@ -6,13 +6,13 @@ import qualified Data.Vector as Vec
 
 import qualified Data.Map.Strict as Map
 
-import System.Random
+import System.Random (newStdGen, randoms)
 
 import Trade.Type.Bars (Bars(..))
 import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 
-import Trade.Analysis.Yield
-import Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
+import Trade.Analysis.Yield (sortNormTradeByState)
+import Trade.Type.OffsettedNormTradeList (OffsettedNormTradeList(..))
 
 startingOffsets :: NormTradeList -> (Int -> Bars)
 startingOffsets (NormTradeList tl) =

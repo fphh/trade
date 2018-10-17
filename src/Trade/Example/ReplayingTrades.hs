@@ -6,10 +6,6 @@
 
 module Trade.Example.ReplayingTrades where
 
-import Control.Monad.Trans (liftIO)
-
-import Control.Monad (replicateM)
-
 import qualified Data.List as List
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
@@ -19,8 +15,6 @@ import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
-
-import qualified Text.Blaze.Html5 as H5
 
 import qualified Trade.Type.Impulse as Imp
 import qualified Trade.Type.Equity as Eqty

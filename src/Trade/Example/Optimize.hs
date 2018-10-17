@@ -34,6 +34,7 @@ import qualified Trade.Type.Broom as Broom
 import qualified Trade.Type.Distribution as Dist
 import qualified Trade.Type.Fraction as F
 import qualified Trade.Type.Trade as Trade
+import qualified Trade.Type.OffsettedNormTradeList as ONTL
 
 import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.Signal.Price as PS
@@ -62,7 +63,6 @@ import qualified Trade.TStatistics.SampleStatistics as SStat
 import qualified Trade.TStatistics.TradeStatistics as TStat
 
 import qualified Trade.MonteCarlo.ResampleTrades.MonteCarlo as MC
-import qualified Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList as ONTL
 import qualified Trade.MonteCarlo.ResampleTrades.Broom as RTBroom
 
 

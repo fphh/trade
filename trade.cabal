@@ -36,7 +36,6 @@ library
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.Broom
                         Trade.MonteCarlo.ResampleTrades.MonteCarlo
-                        Trade.MonteCarlo.ResampleTrades.OffsettedNormTradeList
                         Trade.MonteCarlo.Simulation.BlackScholes
                         Trade.Render.Common.Attr
                         Trade.Render.Common.Color
@@ -72,6 +71,7 @@ library
                         Trade.Type.Broom
                         Trade.Type.Commission
                         Trade.Type.Conversion.Impulse2Trade
+                        Trade.Type.Conversion.OffsettedNormTradeList2NormHistory
                         Trade.Type.Conversion.Trade2Equity
                         Trade.Type.Conversion.Trade2NormTrade
                         Trade.Type.Distribution
@@ -81,6 +81,7 @@ library
                         Trade.Type.Impulse
                         Trade.Type.ImpulseGenerator
                         Trade.Type.NormTrade
+                        Trade.Type.OffsettedNormTradeList
                         Trade.Type.OHLC
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
