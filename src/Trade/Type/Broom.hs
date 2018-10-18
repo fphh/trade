@@ -3,20 +3,19 @@
 module Trade.Type.Broom where
 
 
-import Data.Vector (Vector)
-
-import Trade.Type.Yield (Yield)
 import Trade.Type.Equity (Equity)
-import Trade.Type.History (History)
+import Trade.Type.Signal (Signal)
 import Trade.Type.StepFunc (StepFunc)
-import qualified Trade.Type.History as Hist
 
-import Trade.Report.Curve -- (Curve, curve)
+import qualified Trade.Type.Conversion.Equity2Yield as E2Y
+import qualified Trade.Type.Conversion.Yield2Equity as Y2E
+
+-- import Trade.Report.Curve -- (Curve, curve)
 import qualified Trade.Report.Line as Line
 
 -- | A broom is a list of histories that we can analyse for profit and risk.
-newtype Broom history = Broom {
-  unBroom :: [history]
+newtype Broom signal = Broom {
+  unBroom :: [signal]
   } deriving (Show, Eq)
 
 
@@ -25,17 +24,20 @@ instance Functor Broom where
 
 
 -- | Turn a broom into a chart with `n` curves.
-broom2chart :: (Curve history) => Int -> Broom history -> [Line.L [(CurveTy history, Double)]]
+broom2chart :: (Line.Line signal) => Int -> Broom signal -> [Line.L [(Line.TyX signal, Line.TyY signal)]]
 broom2chart n (Broom xs) =
-  let f i x = Line.line (show i) (curve x)
+  let f i x = Line.line (show i) x
   in zipWith f [0 :: Integer ..] (take n xs)
+
 
 
 -- | TODO: Testing (yield2equity . equity2yield) == id
 yield2equity ::
-  StepFunc -> Equity -> Broom (History Yield) -> Broom (History Equity)
-yield2equity step eqty = fmap (Hist.yield2equity step eqty)
+  (Y2E.Yield2Equity yield) =>
+  StepFunc yield -> Equity -> Broom (Signal t yield) -> Broom (Signal t Equity)
+yield2equity step eqty = fmap (Y2E.yield2equity step eqty)
 
 
-equity2yield :: Broom (History Equity) -> Broom (History Yield)
-equity2yield = fmap Hist.equity2yield
+
+equity2yield :: (E2Y.Equity2Yield yield) => Broom (Signal t Equity) -> Broom (Signal t yield)
+equity2yield = fmap E2Y.equity2yield

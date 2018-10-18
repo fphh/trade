@@ -10,6 +10,8 @@ import Control.Monad.Trans (liftIO)
 
 import Control.Monad (replicateM)
 
+import Data.Time.Clock (UTCTime)
+
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -28,13 +30,13 @@ import qualified Trade.Type.Impulse as Imp
 import qualified Trade.Type.Equity as Eqty
 import qualified Trade.Type.OHLC as O
 import qualified Trade.Type.Bars as B
-import qualified Trade.Type.History as Hist
 import qualified Trade.Type.StepFunc as SF
 import qualified Trade.Type.Broom as Broom
 import qualified Trade.Type.Distribution as Dist
 import qualified Trade.Type.Fraction as F
 import qualified Trade.Type.Trade as Trade
 import qualified Trade.Type.OffsettedNormTradeList as ONTL
+import qualified Trade.Type.Yield as Y
 
 import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.Signal.Price as PS
@@ -44,6 +46,7 @@ import qualified Trade.Type.Signal.Equity as ES
 
 import qualified Trade.Type.Conversion.Impulse2Trade as I2T
 import qualified Trade.Type.Conversion.Trade2NormTrade as T2NT
+import qualified Trade.Type.Conversion.Equity2Yield as E2Y
 
 import qualified Trade.Type.ImpulseGenerator as IG
 
@@ -81,14 +84,14 @@ import Debug.Trace
 
 --------------------------------------------------------
 
-
+{-
 data OptimizationInput ohlc = OptimizationInput {
   optSample :: PS.PriceSignal ohlc
   , optTradeAt :: ohlc -> O.Close
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
-  , stepFunc :: F.Fraction -> SF.StepFunc
+  , stepFunc :: F.Fraction -> SF.StepFunc Y.Yield
   , fractions :: [F.Fraction]
   }
   
@@ -98,22 +101,37 @@ instance Opt.Optimize OptimizationInput where
   
   optimize strat optInp = do
     let optStrat = strat optInp
-        sample = fmap (O.unOHLC . (optTradeAt optInp)) (optSample optInp)
-        sampleStats = SStat.sampleStatistics sample
+    
+        sample = fmap (Eqty.Equity . O.unOHLC . (optTradeAt optInp)) (optSample optInp)
+        len = Signal.length (optSample optInp)
 
-    brm <- Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) (Black.Mu 0.2) (Black.Sigma 0.15)
-      
-    return (optStrat, OptimizationResult (fmap (fmap Eqty.Equity) brm))
+        -- hist = S2H.signal2history sample
+        yields :: Signal.Signal UTCTime Y.LogYield
+        yields = E2Y.equity2yield sample
+        sampleStats = SStat.sampleStatistics yields
+
+        mu = Black.Mu (fromIntegral len * SStat.mean sampleStats)
+        sigma = Black.Sigma (sqrt (fromIntegral len) * SStat.stdDev sampleStats)
+
+    brm <- Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) mu sigma
+
+    let eqtyBrm = fmap (fmap Eqty.Equity) brm
+        -- yieldBrm = Broom.equity2yield eqtyBrm
+
+    return (optStrat, OptimizationResult eqtyBrm mu sigma sampleStats)
 
     
 
 data OptimizationResult = OptimizationResult {
-  broom :: Broom.Broom (Hist.History Eqty.Equity)
+  broom :: Broom.Broom (Signal.Signal UTCTime Eqty.Equity)
+  , muOR :: Black.Mu
+  , sigmaOR :: Black.Sigma
+  , sampleStats :: SStat.SampleStatistics B.BarNo
   }
 
 instance (OHLC.OHLCInterface ohlc) =>
          TR.ToReport (TR.OptimizationData ohlc OptimizationInput OptimizationResult) where
-  toReport (TR.OptimizationData optInp (OptimizationResult brm)) = do
+  toReport (TR.OptimizationData optInp (OptimizationResult brm mu sigma sStats)) = do
     let toC (t, ohlc) =
           let c = E.Candle t
                   (O.unOHLC $ OHLC.ohlcLow ohlc)
@@ -126,8 +144,6 @@ instance (OHLC.OHLCInterface ohlc) =>
 
         nOfSamp = 20
         
-        signal = Vec.map (fmap (O.unClose . optTradeAt optInp)) (Signal.unSignal (optSample optInp))
-
 {-
 
         showFrac :: F.Fraction -> String
@@ -149,10 +165,11 @@ instance (OHLC.OHLCInterface ohlc) =>
     Rep.subheader "Optimization Input"
     Rep.candle "Symbol" [toCandle (optSample optInp)]
 
-    Rep.subsubheader "Sample Statistics"
-    SStat.stats2para (SStat.sampleStatistics signal)
+    Rep.subsubheader "Sample Statistics of Log Yields"
+    SStat.stats2para sStats
     
     Rep.subsubheader "Generated Broom"
+    Rep.text ("Black-Scholes with parameters: " ++ show mu ++ ", " ++ show sigma)
     Rep.text ("Number of Monte Carlo samples: " ++ show (mcN optInp) ++ ", showing " ++ show nOfSamp)
     Rep.chart (Style.axTitle "Bars") (Style.axTitle "Equity", Broom.broom2chart nOfSamp brm)
 
@@ -233,12 +250,12 @@ example = do
 
   let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
   
-  let mu = Black.Mu 0.2
-      sigma = Black.Sigma 0.15
+  let mu = Black.Mu 0.4
+      sigma = Black.Sigma 0.2
       start = Eqty.Equity 100
-      seed = 53
+      seed = 47
 
-  samp <- Black.blackScholesDet seed (T.yearsN 1) start mu sigma
+  samp <- Black.blackScholesDet seed (T.yearsN 4) start mu sigma
   
   -- let sample = Signal.Signal (Vec.map (fmap f) TD.test2)
   let sample = Signal.Signal (Vec.map (fmap f) samp)
@@ -266,3 +283,5 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+
+-}

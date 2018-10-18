@@ -20,17 +20,12 @@ import qualified System.Random.MWC.Distributions as Dist
 import Trade.Type.Bars (Bars(..), BarNo(..))
 import Trade.Type.Broom (Broom(..))
 import Trade.Type.Equity (Equity(..))
-import Trade.Type.History (History(..))
-import Trade.Type.Signal.Price (PriceSignal)
-import qualified Trade.Type.OHLC as O
+import Trade.Type.Signal (Signal(..))
 
-import Trade.Timeseries.OHLC (OHLC(..))
 
-import Debug.Trace
-
-newtype Mu = Mu { _mu :: Double }
-newtype Sigma = Sigma { _sigma :: Double }
-newtype Start = Start { _start :: Double }
+newtype Mu = Mu { _mu :: Double } deriving (Show)
+newtype Sigma = Sigma { _sigma :: Double } deriving (Show)
+newtype Start = Start { _start :: Double } deriving (Show)
 
 
 
@@ -48,9 +43,9 @@ blackScholesDet :: Word32 -> Vector UTCTime -> Equity -> Mu -> Sigma -> IO (Vect
 blackScholesDet seed interval eqty mu sigma =
   MWC.initialize (Vec.singleton seed) >>= \gen -> blackScholes gen interval eqty mu sigma
 
-priceSignalBroom :: Bars -> Int -> Equity -> Mu -> Sigma -> IO (Broom (History Double))
+priceSignalBroom :: Bars -> Int -> Equity -> Mu -> Sigma -> IO (Broom (Signal BarNo Double))
 priceSignalBroom (Bars b) n eqty mu sigma = do
   let vs = Vec.generate b BarNo
   gen <- MWC.createSystemRandom
   broom <- replicateM n (blackScholes gen vs eqty mu sigma)
-  return (Broom (map History broom))
+  return (Broom (map Signal broom))

@@ -19,12 +19,12 @@ import Text.Printf (printf)
 import qualified Trade.Type.Equity as Eqty
 import qualified Trade.Type.OHLC as O
 import qualified Trade.Type.Bars as B
-import qualified Trade.Type.History as Hist
 import qualified Trade.Type.StepFunc as SF
 import qualified Trade.Type.Broom as Broom
 import qualified Trade.Type.Distribution as Dist
 import qualified Trade.Type.Fraction as F
 import qualified Trade.Type.Trade as Trade
+import qualified Trade.Type.Yield as Y
 
 import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.Signal.Price as PS
@@ -34,6 +34,7 @@ import qualified Trade.Type.Signal.Impulse as IS
 
 import qualified Trade.Type.Conversion.Impulse2Trade as I2T
 import qualified Trade.Type.Conversion.Trade2NormTrade as T2NT
+
 
 import qualified Trade.Type.ImpulseGenerator as IG
 
@@ -71,7 +72,7 @@ data OptimizationInput ohlc = OptimizationInput {
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
-  , stepFunc :: F.Fraction -> SF.StepFunc
+  , stepFunc :: F.Fraction -> SF.StepFunc Y.Yield
   , fractions :: [F.Fraction]
   }
   
@@ -83,15 +84,15 @@ instance Opt.Optimize OptimizationInput where
     let optStrat = strat optInp
         trds = I2T.impulse2trade (optSample optInp) (optStrat (optSample optInp))
         ntrds = T2NT.trade2normTrade (fmap (optTradeAt optInp) trds)
-    yieldHistBroom <- RTBroom.normHistoryBroom (forcastHorizon optInp) (mcN optInp) ntrds
+    yieldBroom <- RTBroom.normBroom (forcastHorizon optInp) (mcN optInp) ntrds
 
     let sf = stepFunc optInp
         eq = optInitialEquity optInp
 
-        eqtyBrm = Broom.yield2equity (sf (F.Fraction 1)) eq yieldHistBroom
+        eqtyBrm = Broom.yield2equity (sf (F.Fraction 1)) eq yieldBroom
     
         f fr (ts, rs) =
-          let eb = Broom.yield2equity (sf fr) eq yieldHistBroom
+          let eb = Broom.yield2equity (sf fr) eq yieldBroom
               tw = TWR.terminalWealthRelative eq eb
               rk = Risk.risk eb
           in ((fr, tw):ts, (fr, rk):rs)
@@ -106,7 +107,7 @@ instance Opt.Optimize OptimizationInput where
     
 
 data OptimizationResult = OptimizationResult {
-  eqtyBroom :: Broom.Broom (Hist.History Eqty.Equity)
+  eqtyBroom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
   , tradeList :: Trade.TradeList O.Close
   , twr :: [(F.Fraction, Dist.CDF TWR.TWR)]
   , risk :: [(F.Fraction, Dist.CDF Risk.Risk)]

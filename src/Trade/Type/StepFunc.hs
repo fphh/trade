@@ -4,31 +4,39 @@ module Trade.Type.StepFunc where
 
 import Trade.Type.Fraction (Fraction(..), fullFrac)
 import Trade.Type.Equity (Equity(..))
-import Trade.Type.Yield (Yield(..))
+import Trade.Type.Yield (Yield(..), LogYield(..))
 import Trade.Type.Commission (Commission(..), noCommission)
 
 
 -- | StepFunc takes a yield and an equity and returns the equity with the yield applied.
-type StepFunc = Equity -> Yield -> Equity
-
+type StepFunc yield = Equity -> yield -> Equity
 
 -- | Genearal function which pays commissions to the broker and
 -- uses only a fraction of your total equity.
-stepFunc :: Commission -> Fraction -> StepFunc
-stepFunc (Commission com) (Fraction frac) (Equity e) (Yield y) =
-  let e0 = frac * e
-      e1 = (1-frac) * e
-  in Equity (e1 + com (e0*y))
+class StepFunction yield where
+  stepFunction :: Commission -> Fraction -> StepFunc yield
 
+instance StepFunction Yield where
+  stepFunction (Commission com) (Fraction frac) (Equity e) (Yield y) =
+    let e0 = frac * e
+        e1 = (1-frac) * e
+    in Equity (e1 + com (e0 * y))
 
-stepFuncNoCommission :: Fraction -> StepFunc
-stepFuncNoCommission = stepFunc noCommission
+instance StepFunction LogYield where
+  stepFunction (Commission com) (Fraction frac) (Equity e) (LogYield y) =
+    let e0 = frac * e
+        e1 = (1-frac) * e
+    in Equity (e1 + com (e0 * exp y))
 
-stepFuncNoCommissionFullFraction :: StepFunc
-stepFuncNoCommissionFullFraction = stepFunc noCommission fullFrac
+stepFuncNoCommission :: (StepFunction yield) => Fraction -> StepFunc yield
+stepFuncNoCommission = stepFunction noCommission
 
-stepFuncFixedPrice :: Double -> Fraction -> StepFunc
-stepFuncFixedPrice price = stepFunc (Commission (\x -> x-price))
+stepFuncNoCommissionFullFraction :: (StepFunction yield) => StepFunc yield
+stepFuncNoCommissionFullFraction = stepFunction noCommission fullFrac
 
-stepFuncRelativePrice :: Double -> Fraction -> StepFunc
-stepFuncRelativePrice q = stepFunc (Commission (\x -> (1-q)*x))
+stepFuncFixedPrice :: (StepFunction yield) => Double -> Fraction -> StepFunc yield
+stepFuncFixedPrice price = stepFunction (Commission (\x -> x-price))
+
+stepFuncRelativePrice ::(StepFunction yield) =>  Double -> Fraction -> StepFunc yield
+stepFuncRelativePrice q = stepFunction (Commission (\x -> (1-q)*x))
+

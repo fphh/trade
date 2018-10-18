@@ -70,14 +70,15 @@ library
                         Trade.Type.Bars
                         Trade.Type.Broom
                         Trade.Type.Commission
+                        Trade.Type.Conversion.Equity2Yield
                         Trade.Type.Conversion.Impulse2Trade
-                        Trade.Type.Conversion.OffsettedNormTradeList2NormHistory
+                        Trade.Type.Conversion.OffsettedNormTradeList2NormSignal
                         Trade.Type.Conversion.Trade2Equity
                         Trade.Type.Conversion.Trade2NormTrade
+                        Trade.Type.Conversion.Yield2Equity
                         Trade.Type.Distribution
                         Trade.Type.Fraction
                         Trade.Type.Equity
-                        Trade.Type.History
                         Trade.Type.Impulse
                         Trade.Type.ImpulseGenerator
                         Trade.Type.NormTrade

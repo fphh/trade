@@ -6,16 +6,16 @@ import qualified Data.List as List
 
 import qualified Data.Vector as Vec
 
-import Trade.Type.History (History(..))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Broom (Broom(..))
 import Trade.Type.Distribution (CDF(..))
+import Trade.Type.Signal (Signal(..))
 
 
 -- | Risk
 data Risk
 
-risk :: Broom (History Equity) -> CDF Risk
+risk :: Broom (Signal t Equity) -> CDF Risk
 risk (Broom hs) =
   let f vs =
         let l = Vec.length vs
@@ -30,7 +30,7 @@ risk (Broom hs) =
       len = fromIntegral (length hs)
 
       
-      qs = map (f . Vec.map (unEquity . snd) . unHistory) hs
+      qs = map (f . Vec.map (unEquity . snd) . unSignal) hs
 
       h i w = (i/len, w)
 

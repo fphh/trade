@@ -9,15 +9,15 @@ import qualified Data.Vector as Vec
 
 import Control.Monad (replicateM)
 
-import Trade.Type.Bars (Bars(..))
+import Trade.Type.Bars (Bars(..), BarNo)
 import Trade.Type.Broom (Broom(..))
-import Trade.Type.History (History(..))
 import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 import Trade.Type.OffsettedNormTradeList (OffsettedNormTradeList(..))
+import Trade.Type.Signal (Signal(..))
 import Trade.Type.State (State(..))
 import Trade.Type.Yield (Yield(..))
 
-import Trade.Type.Conversion.OffsettedNormTradeList2NormHistory (offsettedNormTradeList2normHistory)
+import Trade.Type.Conversion.OffsettedNormTradeList2NormSignal (offsettedNormTradeList2normSignal)
 
 import Trade.Analysis.Yield (sortNormTradesByState)
 
@@ -73,8 +73,8 @@ randomYieldSignal ys offsetTable = do
     return (OffsettedNormTradeList offs rysig)
 
 
-normHistoryBroom :: Bars -> Int -> NormTradeList -> IO (Broom (History Yield))
-normHistoryBroom bs n ntl = do
+normBroom :: Bars -> Int -> NormTradeList -> IO (Broom (Signal BarNo Yield))
+normBroom bs n ntl = do
   let soffs = startingOffsets ntl
       f (NormTrade NoPosition t vs) =
         NormTrade NoPosition t (Vec.replicate (Vec.length vs + 1) (Yield 1))
@@ -85,5 +85,5 @@ normHistoryBroom bs n ntl = do
       
   offsTls <- replicateM n (randomYieldSignal ntl' soffs)
 
-  return (Broom (map (offsettedNormTradeList2normHistory bs) offsTls))
+  return (Broom (map (offsettedNormTradeList2normSignal bs) offsTls))
 

@@ -59,12 +59,16 @@ zipWith f x (Signal xs) =
       g (_, x) (t, y) = (t, f x y)
   in Signal (Vec.cons start (Vec.zipWith g xs (stail "Signal.zipWith" xs)))
 
+{-
+TODO: Testing
+
 test_scanl_zipWith :: (Eq t, Eq a, Fractional a) => Signal t a -> Bool
 test_scanl_zipWith ps =
   let qs = zipWith (flip (/)) 0 ps
       (_, start) = head ps
       rs = scanl (*) start qs
   in ps == rs
+-}
 
 head :: Signal t y -> (t, y)
 head (Signal ps) = shead "Signal.head" ps

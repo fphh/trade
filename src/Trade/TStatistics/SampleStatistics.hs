@@ -7,10 +7,8 @@ module Trade.TStatistics.SampleStatistics where
 
 import Text.Printf (printf)
 
-import Data.Time.Clock (UTCTime)
-
-import Trade.Type.Signal.Price (PriceSignal)
 import Trade.Type.Signal (Signal(..))
+import Trade.Type.Yield (LogYield(..))
 
 import qualified Statistics.Sample as Sample
 
@@ -70,11 +68,15 @@ instance SampleStats (Vector (t, Double)) where
   type SampleStatsTy (Vector (t, Double)) = t
   sampleStatistics = sampleStatistics'
 
-instance SampleStats (PriceSignal Double) where
-  type SampleStatsTy (PriceSignal Double) = UTCTime
+instance SampleStats (Signal t Double) where
+  type SampleStatsTy (Signal t Double) = t
   sampleStatistics = sampleStatistics' . unSignal
 
-stats2para :: SampleStatistics UTCTime -> Rep.HtmlIO
+instance SampleStats (Signal t LogYield) where
+  type SampleStatsTy (Signal t LogYield) = t
+  sampleStatistics = sampleStatistics' . Vec.map (\(a, LogYield y) -> (a, y)) . unSignal
+
+stats2para :: (Show a) => SampleStatistics a -> Rep.HtmlIO
 stats2para stats =
   Rep.vtable $
   ["mean", show $ mean stats]
