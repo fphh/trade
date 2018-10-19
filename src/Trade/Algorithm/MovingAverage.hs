@@ -2,8 +2,6 @@
 
 module Trade.Algorithm.MovingAverage where
 
-import Data.Time.Clock (UTCTime)
-
 import Statistics.Sample (mean)
 
 import qualified Data.Vector as Vec
@@ -80,8 +78,8 @@ mavg100 :: MovingAverage vec => vec Double -> vec (Double, Double)
 mavg100 = mavg 100
 
 
-mavgTime :: Int -> Vector (UTCTime, Double) -> Vector (UTCTime, Double)
-mavgTime n vs =
+mavgBar :: Int -> Vector (t, Double) -> Vector (t, Double)
+mavgBar n vs =
   let (ts, ys) = Vec.unzip vs
       ts' = Vec.drop n ts
       ys' = movingAverage n ys

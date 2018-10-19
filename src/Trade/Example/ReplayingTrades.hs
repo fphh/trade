@@ -6,6 +6,8 @@
 
 module Trade.Example.ReplayingTrades where
 
+import Data.Time.Clock (UTCTime)
+
 import qualified Data.List as List
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
@@ -59,13 +61,132 @@ import qualified Trade.Report.Curve as Curve
 import qualified Trade.Report.Line as Line
 
 import qualified Trade.Test.Time as T
--- import qualified Trade.Test.Data as TD
+import qualified Trade.Test.Data as TD
 
 import qualified Trade.Report.Style as Style
 
 
 --------------------------------------------------------
 
+ticker :: PS.PriceSignal OHLC.OHLC
+ticker =
+  let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
+  in Signal.Signal (Vec.map (fmap f) TD.test2)
+  
+--------------------------------------------------------
+
+data OptimizationInput ohlc = OptimizationInput {
+  optInput :: PS.PriceSignal ohlc
+  }
+
+
+apply :: IG.OptimizedImpulseGenerator t ohlc -> Signal.Signal t ohlc -> IS.ImpulseSignal t
+apply ig s = ig s
+
+instance Opt.Optimize OptimizationInput where
+  type OptReportTy OptimizationInput = OptimizationResult
+  optimize strat optInput = do
+    let -- optStrat :: IG.OptimizedImpulseGenerator t ohlc
+        optStrat :: IG.OptimizedImpulseGenerator B.BarNo Double
+        optStrat = strat optInput
+        -- as :: Signal.Signal B.BarNo Double
+        -- as = Signal.Signal (Vec.fromList [])
+        -- xs = apply optStrat as
+
+        bs :: Signal.Signal B.BarNo Double
+        bs = Signal.Signal (Vec.fromList [(B.BarNo 0, 0.0)])
+
+        ys = apply _ bs
+        
+        -- trds = I2T.impulse2trade (optSample optInput) xs
+        -- ntrds = T2NT.trade2normTrade (fmap (optTradeAt optInp) trds)
+        
+    return (strat optInput, OptimizationResult)
+
+data OptimizationResult = OptimizationResult
+
+instance TR.ToReport (TR.OptimizationData OHLC.OHLC OptimizationInput OptimizationResult) where
+  toReport (TR.OptimizationData (OptimizationInput ps) OptimizationResult) = do
+    let toC (t, ohlc) =
+          let c = E.Candle t
+                (O.unOHLC $ OHLC.ohlcLow ohlc)
+                (O.unOHLC $ OHLC.ohlcOpen ohlc)
+                0
+                (O.unOHLC $ OHLC.ohlcClose ohlc)
+                (O.unOHLC $ OHLC.ohlcHigh ohlc)
+          in c
+        toCandle (Signal.Signal cs) = Vec.map toC cs
+
+
+    
+    Rep.subheader "Optimization Input"
+    Rep.candle "Symbol" [toCandle ps]
+    Rep.subheader "Optimization Result"
+    Rep.text "No optimization has been done."
+
+
+--------------------------------------------------------
+
+data BacktestInput ohlc = BacktestInput {
+  tradeAt :: ohlc -> O.Close
+  , initialEquity :: Eqty.Equity
+  , pricesInput :: Signal.Signal UTCTime ohlc
+  }
+    
+instance BT.Backtest BacktestInput where
+  type BacktestReportTy BacktestInput = BacktestResult
+
+  backtest optStrat (BacktestInput trdAt initEqty ps) =
+    let impSig = optStrat ps
+        es = BT.equitySignal trdAt initEqty impSig ps
+    in BacktestResult impSig es
+
+data BacktestResult = BacktestResult {
+  impulses :: IS.ImpulseSignal UTCTime
+  , eqties :: ES.EquitySignal UTCTime
+  }
+
+instance TR.ToReport (TR.BacktestData OHLC.OHLC BacktestInput BacktestResult) where
+  toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
+    let bts = fmap Eqty.unEquity es
+        ps' = fmap (O.unOHLC . trdAt) ps
+        left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
+        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (Curve.curve impSig)])
+
+    Rep.subheader "Backtest Result"
+    Rep.chartLR (Style.axTitle "Time") left right
+    Rep.text ("Initial Equity: " ++ show inEq)
+    Rep.text ("Starting with equity " ++ show (Vec.head $ Signal.unSignal bts))
+    Rep.text ("Ending with equity " ++ show (Vec.last $ Signal.unSignal bts))
+
+--------------------------------------------------------
+
+example :: IO ()
+example = do
+  
+
+  let equity = Eqty.Equity 1
+      trdAt = OHLC.ohlcClose
+  
+      analysis :: Ana.Analysis OHLC.OHLC OptimizationInput BacktestInput
+      analysis = Ana.Analysis {
+        Ana.title = "An Example Report"
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
+        , Ana.optimizationInput = OptimizationInput ticker
+        , Ana.backtestInput = BacktestInput trdAt equity ticker
+        }
+
+      rep = Ana.analyze analysis
+
+  t <- Rep.renderReport rep
+  
+  BSL.putStrLn t
+
+------------------------------------------------------
+
+
+
+{-
 data OptimizationInput ohlc = OptimizationInput {
   optSample :: PS.PriceSignal ohlc
   , optTradeAt :: ohlc -> O.Close
@@ -108,7 +229,7 @@ instance Opt.Optimize OptimizationInput where
 
 data OptimizationResult = OptimizationResult {
   eqtyBroom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
-  , tradeList :: Trade.TradeList O.Close
+  , tradeList :: Trade.TradeList UTCTime O.Close
   , twr :: [(F.Fraction, Dist.CDF TWR.TWR)]
   , risk :: [(F.Fraction, Dist.CDF Risk.Risk)]
   }
@@ -191,8 +312,8 @@ instance BT.Backtest BacktestInput where
     in BacktestResult impSig es
 
 data BacktestResult = BacktestResult {
-  impulses :: IS.ImpulseSignal
-  , eqties :: ES.EquitySignal
+  impulses :: IS.ImpulseSignal UTCTime
+  , eqties :: ES.EquitySignal UTCTime
   }
 
 instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
@@ -237,7 +358,7 @@ example = do
       analysis :: Ana.Analysis OHLC.OHLC OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromMovingAverages 19 5)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt) -- IG.optImpGen2impGen (IG.impulsesFromMovingAverages 19 5)
         , Ana.optimizationInput = OptimizationInput {
             optSample = sample
             , optTradeAt = trdAt
@@ -255,3 +376,5 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+
+-}

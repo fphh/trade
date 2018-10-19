@@ -5,22 +5,20 @@ module Trade.Type.Trade where
 import Data.Vector (Vector)
 import qualified Data.Vector as Vec
 
-import Data.Time.Clock (UTCTime)
-
 import Trade.Type.State (State)
 
-data Trade ohlc = Trade {
+data Trade t ohlc = Trade {
   tradeState :: State
-  , ticker :: Vector (UTCTime, ohlc)
+  , ticker :: Vector (t, ohlc)
   } deriving (Show)
 
-instance Functor Trade where
+instance Functor (Trade t) where
   fmap f (Trade ts vs) = Trade ts (Vec.map (fmap f) vs)
 
-newtype TradeList ohlc = TradeList {
-  unTradeList :: [Trade ohlc]
+newtype TradeList t ohlc = TradeList {
+  unTradeList :: [Trade t ohlc]
   } deriving (Show)
 
-instance Functor TradeList where
+instance Functor (TradeList t) where
   fmap f (TradeList tl) = TradeList (map (fmap f) tl)
 

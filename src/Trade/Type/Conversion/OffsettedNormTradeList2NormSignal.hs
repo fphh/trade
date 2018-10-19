@@ -12,8 +12,9 @@ import Trade.Type.Signal (Signal(..))
 import Trade.Type.State (State(..))
 import Trade.Type.Yield (Yield(..))
 
+
 offsettedNormTradeList2normSignal ::
-  Bars -> OffsettedNormTradeList -> Signal BarNo Yield
+  Bars -> OffsettedNormTradeList t -> Signal BarNo Yield
 offsettedNormTradeList2normSignal (Bars bs) (OffsettedNormTradeList (Bars offs) (NormTradeList ntl)) =
   let f (o, NormTrade state _ vs : xs) =
         let len = o + Vec.length vs

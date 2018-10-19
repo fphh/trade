@@ -6,10 +6,7 @@ module Trade.Algorithm.StochasticOscillator where
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Algorithm.MovingAverage
-
--- import Trade.Render.Svg.Plot
-
+import Trade.Algorithm.MovingAverage (mavg)
 
 -- Probably slow implementation
 oscV :: Int -> Vector Double -> Vector (Double, Double)
@@ -19,10 +16,10 @@ oscV l v =
   let len = Vec.length v
       f a =
         let u = Vec.slice a l v
-            min = Vec.minimum u
-            max = Vec.maximum u
+            min_ = Vec.minimum u
+            max_ = Vec.maximum u
             c = Vec.last u
-        in (fromIntegral (a+l), 100 * (c - min) / (max - min))
+        in (fromIntegral (a+l), 100 * (c - min_) / (max_ - min_))
   in Vec.generate (len-l) f
 
 data StochasticOscillator = StochasticOscillator {
@@ -44,11 +41,3 @@ oscillator l v =
     , threePeriod = Vec.map f tp
     , signal = undefined
     }
-
-{-
-oscillator2Lines :: String -> Int -> Vector Double -> [PlotItem Vector Double]
-oscillator2Lines str l v =
-  let StochasticOscillator o tp sig = oscillator l v
-  in [ Line (str ++ " osc") o
-     , Line (str ++ " tp") tp ]
--}

@@ -57,7 +57,8 @@ instance RowInterface Row where
   volumeR = tradeVolume
 
 instance DateInterface Row where
-  type Ty Row = Row
+  type TyD Row = UTCTime
+  type TyR Row = Row
   dateDI = tradeDate
   removeDI = id
 

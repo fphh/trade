@@ -11,7 +11,7 @@ import Trade.Type.ImpulseGenerator (ImpulseGenerator, OptimizedImpulseGenerator)
 
 class Optimize optInput where
   type OptReportTy optInput :: *
-  optimize :: ImpulseGenerator optInput ohlc -> optInput ohlc -> IO (OptimizedImpulseGenerator ohlc, OptReportTy optInput)
+  optimize :: ImpulseGenerator t optInput ohlc -> optInput ohlc -> IO (OptimizedImpulseGenerator t ohlc, OptReportTy optInput)
 
 
 

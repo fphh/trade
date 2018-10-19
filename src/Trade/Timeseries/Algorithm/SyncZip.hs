@@ -6,14 +6,14 @@
 
 module Trade.Timeseries.Algorithm.SyncZip where
 
-import Data.Time.Clock (UTCTime)
-
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
 import Trade.Timeseries.Row
 
-syncZipWith :: (DateInterface rtx, DateInterface rty) => (UTCTime -> Ty rtx -> Ty rty -> a) -> Vector rtx -> Vector rty -> (Vector (UTCTime, a))
+syncZipWith ::
+  (DateInterface rtx, DateInterface rty, TyD rtx ~ TyD rty, Eq (TyD rty), Ord (TyD rty)) =>
+  (TyD rtx -> TyR rtx -> TyR rty -> a) -> Vector rtx -> Vector rty -> (Vector (TyD rtx, a))
 syncZipWith f xs ys =
   let as = Vec.toList xs
       bs = Vec.toList ys
@@ -33,11 +33,11 @@ syncZipWith f xs ys =
 class SyncZip rtx rty where
   type TyX rtx :: *
   type TyY rty :: *
-  syncZip :: Vector rtx -> Vector rty -> (Vector (UTCTime, (TyX rtx, TyY rty)))
+  syncZip :: Vector rtx -> Vector rty -> (Vector (TyD rtx, (TyX rtx, TyY rty)))
 
-instance SyncZip (UTCTime, a) (UTCTime, b) where
-  type TyX (UTCTime, a) = a
-  type TyY (UTCTime, b) = b
+instance (Ord t) => SyncZip (t, a) (t, b) where
+  type TyX (t, a) = a
+  type TyY (t, b) = b
   syncZip = syncZipWith (\_ x y -> (x, y))
 
 

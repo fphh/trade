@@ -3,7 +3,6 @@
 
 module Trade.TStatistics.TradeStatistics where
 
-import Data.Time.Clock
 
 import qualified Data.Map as Map
 
@@ -14,6 +13,7 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
+import Trade.Type.Bars (Time, DeltaT, diff)
 import Trade.Type.OHLC (UnOHLC, unOHLC)
 import Trade.Type.State (State)
 import Trade.Type.Trade (TradeList(..), ticker)
@@ -33,14 +33,14 @@ data TradeStatistics = TradeStatistics {
   } deriving (Show)
 
 
-tradeStatistics :: (UnOHLC b) => (ohlc -> b) -> TradeList ohlc -> [TradeStatistics]
+tradeStatistics :: (UnOHLC b, Time t, Real (DeltaT t)) => (ohlc -> b) -> TradeList t ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
   let m = sortTradesByState tl
 
       day = 60*60*24
 
       h v = case (Vec.head v, Vec.last v) of
-              ((tx, x), (ty, y)) -> (realToFrac (ty `diffUTCTime` tx), log (unOHLC y / unOHLC x))
+              ((tx, x), (ty, y)) -> (realToFrac (ty `diff` tx), log (unOHLC y / unOHLC x))
 
       f = Vec.fromList . map (h . Vec.map (fmap extract) . ticker) . unTradeList
 

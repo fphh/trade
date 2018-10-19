@@ -21,17 +21,20 @@ class RowInterface row where
 
 
 class DateInterface row where
-  type Ty row :: *
-  dateDI :: row -> UTCTime
-  removeDI :: row -> Ty row
+  type TyD row :: *
+  type TyR row :: *
+  dateDI :: row -> TyD row
+  removeDI :: row -> TyR row
 
-instance DateInterface (UTCTime, a) where
-  type Ty (UTCTime, a) = a
+instance DateInterface (t, a) where
+  type TyD (t, a) = t
+  type TyR (t, a) = a
   dateDI = fst
   removeDI = snd
 
-instance DateInterface (UTCTime, a, b) where
-  type Ty (UTCTime, a, b) = (a, b)
+instance DateInterface (t, a, b) where
+  type TyD (t, a, b) = t
+  type TyR (t, a, b) = (a, b)
   dateDI (t, _, _) = t
   removeDI (_, x, y) = (x, y)
 

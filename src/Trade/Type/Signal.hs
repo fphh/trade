@@ -57,7 +57,7 @@ zipWith ::(a -> a -> b) -> b -> Signal t a -> Signal t b
 zipWith f x (Signal xs) =
   let start = fmap (const x) (Vec.head xs)
       g (_, x) (t, y) = (t, f x y)
-  in Signal (Vec.cons start (Vec.zipWith g xs (stail "Signal.zipWith" xs)))
+  in Signal (Vec.cons start (Vec.zipWith g (stail "Signal.zipWith" xs) xs))
 
 {-
 TODO: Testing

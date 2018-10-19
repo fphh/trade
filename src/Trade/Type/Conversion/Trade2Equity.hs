@@ -14,7 +14,7 @@ import Trade.Type.Trade (Trade(..), TradeList(..))
 
 import Trade.Help.SafeTail
 
-trade2equity :: (UnOHLC a) => (ohlc -> a) -> Equity -> TradeList ohlc -> EquitySignal
+trade2equity :: (UnOHLC a) => (ohlc -> a) -> Equity -> TradeList t ohlc -> EquitySignal t
 trade2equity tradeAt (Equity eqty) (TradeList tl) =
   let p (Trade NoPosition _) = False
       p _ = True

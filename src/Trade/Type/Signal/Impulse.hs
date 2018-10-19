@@ -12,8 +12,6 @@ import Data.Vector (Vector)
 
 import qualified Data.List as List
 
-import Data.Time.Clock (UTCTime)
-
 import Trade.Type.Impulse (Impulse(..))
 import Trade.Type.Signal (Signal(..))
 
@@ -22,11 +20,11 @@ import Trade.Type.Signal (Signal(..))
 import Trade.Report.Curve
 
 
-type ImpulseSignal = Signal UTCTime (Maybe Impulse)
+type ImpulseSignal t = Signal t (Maybe Impulse)
 
 
-instance Curve ImpulseSignal where
-  type CurveTy ImpulseSignal = UTCTime
+instance Curve (ImpulseSignal t) where
+  type CurveTy (ImpulseSignal t) = t
   
   curve (Signal is) =
     let f (t, Just Sell) = Vec.fromList [(t, 0), (t, 1), (t, 0)]
@@ -36,22 +34,22 @@ instance Curve ImpulseSignal where
 
 
 toImpulseSignal ::
-  (Int -> UTCTime -> evt -> Maybe Impulse)
-  -> Vector (UTCTime, evt)
-  -> ImpulseSignal
+  (Int -> t -> evt -> Maybe Impulse)
+  -> Vector (t, evt)
+  -> ImpulseSignal t
 toImpulseSignal f vs = Signal (Vec.imap (\i (t, x) -> (t, f i t x)) vs)
 
-bhImpulse :: Int -> (Int -> UTCTime -> evt -> Maybe Impulse)
+bhImpulse :: Int -> (Int -> t -> evt -> Maybe Impulse)
 bhImpulse _ i _ _ | i == 0 = Just Buy
 bhImpulse len i _ _ | i == len-1 = Just Sell
 bhImpulse _ _ _ _ = Nothing
 
-bhImpulseSignal :: Vector (UTCTime, evt) -> ImpulseSignal
+bhImpulseSignal :: Vector (t, evt) -> ImpulseSignal t
 bhImpulseSignal vs = toImpulseSignal (bhImpulse (Vec.length vs - 1)) vs
 
 
 -- | TODO: This is not very correct!
-simplifyImpulseSignal :: ImpulseSignal -> ImpulseSignal
+simplifyImpulseSignal :: ImpulseSignal t -> ImpulseSignal t
 simplifyImpulseSignal _ = error "Trade.Type.Signal.Impulse.simplifyImpulseSignal is not very correct"
 simplifyImpulseSignal (Signal is) =
   let js = Vec.toList is

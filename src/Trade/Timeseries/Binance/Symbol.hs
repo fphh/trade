@@ -64,7 +64,8 @@ instance RowInterface Row where
   volumeR = Just . volume
 
 instance DateInterface Row where
-  type Ty Row = Row
+  type TyD Row = UTCTime
+  type TyR Row = Row
   dateDI = toDate
   removeDI = id
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 
 module Trade.MonteCarlo.ResampleTrades.Broom where
 
@@ -22,7 +24,7 @@ import Trade.Type.Conversion.OffsettedNormTradeList2NormSignal (offsettedNormTra
 import Trade.Analysis.Yield (sortNormTradesByState)
 
 
-startingOffsets :: NormTradeList -> (Int -> Bars)
+startingOffsets :: NormTradeList t -> (Int -> Bars)
 startingOffsets (NormTradeList tl) =
   let f (NormTrade _ _ ys) = Vec.imap (\i _ -> Bars i) ys
       table = Vec.concat (map f tl)
@@ -30,7 +32,7 @@ startingOffsets (NormTradeList tl) =
   in \n -> table Vec.! (n `mod` len)
 
 
-randomYieldSignal' :: NormTradeList -> [Int] -> NormTradeList
+randomYieldSignal' :: NormTradeList t -> [Int] -> NormTradeList t
 randomYieldSignal' _ [] = error "randomYieldSignal': no random numbers"
 randomYieldSignal' ys (i:is) =
   let j = i `mod` 2
@@ -64,7 +66,7 @@ randomYieldSignal' ys (i:is) =
   in NormTradeList trades
 
 
-randomYieldSignal :: NormTradeList -> (Int -> Bars) -> IO OffsettedNormTradeList
+randomYieldSignal :: NormTradeList t -> (Int -> Bars) -> IO (OffsettedNormTradeList t)
 randomYieldSignal ys offsetTable = do
     gen <- newStdGen
     let i:is = map abs (randoms gen)
@@ -73,9 +75,10 @@ randomYieldSignal ys offsetTable = do
     return (OffsettedNormTradeList offs rysig)
 
 
-normBroom :: Bars -> Int -> NormTradeList -> IO (Broom (Signal BarNo Yield))
+normBroom :: Bars -> Int -> NormTradeList t -> IO (Broom (Signal BarNo Yield))
 normBroom bs n ntl = do
   let soffs = startingOffsets ntl
+      f :: NormTrade t -> NormTrade t
       f (NormTrade NoPosition t vs) =
         NormTrade NoPosition t (Vec.replicate (Vec.length vs + 1) (Yield 1))
       f (NormTrade state t vs) =

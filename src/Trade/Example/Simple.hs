@@ -4,6 +4,8 @@
 
 module Trade.Example.Simple where
 
+import Data.Time.Clock (UTCTime)
+
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import qualified Graphics.Rendering.Chart.Easy as E
@@ -63,8 +65,6 @@ instance TR.ToReport (TR.OptimizationData OHLC.OHLC OptimizationInput Optimizati
           in c
         toCandle (Signal.Signal cs) = Vec.map toC cs
 
-
-    
     Rep.subheader "Optimization Input"
     Rep.candle "Symbol" [toCandle ps]
     Rep.subheader "Optimization Result"
@@ -88,8 +88,8 @@ instance BT.Backtest BacktestInput where
     in BacktestResult impSig es
 
 data BacktestResult = BacktestResult {
-  impulses :: IS.ImpulseSignal
-  , eqties :: ES.EquitySignal
+  impulses :: IS.ImpulseSignal UTCTime
+  , eqties :: ES.EquitySignal UTCTime
   }
 
 instance TR.ToReport (TR.BacktestData OHLC.OHLC BacktestInput BacktestResult) where

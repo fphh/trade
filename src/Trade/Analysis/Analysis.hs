@@ -7,6 +7,7 @@ module Trade.Analysis.Analysis where
 
 import Control.Monad.Trans (liftIO)
 
+-- import Trade.Type.Bars (Time)
 import Trade.Type.ImpulseGenerator (ImpulseGenerator)
 
 import Trade.Analysis.Optimize (Optimize, OptReportTy, optimize)
@@ -18,7 +19,7 @@ import Trade.Analysis.ToReport (ToReport, report, OptimizationData(..), Backtest
 
 data Analysis ohlc optInp backInp = Analysis {
   title :: String
-  , impulseGenerator :: ImpulseGenerator optInp ohlc
+  , impulseGenerator :: forall t. ImpulseGenerator t optInp ohlc
   , optimizationInput :: optInp ohlc
   , backtestInput :: backInp ohlc
   }

@@ -3,8 +3,6 @@
 
 module Trade.Timeseries.Timeseries where
 
-import Data.Time.Clock (UTCTime)
-
 import Trade.Type.OHLC (Open(..), Close(..), Low(..), High(..), Volume(..))
 
 import qualified Data.Vector as Vec
@@ -18,11 +16,11 @@ import Trade.Timeseries.Row
 
 extractMaybeFromRow ::
   (DateInterface row) =>
-  (row -> Maybe a) -> Vector row -> Vector (UTCTime, Maybe a)
+  (row -> Maybe a) -> Vector row -> Vector (TyD row, Maybe a)
 extractMaybeFromRow f = Vec.map (\r -> (dateDI r, f r))
 
 
-timeseriesFromMaybe :: Vector (UTCTime, Maybe a) -> (Double, Vector (UTCTime, a))
+timeseriesFromMaybe :: Vector (t, Maybe a) -> (Double, Vector (t, a))
 timeseriesFromMaybe vs =
   let (nothings, bs) = Vec.partition isNothing (Vec.map sequence vs)
       ratio = fromIntegral (Vec.length nothings) / fromIntegral (Vec.length vs)
@@ -33,13 +31,13 @@ timeseriesFromMaybe vs =
 
 extractFromRow ::
   (DateInterface row) =>
-  (row -> Maybe a) -> Vector row -> Vector (UTCTime, a)
+  (row -> Maybe a) -> Vector row -> Vector (TyD row, a)
 extractFromRow f vs = snd (timeseriesFromMaybe (extractMaybeFromRow f vs))
 
 class Timeseries a where
   type TSTy a :: *
     
-  timeseries :: Vector (UTCTime, a) -> Vector (UTCTime, TSTy a)
+  timeseries :: Vector (t, a) -> Vector (t, TSTy a)
 
 instance Timeseries Open where
   type TSTy Open = Double
@@ -65,6 +63,6 @@ instance Timeseries Volume where
 
 timeseriesBy ::
   (DateInterface row, Timeseries a) =>
-  (row -> Maybe a) -> Vector row -> Vector (UTCTime, TSTy a)
+  (row -> Maybe a) -> Vector row -> Vector (TyD row, TSTy a)
 timeseriesBy f = timeseries . extractFromRow f
 

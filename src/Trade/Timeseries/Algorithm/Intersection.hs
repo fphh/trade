@@ -2,8 +2,6 @@
 
 module Trade.Timeseries.Algorithm.Intersection where
 
-import Data.Time.Clock (UTCTime)
-
 
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
@@ -14,8 +12,6 @@ import Trade.Timeseries.Algorithm.SyncZip (syncZip)
 
 import Trade.Report.Pretty
 
-
-import Debug.Trace
 
 --    y1 = m x1 + b und y2 = n x2 + c.
 --    x = (c−b) / (m−n)
@@ -35,7 +31,7 @@ data Intersection = Up | Down | NoIntersection deriving (Eq, Show)
 instance Pretty Intersection where
   pretty = show
 
-intersection :: Vector (UTCTime, Double) -> Vector (UTCTime, Double) -> Vector (UTCTime, Intersection)
+intersection :: (Ord t) => Vector (t, Double) -> Vector (t, Double) -> Vector (t, Intersection)
 intersection vs us =
   let ss = syncZip vs us
   
@@ -55,7 +51,7 @@ data IntersectionArgs = IntersectionArgs {
 
 
 
-intersectionToLine :: IntersectionArgs -> Vector (UTCTime, Intersection) -> Vector (UTCTime, Double)
+intersectionToLine :: IntersectionArgs -> Vector (t, Intersection) -> Vector (t, Double)
 intersectionToLine (IntersectionArgs m len) =
   let l = m-len
       h = m+len

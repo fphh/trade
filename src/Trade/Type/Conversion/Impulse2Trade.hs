@@ -6,12 +6,14 @@ import qualified Data.Vector as Vec
 
 import Data.Maybe (isNothing)
 
+
+import Trade.Type.Bars (Time)
+
 import Trade.Timeseries.Algorithm.SyncZip
 
 import Trade.Type.State (State(..))
 import Trade.Type.Impulse (Impulse(..))
 import Trade.Type.Signal (Signal(..))
-import Trade.Type.Signal.Price (PriceSignal)
 import Trade.Type.Signal.Impulse (ImpulseSignal)
 import Trade.Type.Trade (Trade(..), TradeList(..))
 
@@ -19,7 +21,7 @@ import Trade.Help.SafeTail
 
 
 
-impulse2trade :: PriceSignal ohlc -> ImpulseSignal -> TradeList ohlc
+impulse2trade :: (Ord t) => Signal t ohlc -> ImpulseSignal t -> TradeList t ohlc
 impulse2trade (Signal ps) (Signal is) =
   let ss = syncZip ps is
       impulse (_, (_, x)) = x

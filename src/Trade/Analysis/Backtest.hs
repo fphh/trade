@@ -4,8 +4,10 @@
 
 module Trade.Analysis.Backtest where
 
+import Data.Time.Clock (UTCTime)
+
+import Trade.Type.Signal (Signal(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator)
-import Trade.Type.Signal.Price (PriceSignal)
 import Trade.Type.Signal.Impulse (ImpulseSignal)
 import Trade.Type.Signal.Equity (EquitySignal)
 import Trade.Type.Equity (Equity(..))
@@ -17,8 +19,8 @@ import qualified Trade.Report.Report as Rep
 import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
 
 equitySignal ::
-  UnOHLC a =>
-  (ohlc -> a) -> Equity -> ImpulseSignal -> PriceSignal ohlc -> EquitySignal
+  (UnOHLC a, Ord t) =>
+  (ohlc -> a) -> Equity -> ImpulseSignal t -> Signal t ohlc -> EquitySignal t
 equitySignal tradeAt eqty impSig qs = 
   let ts = impulse2trade qs impSig
   in trade2equity tradeAt eqty ts
@@ -26,7 +28,7 @@ equitySignal tradeAt eqty impSig qs =
 class Backtest btInput where
   type BacktestReportTy btInput :: *
   
-  backtest :: OptimizedImpulseGenerator ohlc -> btInput ohlc -> BacktestReportTy btInput
+  backtest :: OptimizedImpulseGenerator UTCTime ohlc -> btInput ohlc -> BacktestReportTy btInput
 
 data NoBacktest ohlc = NoBacktest
 

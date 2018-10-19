@@ -85,6 +85,7 @@ import Debug.Trace
 --------------------------------------------------------
 
 {-
+
 data OptimizationInput ohlc = OptimizationInput {
   optSample :: PS.PriceSignal ohlc
   , optTradeAt :: ohlc -> O.Close
@@ -105,7 +106,6 @@ instance Opt.Optimize OptimizationInput where
         sample = fmap (Eqty.Equity . O.unOHLC . (optTradeAt optInp)) (optSample optInp)
         len = Signal.length (optSample optInp)
 
-        -- hist = S2H.signal2history sample
         yields :: Signal.Signal UTCTime Y.LogYield
         yields = E2Y.equity2yield sample
         sampleStats = SStat.sampleStatistics yields
@@ -115,18 +115,19 @@ instance Opt.Optimize OptimizationInput where
 
     brm <- Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) mu sigma
 
-    let eqtyBrm = fmap (fmap Eqty.Equity) brm
-        -- yieldBrm = Broom.equity2yield eqtyBrm
+    let eqtyBrm@(Broom.Broom (x:_)) = fmap (fmap Eqty.Equity) brm
+
+        t = optStrat x
 
     return (optStrat, OptimizationResult eqtyBrm mu sigma sampleStats)
 
     
 
 data OptimizationResult = OptimizationResult {
-  broom :: Broom.Broom (Signal.Signal UTCTime Eqty.Equity)
+  broom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
   , muOR :: Black.Mu
   , sigmaOR :: Black.Sigma
-  , sampleStats :: SStat.SampleStatistics B.BarNo
+  , sampleStats :: SStat.SampleStatistics UTCTime
   }
 
 instance (OHLC.OHLCInterface ohlc) =>
@@ -253,21 +254,21 @@ example = do
   let mu = Black.Mu 0.4
       sigma = Black.Sigma 0.2
       start = Eqty.Equity 100
-      seed = 47
+      seed = 41
 
   samp <- Black.blackScholesDet seed (T.yearsN 4) start mu sigma
   
   -- let sample = Signal.Signal (Vec.map (fmap f) TD.test2)
-  let sample = Signal.Signal (Vec.map (fmap f) samp)
+  let Signal.Sample inSample outOfSample = Signal.split 0.75 (Signal.Signal (Vec.map (fmap f) samp))
 
   let trdAt = OHLC.ohlcClose
   
       analysis :: Ana.Analysis OHLC.OHLC OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.buySellAfterNM 2 3)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromMovingAverages 17 7)
         , Ana.optimizationInput = OptimizationInput {
-            optSample = sample
+            optSample = inSample
             , optTradeAt = trdAt
             , mcN = 1000
             , optInitialEquity = Eqty.Equity 1000
@@ -275,7 +276,7 @@ example = do
             , stepFunc = SF.stepFuncNoCommission -- stepFuncNoCommissionFullFraction
             , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0]
             }
-        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 10) sample
+        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 100) outOfSample
         }
 
       rep = Ana.analyze analysis
@@ -283,5 +284,6 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+
 
 -}
