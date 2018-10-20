@@ -76,7 +76,7 @@ ticker =
 --------------------------------------------------------
 
 data OptimizationInput ohlc = OptimizationInput {
-  optInput :: PS.PriceSignal ohlc
+  optSample :: PS.PriceSignal ohlc
   }
 
 
@@ -87,18 +87,10 @@ instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
   optimize strat optInput = do
     let -- optStrat :: IG.OptimizedImpulseGenerator t ohlc
-        optStrat :: IG.OptimizedImpulseGenerator B.BarNo Double
         optStrat = strat optInput
-        -- as :: Signal.Signal B.BarNo Double
-        -- as = Signal.Signal (Vec.fromList [])
-        -- xs = apply optStrat as
+        xs = optStrat (optSample optInput)
 
-        bs :: Signal.Signal B.BarNo Double
-        bs = Signal.Signal (Vec.fromList [(B.BarNo 0, 0.0)])
-
-        ys = apply _ bs
-        
-        -- trds = I2T.impulse2trade (optSample optInput) xs
+        -- trds = I2T.impulse2trade (optSample optInp) (optStrat (optSample optInp))
         -- ntrds = T2NT.trade2normTrade (fmap (optTradeAt optInp) trds)
         
     return (strat optInput, OptimizationResult)

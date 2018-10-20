@@ -3,6 +3,9 @@
 
 module Trade.Analysis.Optimize where
 
+
+import Data.Time.Clock (UTCTime)
+
 import qualified Trade.Report.Report as Rep
 import Trade.Analysis.ToReport (ToReport, toReport, OptimizationData(..))
 

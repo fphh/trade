@@ -27,12 +27,13 @@ data Analysis ohlc optInp backInp = Analysis {
 
 -- ---------------------------------------------
 
+
 analyze ::
   (Optimize optInp, Backtest backInp
   , ToReport (OptimizationData ohlc optInp (OptReportTy optInp))
   , ToReport (BacktestData ohlc backInp (BacktestReportTy backInp))) =>
   Analysis ohlc optInp backInp -> Rep.HtmlIO
-analyze (Analysis ttle strat optInp backInp) = do
-  (optStrat, optOut) <- liftIO (optimize strat optInp)
-  let backOut = backtest optStrat backInp
+analyze (Analysis ttle impGen optInp backInp) = do
+  (optImpGen, optOut) <- liftIO (optimize impGen optInp)
+  let backOut = backtest optImpGen backInp
   report ttle (OptimizationData optInp optOut) (BacktestData backInp backOut)
