@@ -85,9 +85,9 @@ import Debug.Trace
 --------------------------------------------------------
 
 
-data OptimizationInput t ohlc = OptimizationInput {
-  optSample :: Signal.Signal t ohlc
-  , optTradeAt :: ohlc -> O.Close
+data OptimizationInput = OptimizationInput {
+  optSample :: Signal.Signal UTCTime OHLC.OHLC
+  , optTradeAt :: OHLC.OHLC -> O.Close
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
@@ -98,6 +98,9 @@ data OptimizationInput t ohlc = OptimizationInput {
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
+  type TimeTy OptimizationInput = UTCTime
+  type OHLCTy OptimizationInput = OHLC.OHLC
+
   
   optimize strat optInp = do
     let optStrat = strat optInp
@@ -105,10 +108,8 @@ instance Opt.Optimize OptimizationInput where
         sample = fmap (Eqty.Equity . O.unOHLC . (optTradeAt optInp)) (optSample optInp)
         len = Signal.length (optSample optInp)
         
-        -- yields :: Signal.Signal t Y.LogYield
+        yields :: Signal.Signal UTCTime Y.LogYield
         yields = E2Y.equity2yield sample
-
-        sampleStats :: SStat.SampleStatistics UTCTime
         sampleStats = SStat.sampleStatistics yields
 
         mu = Black.Mu (fromIntegral len * SStat.mean sampleStats)
@@ -124,15 +125,14 @@ instance Opt.Optimize OptimizationInput where
 
     
 
-data OptimizationResult t = OptimizationResult {
+data OptimizationResult = OptimizationResult {
   broom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
   , muOR :: Black.Mu
   , sigmaOR :: Black.Sigma
-  , sampleStats :: SStat.SampleStatistics (SStat.SampleStatsTy (Signal.Signal t Y.LogYield))
+  , sampleStats :: SStat.SampleStatistics UTCTime
   }
 
-instance (OHLC.OHLCInterface ohlc) =>
-         TR.ToReport (TR.OptimizationData UTCTime ohlc OptimizationInput OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
   toReport (TR.OptimizationData optInp (OptimizationResult brm mu sigma sStats)) = do
     let toC (t, ohlc) =
           let c = E.Candle t
@@ -168,7 +168,7 @@ instance (OHLC.OHLCInterface ohlc) =>
     Rep.candle "Symbol" [toCandle (optSample optInp)]
 
     Rep.subsubheader "Sample Statistics of Log Yields"
---    SStat.stats2para sStats
+    SStat.stats2para sStats
     
     Rep.subsubheader "Generated Broom"
     Rep.text ("Black-Scholes with parameters: " ++ show mu ++ ", " ++ show sigma)
@@ -264,7 +264,7 @@ example = do
 
   let trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis UTCTime OHLC.OHLC OptimizationInput BacktestInput
+      analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
         , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromMovingAverages 17 7)

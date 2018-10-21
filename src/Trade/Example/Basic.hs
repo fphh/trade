@@ -4,8 +4,6 @@
 
 module Trade.Example.Basic where
 
-import Data.Time.Clock (UTCTime)
-
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import qualified Trade.Type.ImpulseGenerator as IG
@@ -19,16 +17,18 @@ import qualified Trade.Report.Report as Rep
 
 --------------------------------------------------------
   
-data OptimizationInput t ohlc = OptimizationInput
+data OptimizationInput = OptimizationInput
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
+  type TimeTy OptimizationInput = Opt.NoTime
+  type OHLCTy OptimizationInput = Opt.NoOHLC
   optimize strat OptimizationInput = return (strat OptimizationInput, OptimizationResult)
 
 
-data OptimizationResult t = OptimizationResult
+data OptimizationResult = OptimizationResult
 
-instance TR.ToReport (TR.OptimizationData t ohlc OptimizationInput OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
   toReport _ = do
     Rep.subheader "Optimization"
     Rep.text "Nothing to optimize."
@@ -55,7 +55,7 @@ example :: IO ()
 example = do
   
 
-  let analysis :: Ana.Analysis UTCTime ohlc OptimizationInput BacktestInput
+  let analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "Basic Report"
         , Ana.impulseGenerator = IG.optImpGen2impGen IG.noImpulses

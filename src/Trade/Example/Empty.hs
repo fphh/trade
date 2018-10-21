@@ -17,7 +17,7 @@ import Trade.Analysis.Backtest (NoBacktest(..))
 example :: IO ()
 example = do
 
-  let analysis :: Analysis UTCTime ohlc NoOptimization NoBacktest
+  let analysis :: Analysis NoOptimization NoBacktest
       analysis = Analysis {
         title = "Empty Report"
         , impulseGenerator = optImpGen2impGen noImpulses

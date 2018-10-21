@@ -67,9 +67,9 @@ import qualified Trade.Report.Style as Style
 
 
 
-data OptimizationInput t ohlc = OptimizationInput {
-  optSample :: Signal.Signal t ohlc
-  , optTradeAt :: ohlc -> O.Close
+data OptimizationInput = OptimizationInput {
+  optSample :: Signal.Signal UTCTime OHLC.OHLC
+  , optTradeAt :: OHLC.OHLC -> O.Close
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
@@ -80,7 +80,8 @@ data OptimizationInput t ohlc = OptimizationInput {
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  
+  type TimeTy OptimizationInput = UTCTime
+  type OHLCTy OptimizationInput = OHLC.OHLC
   optimize strat optInp = do
     let optStrat = strat optInp
         trds = I2T.impulse2trade (optSample optInp) (optStrat (optSample optInp))
@@ -107,15 +108,14 @@ instance Opt.Optimize OptimizationInput where
 
     
 
-data OptimizationResult t = OptimizationResult {
+data OptimizationResult = OptimizationResult {
   eqtyBroom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
-  , tradeList :: Trade.TradeList t O.Close
+  , tradeList :: Trade.TradeList UTCTime O.Close
   , twr :: [(F.Fraction, Dist.CDF TWR.TWR)]
   , risk :: [(F.Fraction, Dist.CDF Risk.Risk)]
   }
 
-instance (OHLC.OHLCInterface ohlc) =>
-         TR.ToReport (TR.OptimizationData UTCTime ohlc OptimizationInput OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
   toReport (TR.OptimizationData optInp (OptimizationResult brm trdList twrs rsks)) = do
     let toC (t, ohlc) =
           let c = E.Candle t
@@ -235,7 +235,7 @@ example = do
 
   let trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis UTCTime OHLC.OHLC OptimizationInput BacktestInput
+      analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
         , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromMovingAverages 19 5)
@@ -248,7 +248,7 @@ example = do
             , stepFunc = SF.stepFuncNoCommission -- stepFuncNoCommissionFullFraction
             , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0] -- [0.1, 0.2 .. 2]
             }
-        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 10) sample
+        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 100) sample
         }
 
       rep = Ana.analyze analysis

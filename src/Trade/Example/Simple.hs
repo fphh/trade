@@ -44,15 +44,17 @@ ticker =
   
 --------------------------------------------------------
 
-data OptimizationInput t ohlc = OptimizationInput (Signal.Signal t ohlc)
+data OptimizationInput = OptimizationInput (Signal.Signal UTCTime OHLC.OHLC)
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
+  type TimeTy OptimizationInput = UTCTime
+  type OHLCTy OptimizationInput = OHLC.OHLC
   optimize strat optInput = return (strat optInput, OptimizationResult)
 
-data OptimizationResult t = OptimizationResult
+data OptimizationResult = OptimizationResult
 
-instance TR.ToReport (TR.OptimizationData UTCTime OHLC.OHLC OptimizationInput OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
   toReport (TR.OptimizationData (OptimizationInput ps) OptimizationResult) = do
     let toC (t, ohlc) =
           let c = E.Candle t
@@ -113,7 +115,7 @@ example = do
   let equity = Eqty.Equity 1
       trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis UTCTime OHLC.OHLC OptimizationInput BacktestInput
+      analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
         , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
