@@ -28,20 +28,20 @@ instance (ToReport a, ToReport b) => ToReport (a, b) where
   toReport (x, y) = toReport x <> toReport y
 
 
-data OptimizationData ohlc optInput optOutput = OptimizationData {
-  optimizationInput :: optInput ohlc
-  , optimizationOutput :: optOutput
+data OptimizationData t ohlc optInput optOutput = OptimizationData {
+  optimizationInput :: optInput t ohlc
+  , optimizationOutput :: optOutput t
   }
 
-data BacktestData ohlc backtestInput backtestOutput = BacktestData {
-  backtestInput :: backtestInput ohlc
-  , backtestOutput :: backtestOutput
+data BacktestData t ohlc backtestInput backtestOutput = BacktestData {
+  backtestInput :: backtestInput t ohlc
+  , backtestOutput :: backtestOutput t
   }
   
 report ::
-  (ToReport (OptimizationData ohlc optInp optOut)
-  , ToReport (BacktestData ohlc backInp backOut)) =>
-  String -> OptimizationData ohlc optInp optOut -> BacktestData ohlc backInp backOut -> Rep.HtmlIO
+  (ToReport (OptimizationData t ohlc optInp optOut)
+  , ToReport (BacktestData t ohlc backInp backOut)) =>
+  String -> OptimizationData t ohlc optInp optOut -> BacktestData t ohlc backInp backOut -> Rep.HtmlIO
 report ttle opt back =
   let title = Rep.header ttle
       optRep = toReport opt

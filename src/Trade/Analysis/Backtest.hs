@@ -4,8 +4,6 @@
 
 module Trade.Analysis.Backtest where
 
-import Data.Time.Clock (UTCTime)
-
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator)
 import Trade.Type.Signal.Impulse (ImpulseSignal)
@@ -26,19 +24,20 @@ equitySignal tradeAt eqty impSig qs =
   in trade2equity tradeAt eqty ts
   
 class Backtest btInput where
-  type BacktestReportTy btInput :: *
+  type BacktestReportTy btInput :: * -> *
   
-  backtest :: OptimizedImpulseGenerator UTCTime ohlc -> btInput ohlc -> BacktestReportTy btInput
+  backtest ::
+    (Ord t) => OptimizedImpulseGenerator t ohlc -> btInput t ohlc -> (BacktestReportTy btInput) t
 
-data NoBacktest ohlc = NoBacktest
+data NoBacktest t ohlc = NoBacktest
 
-data NoBacktestReport = NoBacktestReport
+data NoBacktestReport t = NoBacktestReport
 
 instance Backtest NoBacktest where
   type BacktestReportTy NoBacktest = NoBacktestReport
   backtest _ NoBacktest = NoBacktestReport
 
-instance ToReport (BacktestData ohlc NoBacktest NoBacktestReport) where
+instance ToReport (BacktestData t ohlc NoBacktest NoBacktestReport) where
   toReport _ = Rep.text "No backtest done."
   
 

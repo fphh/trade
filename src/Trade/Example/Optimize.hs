@@ -84,10 +84,9 @@ import Debug.Trace
 
 --------------------------------------------------------
 
-{-
 
-data OptimizationInput ohlc = OptimizationInput {
-  optSample :: PS.PriceSignal ohlc
+data OptimizationInput t ohlc = OptimizationInput {
+  optSample :: Signal.Signal t ohlc
   , optTradeAt :: ohlc -> O.Close
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
@@ -105,9 +104,11 @@ instance Opt.Optimize OptimizationInput where
     
         sample = fmap (Eqty.Equity . O.unOHLC . (optTradeAt optInp)) (optSample optInp)
         len = Signal.length (optSample optInp)
-
-        yields :: Signal.Signal UTCTime Y.LogYield
+        
+        -- yields :: Signal.Signal t Y.LogYield
         yields = E2Y.equity2yield sample
+
+        sampleStats :: SStat.SampleStatistics UTCTime
         sampleStats = SStat.sampleStatistics yields
 
         mu = Black.Mu (fromIntegral len * SStat.mean sampleStats)
@@ -117,21 +118,21 @@ instance Opt.Optimize OptimizationInput where
 
     let eqtyBrm@(Broom.Broom (x:_)) = fmap (fmap Eqty.Equity) brm
 
-        t = optStrat x
+        -- t = optStrat x
 
     return (optStrat, OptimizationResult eqtyBrm mu sigma sampleStats)
 
     
 
-data OptimizationResult = OptimizationResult {
+data OptimizationResult t = OptimizationResult {
   broom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
   , muOR :: Black.Mu
   , sigmaOR :: Black.Sigma
-  , sampleStats :: SStat.SampleStatistics UTCTime
+  , sampleStats :: SStat.SampleStatistics (SStat.SampleStatsTy (Signal.Signal t Y.LogYield))
   }
 
 instance (OHLC.OHLCInterface ohlc) =>
-         TR.ToReport (TR.OptimizationData ohlc OptimizationInput OptimizationResult) where
+         TR.ToReport (TR.OptimizationData UTCTime ohlc OptimizationInput OptimizationResult) where
   toReport (TR.OptimizationData optInp (OptimizationResult brm mu sigma sStats)) = do
     let toC (t, ohlc) =
           let c = E.Candle t
@@ -167,7 +168,7 @@ instance (OHLC.OHLCInterface ohlc) =>
     Rep.candle "Symbol" [toCandle (optSample optInp)]
 
     Rep.subsubheader "Sample Statistics of Log Yields"
-    SStat.stats2para sStats
+--    SStat.stats2para sStats
     
     Rep.subsubheader "Generated Broom"
     Rep.text ("Black-Scholes with parameters: " ++ show mu ++ ", " ++ show sigma)
@@ -205,10 +206,10 @@ instance (OHLC.OHLCInterface ohlc) =>
 
 --------------------------------------------------------
 
-data BacktestInput ohlc = BacktestInput {
+data BacktestInput t ohlc = BacktestInput {
   tradeAt :: ohlc -> O.Close
   , initialEquity :: Eqty.Equity
-  , pricesInput :: PS.PriceSignal ohlc
+  , pricesInput :: Signal.Signal t ohlc
   }
     
 instance BT.Backtest BacktestInput where
@@ -219,12 +220,12 @@ instance BT.Backtest BacktestInput where
         es = BT.equitySignal trdAt initEqty impSig ps
     in BacktestResult impSig es
 
-data BacktestResult = BacktestResult {
-  impulses :: IS.ImpulseSignal
-  , eqties :: ES.EquitySignal
+data BacktestResult t = BacktestResult {
+  impulses :: IS.ImpulseSignal t
+  , eqties :: ES.EquitySignal t
   }
 
-instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
+instance (E.PlotValue t, Show t) => TR.ToReport (TR.BacktestData t ohlc BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let Signal.Signal bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
@@ -263,7 +264,7 @@ example = do
 
   let trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis OHLC.OHLC OptimizationInput BacktestInput
+      analysis :: Ana.Analysis UTCTime OHLC.OHLC OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
         , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromMovingAverages 17 7)
@@ -284,6 +285,3 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
-
-
--}

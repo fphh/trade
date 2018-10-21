@@ -16,7 +16,6 @@ import qualified Trade.Type.Equity as Eqty
 import qualified Trade.Type.OHLC as O
 
 import qualified Trade.Type.Signal as Signal
-import qualified Trade.Type.Signal.Price as PS
 import qualified Trade.Type.Signal.Impulse as IS
 import qualified Trade.Type.Signal.Equity as ES
 
@@ -38,22 +37,22 @@ import qualified Trade.Test.Data as TD
 import qualified Trade.Report.Style as Style
 
 
-ticker :: PS.PriceSignal OHLC.OHLC
+ticker :: Signal.Signal UTCTime OHLC.OHLC
 ticker =
   let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
   in Signal.Signal (Vec.map (fmap f) TD.test2)
   
 --------------------------------------------------------
 
-data OptimizationInput ohlc = OptimizationInput (PS.PriceSignal ohlc)
+data OptimizationInput t ohlc = OptimizationInput (Signal.Signal t ohlc)
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
   optimize strat optInput = return (strat optInput, OptimizationResult)
 
-data OptimizationResult = OptimizationResult
+data OptimizationResult t = OptimizationResult
 
-instance TR.ToReport (TR.OptimizationData OHLC.OHLC OptimizationInput OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData UTCTime OHLC.OHLC OptimizationInput OptimizationResult) where
   toReport (TR.OptimizationData (OptimizationInput ps) OptimizationResult) = do
     let toC (t, ohlc) =
           let c = E.Candle t
@@ -73,10 +72,10 @@ instance TR.ToReport (TR.OptimizationData OHLC.OHLC OptimizationInput Optimizati
 
 --------------------------------------------------------
 
-data BacktestInput ohlc = BacktestInput {
+data BacktestInput t ohlc = BacktestInput {
   tradeAt :: ohlc -> O.Close
   , initialEquity :: Eqty.Equity
-  , pricesInput :: PS.PriceSignal ohlc
+  , outOfSample :: Signal.Signal t ohlc
   }
     
 instance BT.Backtest BacktestInput where
@@ -87,12 +86,12 @@ instance BT.Backtest BacktestInput where
         es = BT.equitySignal trdAt initEqty impSig ps
     in BacktestResult impSig es
 
-data BacktestResult = BacktestResult {
-  impulses :: IS.ImpulseSignal UTCTime
-  , eqties :: ES.EquitySignal UTCTime
+data BacktestResult t = BacktestResult {
+  impulses :: IS.ImpulseSignal t
+  , eqties :: ES.EquitySignal t
   }
 
-instance TR.ToReport (TR.BacktestData OHLC.OHLC BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData UTCTime OHLC.OHLC BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
@@ -114,7 +113,7 @@ example = do
   let equity = Eqty.Equity 1
       trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis OHLC.OHLC OptimizationInput BacktestInput
+      analysis :: Ana.Analysis UTCTime OHLC.OHLC OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
         , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)

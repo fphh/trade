@@ -1,6 +1,9 @@
 
 module Trade.Example.Empty where
 
+
+import Data.Time.Clock (UTCTime)
+
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Trade.Report.Report as Report
 
@@ -14,7 +17,7 @@ import Trade.Analysis.Backtest (NoBacktest(..))
 example :: IO ()
 example = do
 
-  let analysis :: Analysis ohlc NoOptimization NoBacktest
+  let analysis :: Analysis UTCTime ohlc NoOptimization NoBacktest
       analysis = Analysis {
         title = "Empty Report"
         , impulseGenerator = optImpGen2impGen noImpulses

@@ -21,7 +21,7 @@ import qualified Trade.Algorithm.MovingAverage as MAvg
 
 type OptimizedImpulseGenerator t ohlc = Signal t ohlc -> ImpulseSignal t
 
-type ImpulseGenerator t optInput ohlc = optInput ohlc -> OptimizedImpulseGenerator t ohlc
+type ImpulseGenerator t optInput ohlc = optInput t ohlc -> OptimizedImpulseGenerator t ohlc
 
 optImpGen2impGen :: OptimizedImpulseGenerator t ohlc -> ImpulseGenerator t inp ohlc
 optImpGen2impGen ig = \_ -> ig
