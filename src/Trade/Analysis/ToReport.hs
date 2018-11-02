@@ -9,6 +9,9 @@ import qualified Trade.Report.Report as Rep
 
 import Data.Monoid ((<>), mempty)
 
+-- We use IO here because charting needs IO.
+-- We rather like to serialize charts into memory,
+-- but the library only allows for serialization to disk.
 class ToReport a where
   toReport :: a -> Rep.HtmlIO
 
@@ -33,15 +36,15 @@ data OptimizationData optInput optOutput = OptimizationData {
   , optimizationOutput :: optOutput 
   }
 
-data BacktestData t ohlc backtestInput backtestOutput = BacktestData {
-  backtestInput :: backtestInput t ohlc
-  , backtestOutput :: backtestOutput t
+data BacktestData ohlc backtestInput backtestOutput = BacktestData {
+  backtestInput :: backtestInput ohlc
+  , backtestOutput :: backtestOutput
   }
   
 report ::
   (ToReport (OptimizationData optInp optOut)
-  , ToReport (BacktestData t ohlc backInp backOut)) =>
-  String -> OptimizationData optInp optOut -> BacktestData t ohlc backInp backOut -> Rep.HtmlIO
+  , ToReport (BacktestData ohlc backInp backOut)) =>
+  String -> OptimizationData optInp optOut -> BacktestData ohlc backInp backOut -> Rep.HtmlIO
 report ttle opt back =
   let title = Rep.header ttle
       optRep = toReport opt

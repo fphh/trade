@@ -48,7 +48,7 @@ sampleStatistics' as =
     , stdErrMean = Sample.stdErrMean ts
     , skewness = Sample.skewness ts
     , kurtosis = Sample.kurtosis ts
-    -- , autocorrelation = Sample.kurtosis ts
+    -- , autocorrelation = Sample.kurtosis ts -- ???
     , minimum = Vec.minimum ts
     , maximum = Vec.maximum ts
     , range = Sample.range ts
@@ -85,7 +85,7 @@ stats2para stats =
   : ["stdErrMean", show $ stdErrMean stats]
   : ["skewness", show $ skewness stats]
   : ["kurtosis", show $ kurtosis stats]
-  : ["max profit", show (maximum stats / minimum stats)]
+  -- : ["max profit", show (maximum stats / minimum stats)]
   : ["range", show $ range stats]
   : ["count", show $ count stats]
   : ["from", show $ from stats]

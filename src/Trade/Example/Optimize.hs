@@ -84,7 +84,6 @@ import Debug.Trace
 
 --------------------------------------------------------
 
-
 data OptimizationInput = OptimizationInput {
   optSample :: Signal.Signal UTCTime OHLC.OHLC
   , optTradeAt :: OHLC.OHLC -> O.Close
@@ -98,7 +97,6 @@ data OptimizationInput = OptimizationInput {
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  type TimeTy OptimizationInput = UTCTime
   type OHLCTy OptimizationInput = OHLC.OHLC
 
   
@@ -119,7 +117,7 @@ instance Opt.Optimize OptimizationInput where
 
     let eqtyBrm@(Broom.Broom (x:_)) = fmap (fmap Eqty.Equity) brm
 
-        -- t = optStrat x
+        t = optStrat x
 
     return (optStrat, OptimizationResult eqtyBrm mu sigma sampleStats)
 
@@ -176,6 +174,7 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
     Rep.chart (Style.axTitle "Bars") (Style.axTitle "Equity", Broom.broom2chart nOfSamp brm)
 
 
+
     
 {-
     Rep.subheader "Optimization Result"
@@ -206,10 +205,10 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
 
 --------------------------------------------------------
 
-data BacktestInput t ohlc = BacktestInput {
+data BacktestInput ohlc = BacktestInput {
   tradeAt :: ohlc -> O.Close
   , initialEquity :: Eqty.Equity
-  , pricesInput :: Signal.Signal t ohlc
+  , pricesInput :: Signal.Signal UTCTime ohlc
   }
     
 instance BT.Backtest BacktestInput where
@@ -220,12 +219,12 @@ instance BT.Backtest BacktestInput where
         es = BT.equitySignal trdAt initEqty impSig ps
     in BacktestResult impSig es
 
-data BacktestResult t = BacktestResult {
-  impulses :: IS.ImpulseSignal t
-  , eqties :: ES.EquitySignal t
+data BacktestResult = BacktestResult {
+  impulses :: IS.ImpulseSignal UTCTime
+  , eqties :: ES.EquitySignal UTCTime
   }
 
-instance (E.PlotValue t, Show t) => TR.ToReport (TR.BacktestData t ohlc BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let Signal.Signal bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
@@ -252,8 +251,8 @@ example = do
 
   let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
   
-  let mu = Black.Mu 0.4
-      sigma = Black.Sigma 0.2
+  let mu = Black.Mu 0.5
+      sigma = Black.Sigma 0.5
       start = Eqty.Equity 100
       seed = 41
 
@@ -277,7 +276,7 @@ example = do
             , stepFunc = SF.stepFuncNoCommission -- stepFuncNoCommissionFullFraction
             , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0]
             }
-        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 100) outOfSample
+        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 175) outOfSample
         }
 
       rep = Ana.analyze analysis

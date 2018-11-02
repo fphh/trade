@@ -21,7 +21,6 @@ data OptimizationInput = OptimizationInput
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  type TimeTy OptimizationInput = Opt.NoTime
   type OHLCTy OptimizationInput = Opt.NoOHLC
   optimize strat OptimizationInput = return (strat OptimizationInput, OptimizationResult)
 
@@ -35,16 +34,16 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
     
 --------------------------------------------------------
 
-data BacktestInput t ohlc = BacktestInput
+data BacktestInput ohlc = BacktestInput
 
 instance BT.Backtest BacktestInput where
   type BacktestReportTy BacktestInput = BacktestResult
   backtest _ _ = BacktestResult
 
 
-data BacktestResult t = BacktestResult
+data BacktestResult = BacktestResult
 
-instance TR.ToReport (TR.BacktestData t ohlc BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
   toReport _ = do
     Rep.subheader "Backtest"
     Rep.text "Nothing to report."

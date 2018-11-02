@@ -1,8 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE InstanceSigs #-}
 
 module Trade.Example.ReplayingTrades where
 
@@ -80,11 +79,20 @@ data OptimizationInput = OptimizationInput {
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  type TimeTy OptimizationInput = UTCTime
+  -- type TimeTy OptimizationInput = UTCTime
   type OHLCTy OptimizationInput = OHLC.OHLC
+
   optimize strat optInp = do
-    let optStrat = strat optInp
-        trds = I2T.impulse2trade (optSample optInp) (optStrat (optSample optInp))
+    let -- optStrat :: Signal.Signal t OHLC.OHLC -> IS.ImpulseSignal t
+        -- optStrat :: IG.OptimizedImpulseGenerator t OHLC.OHLC
+        optStrat = strat optInp
+
+        samp :: Signal.Signal UTCTime OHLC.OHLC
+        samp = optSample optInp
+
+        xy = optStrat samp
+        
+        trds = I2T.impulse2trade (optSample optInp) (optStrat samp) -- (optStrat (optSample optInp))
         ntrds = T2NT.trade2normTrade (fmap (optTradeAt optInp) trds)
     yieldBroom <- RTBroom.normBroom (forcastHorizon optInp) (mcN optInp) ntrds
 
@@ -177,10 +185,10 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
 
 --------------------------------------------------------
 
-data BacktestInput t ohlc = BacktestInput {
+data BacktestInput ohlc = BacktestInput {
   tradeAt :: ohlc -> O.Close
   , initialEquity :: Eqty.Equity
-  , pricesInput :: Signal.Signal t ohlc
+  , pricesInput :: Signal.Signal UTCTime ohlc
   }
     
 instance BT.Backtest BacktestInput where
@@ -191,12 +199,12 @@ instance BT.Backtest BacktestInput where
         es = BT.equitySignal trdAt initEqty impSig ps
     in BacktestResult impSig es
 
-data BacktestResult t = BacktestResult {
-  impulses :: IS.ImpulseSignal t
-  , eqties :: ES.EquitySignal t
+data BacktestResult = BacktestResult {
+  impulses :: IS.ImpulseSignal UTCTime
+  , eqties :: ES.EquitySignal UTCTime
   }
 
-instance TR.ToReport (TR.BacktestData UTCTime ohlc BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let Signal.Signal bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
@@ -256,3 +264,4 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+

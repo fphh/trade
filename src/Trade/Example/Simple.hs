@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 
 
 module Trade.Example.Simple where
@@ -37,6 +38,7 @@ import qualified Trade.Test.Data as TD
 import qualified Trade.Report.Style as Style
 
 
+
 ticker :: Signal.Signal UTCTime OHLC.OHLC
 ticker =
   let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
@@ -48,7 +50,6 @@ data OptimizationInput = OptimizationInput (Signal.Signal UTCTime OHLC.OHLC)
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  type TimeTy OptimizationInput = UTCTime
   type OHLCTy OptimizationInput = OHLC.OHLC
   optimize strat optInput = return (strat optInput, OptimizationResult)
 
@@ -74,10 +75,10 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
 
 --------------------------------------------------------
 
-data BacktestInput t ohlc = BacktestInput {
+data BacktestInput ohlc = BacktestInput {
   tradeAt :: ohlc -> O.Close
   , initialEquity :: Eqty.Equity
-  , outOfSample :: Signal.Signal t ohlc
+  , outOfSample :: Signal.Signal UTCTime ohlc
   }
     
 instance BT.Backtest BacktestInput where
@@ -88,12 +89,12 @@ instance BT.Backtest BacktestInput where
         es = BT.equitySignal trdAt initEqty impSig ps
     in BacktestResult impSig es
 
-data BacktestResult t = BacktestResult {
-  impulses :: IS.ImpulseSignal t
-  , eqties :: ES.EquitySignal t
+data BacktestResult = BacktestResult {
+  impulses :: IS.ImpulseSignal UTCTime
+  , eqties :: ES.EquitySignal UTCTime
   }
 
-instance TR.ToReport (TR.BacktestData UTCTime OHLC.OHLC BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData OHLC.OHLC BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
