@@ -1,17 +1,17 @@
 
 
-module Trade.Type.State where
+module Trade.Type.Position where
 
 import Trade.Report.Pretty
 
 
--- | The trader's state.
+-- | The trader's position.
 -- TODO: Being short.
-data State =
+data Position =
   Long
   -- -- | Short
   | NoPosition
   deriving (Show, Eq, Ord)
 
-instance Pretty State where
+instance Pretty Position where
   pretty = show
