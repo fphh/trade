@@ -23,6 +23,7 @@ library
                         Trade.Algorithm.StochasticOscillator
                         Trade.Analysis.Analysis
                         Trade.Analysis.Backtest
+                        Trade.Analysis.OHLCData
                         Trade.Analysis.Optimize
                         Trade.Analysis.Risk
                         Trade.Analysis.ToReport
@@ -73,6 +74,7 @@ library
                         Trade.Type.Conversion.Equity2Yield
                         Trade.Type.Conversion.Impulse2Trade
                         Trade.Type.Conversion.OffsettedNormTradeList2NormSignal
+                        Trade.Type.Conversion.NormTrade2YieldSignal
                         Trade.Type.Conversion.Trade2Equity
                         Trade.Type.Conversion.Trade2NormTrade
                         Trade.Type.Conversion.Yield2Equity
@@ -84,11 +86,12 @@ library
                         Trade.Type.NormTrade
                         Trade.Type.OffsettedNormTradeList
                         Trade.Type.OHLC
+                        Trade.Type.Position
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
                         Trade.Type.Signal.Impulse
                         Trade.Type.Signal.Price
-                        Trade.Type.State
+                        Trade.Type.Signal.Yield
                         Trade.Type.StepFunc
                         Trade.Type.Trade
                         Trade.Type.Yield

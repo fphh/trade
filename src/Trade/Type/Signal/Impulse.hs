@@ -48,11 +48,35 @@ bhImpulseSignal :: Vector (t, evt) -> ImpulseSignal t
 bhImpulseSignal vs = toImpulseSignal (bhImpulse (Vec.length vs - 1)) vs
 
 
--- | TODO: This is not very correct!
-simplifyImpulseSignal :: ImpulseSignal t -> ImpulseSignal t
-simplifyImpulseSignal _ = error "Trade.Type.Signal.Impulse.simplifyImpulseSignal is not very correct"
-simplifyImpulseSignal (Signal is) =
-  let js = Vec.toList is
-      cs = List.groupBy (\x y -> snd x == snd y) js
-      ss = map head cs
-  in Signal (Vec.fromList ss)
+
+-- | TODO: Verfy this!
+alternateBuySellKeepFirstOccurrence :: ImpulseSignal t -> ImpulseSignal t
+alternateBuySellKeepFirstOccurrence (Signal is) =
+  let (ts, ds) = unzip (Vec.toList is)
+
+      go xs =
+        let p a x = x == a || x == Nothing
+            toNothing = map (const Nothing)
+            go a xs = (a:) $
+              case List.span (p a) xs of
+                (as, []) -> toNothing as
+                (as, [b]) -> toNothing as ++ [b]
+                (as, b:bs) -> toNothing as ++ go b bs
+        in case xs of
+          [] -> error "alternateBuySellKeepFirstOccurrence: signal shorter than 1"
+          u:us -> go u us
+
+      es = go ds
+      
+   in Signal (Vec.fromList (zip ts es))
+
+{-
+adjustSignal :: ImpulseSignal t -> ImpulseSignal t
+adjustSignal (Signal is) =
+  let len = Vec.length is
+      (a, as) = Vec.splitAt 1 is
+      (os, o) = Vec.splitAt (len-1) is
+      oe = Vec.head o
+
+      newAe = case Vec.head a of
+  -}              

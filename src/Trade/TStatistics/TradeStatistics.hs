@@ -15,16 +15,16 @@ import Text.Printf (printf)
 
 import Trade.Type.Bars (Time, DeltaT, diff)
 import Trade.Type.OHLC (UnOHLC, unOHLC)
-import Trade.Type.State (State)
+import Trade.Type.Position (Position)
 import Trade.Type.Trade (TradeList(..), ticker)
 
-import Trade.Analysis.Yield (sortTradesByState)
+import Trade.Analysis.Yield (sortTradesByPosition)
 
 import qualified Trade.Report.Report as Rep
 
 
 data TradeStatistics = TradeStatistics {
-  state :: State
+  position :: Position
   , cnt :: !Int
   , mean :: !Double
   , stdDev :: !Double
@@ -35,7 +35,7 @@ data TradeStatistics = TradeStatistics {
 
 tradeStatistics :: (UnOHLC b, Time t, Real (DeltaT t)) => (ohlc -> b) -> TradeList t ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
-  let m = sortTradesByState tl
+  let m = sortTradesByPosition tl
 
       day = 60*60*24
 
@@ -47,7 +47,7 @@ tradeStatistics extract tl =
       g st zs =
         let (ts, qs) = Vec.unzip zs
         in TradeStatistics {
-          state = st
+          position = st
           , cnt = Vec.length qs
           , mean = Sample.mean qs
           , stdDev = Sample.stdDev qs
@@ -63,7 +63,7 @@ tradeStatistics extract tl =
 stats2para :: TradeStatistics -> Rep.HtmlIO
 stats2para stats =
   Rep.vtable $
-  [ "state", show $ state stats]
+  [ "position", show $ position stats]
   : ["cnt", show $ cnt stats]
   : ["mean", printf "%.4f log yield" $ mean stats]
   : ["stdDev", printf "%.4f log yield" $ stdDev stats]

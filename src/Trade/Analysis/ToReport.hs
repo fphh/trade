@@ -36,15 +36,15 @@ data OptimizationData optInput optOutput = OptimizationData {
   , optimizationOutput :: optOutput 
   }
 
-data BacktestData ohlc backtestInput backtestOutput = BacktestData {
-  backtestInput :: backtestInput ohlc
+data BacktestData backtestInput backtestOutput = BacktestData {
+  backtestInput :: backtestInput
   , backtestOutput :: backtestOutput
   }
   
 report ::
   (ToReport (OptimizationData optInp optOut)
-  , ToReport (BacktestData ohlc backInp backOut)) =>
-  String -> OptimizationData optInp optOut -> BacktestData ohlc backInp backOut -> Rep.HtmlIO
+  , ToReport (BacktestData backInp backOut)) =>
+  String -> OptimizationData optInp optOut -> BacktestData backInp backOut -> Rep.HtmlIO
 report ttle opt back =
   let title = Rep.header ttle
       optRep = toReport opt

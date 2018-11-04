@@ -9,7 +9,7 @@ import Trade.Type.Signal (Signal(..))
 import Trade.Type.Signal.Equity (EquitySignal)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.OHLC (UnOHLC, unOHLC)
-import Trade.Type.State (State(..))
+import Trade.Type.Position (Position(..))
 import Trade.Type.Trade (Trade(..), TradeList(..))
 
 import Trade.Help.SafeTail

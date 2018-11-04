@@ -2,8 +2,6 @@
 module Trade.Example.Empty where
 
 
-import Data.Time.Clock (UTCTime)
-
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Trade.Report.Report as Report
 

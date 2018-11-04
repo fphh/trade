@@ -19,6 +19,7 @@ import qualified Trade.Type.OHLC as O
 import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.Signal.Impulse as IS
 import qualified Trade.Type.Signal.Equity as ES
+import qualified Trade.Type.StepFunc as SF
 
 import qualified Trade.Type.ImpulseGenerator as IG
 
@@ -28,6 +29,7 @@ import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.ToReport as TR
 import qualified Trade.Analysis.Optimize as Opt
+import qualified Trade.Analysis.OHLCData as OD
 
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Curve as Curve
@@ -50,8 +52,11 @@ data OptimizationInput = OptimizationInput (Signal.Signal UTCTime OHLC.OHLC)
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  type OHLCTy OptimizationInput = OHLC.OHLC
-  optimize strat optInput = return (strat optInput, OptimizationResult)
+  type OptInpTy OptimizationInput = Signal.Signal UTCTime OHLC.OHLC
+  
+  optimize (IG.ImpulseGenerator strat) (OptimizationInput sig) =
+    return (strat sig, OptimizationResult)
+
 
 data OptimizationResult = OptimizationResult
 
@@ -81,12 +86,12 @@ data BacktestInput ohlc = BacktestInput {
   , outOfSample :: Signal.Signal UTCTime ohlc
   }
     
-instance BT.Backtest BacktestInput where
-  type BacktestReportTy BacktestInput = BacktestResult
+instance (Show ohlc) => BT.Backtest (BacktestInput ohlc) where
+  type BacktestReportTy (BacktestInput ohlc) = BacktestResult
 
-  backtest optStrat (BacktestInput trdAt initEqty ps) =
+  backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput trdAt initEqty ps) =
     let impSig = optStrat ps
-        es = BT.equitySignal trdAt initEqty impSig ps
+        es = BT.equitySignal trdAt SF.stepFuncNoCommissionFullFraction initEqty impSig ps
     in BacktestResult impSig es
 
 data BacktestResult = BacktestResult {
@@ -94,7 +99,7 @@ data BacktestResult = BacktestResult {
   , eqties :: ES.EquitySignal UTCTime
   }
 
-instance TR.ToReport (TR.BacktestData OHLC.OHLC BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData (BacktestInput ohlc) BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
@@ -102,10 +107,20 @@ instance TR.ToReport (TR.BacktestData OHLC.OHLC BacktestInput BacktestResult) wh
         right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (Curve.curve impSig)])
 
     Rep.subheader "Backtest Result"
+    Rep.text "Trading at full fraction, no commissions"
+
     Rep.chartLR (Style.axTitle "Time") left right
     Rep.text ("Initial Equity: " ++ show inEq)
     Rep.text ("Starting with equity " ++ show (Vec.head $ Signal.unSignal bts))
     Rep.text ("Ending with equity " ++ show (Vec.last $ Signal.unSignal bts))
+
+--------------------------------------------------------
+
+instance OD.OHLCData OptimizationInput where
+  type OHLCDataTy OptimizationInput = OHLC.OHLC
+
+instance OD.OHLCData (BacktestInput ohlc) where
+  type OHLCDataTy (BacktestInput ohlc) = ohlc
 
 --------------------------------------------------------
 
@@ -116,10 +131,11 @@ example = do
   let equity = Eqty.Equity 1
       trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis OptimizationInput BacktestInput
+      analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
+        -- , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.buyAtSellAtAbs 15 18)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput trdAt equity ticker
         }

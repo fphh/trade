@@ -5,10 +5,10 @@ module Trade.Type.Trade where
 import Data.Vector (Vector)
 import qualified Data.Vector as Vec
 
-import Trade.Type.State (State)
+import Trade.Type.Position (Position)
 
 data Trade t ohlc = Trade {
-  tradeState :: State
+  tradePosition :: Position
   , ticker :: Vector (t, ohlc)
   } deriving (Show)
 

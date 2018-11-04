@@ -16,12 +16,12 @@ import Trade.Type.Broom (Broom(..))
 import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 import Trade.Type.OffsettedNormTradeList (OffsettedNormTradeList(..))
 import Trade.Type.Signal (Signal(..))
-import Trade.Type.State (State(..))
 import Trade.Type.Yield (Yield(..))
 
 import Trade.Type.Conversion.OffsettedNormTradeList2NormSignal (offsettedNormTradeList2normSignal)
+import Trade.Type.Conversion.NormTrade2YieldSignal (yieldAccordingToPosition)
 
-import Trade.Analysis.Yield (sortNormTradesByState)
+import Trade.Analysis.Yield (sortNormTradesByPosition)
 
 
 startingOffsets :: NormTradeList t -> (Int -> Bars)
@@ -39,7 +39,7 @@ randomYieldSignal' ys (i:is) =
       tradeTypes = j:(1 - j):tradeTypes
       
       (_, NormTradeList ys0'):(_, NormTradeList ys1'):_ =
-        case Map.toList (sortNormTradesByState ys) of
+        case Map.toList (sortNormTradesByPosition ys) of
           cs@(_:_:_) -> cs
           _ -> error "randomYieldSignal': not enough types of trades available"
       
@@ -78,15 +78,7 @@ randomYieldSignal ys offsetTable = do
 normBroom :: Bars -> Int -> NormTradeList t -> IO (Broom (Signal BarNo Yield))
 normBroom bs n ntl = do
   let soffs = startingOffsets ntl
-      f :: NormTrade t -> NormTrade t
-      f (NormTrade NoPosition t vs) =
-        NormTrade NoPosition t (Vec.replicate (Vec.length vs + 1) (Yield 1))
-      f (NormTrade state t vs) =
-        NormTrade state t (Vec.cons (Yield 1) vs)
-
-      ntl' = NormTradeList (map f (unNormTradeList ntl))
-      
+      ntl' = NormTradeList (map yieldAccordingToPosition (unNormTradeList ntl))
   offsTls <- replicateM n (randomYieldSignal ntl' soffs)
-
   return (Broom (map (offsettedNormTradeList2normSignal bs) offsTls))
 

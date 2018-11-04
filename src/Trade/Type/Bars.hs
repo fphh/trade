@@ -19,19 +19,17 @@ newtype BarNo = BarNo {
 
 newtype DeltaBar = DeltaBar {
   deltaBar :: Int
-  } deriving (Show, Eq, Ord)
+  } deriving (Show, Eq, Ord, Enum, Num)
 
 class Time t where
   type DeltaT t :: *
   add :: t -> DeltaT t -> t
   diff :: t -> t -> DeltaT t
 
-
 instance Time BarNo where
   type DeltaT BarNo = DeltaBar
   add (BarNo t) (DeltaBar dt) = BarNo (t+dt)
   diff (BarNo s) (BarNo t) = DeltaBar (s-t)
-
 
 instance Time UTCTime where
   type DeltaT UTCTime = NominalDiffTime

@@ -2,6 +2,8 @@
 
 module Trade.Type.Broom where
 
+import qualified Prelude as P
+import Prelude hiding (zip, zipWith)
 
 import Trade.Type.Equity (Equity)
 import Trade.Type.Signal (Signal)
@@ -23,11 +25,17 @@ instance Functor Broom where
   fmap f (Broom hs) = Broom (map f hs)
 
 
+zipWith :: (a -> b -> c) -> Broom a -> Broom b -> Broom c
+zipWith f (Broom xs) (Broom ys) = Broom (P.zipWith f xs ys)
+
+zip :: Broom a -> Broom b -> Broom (a, b)
+zip = zipWith (,)
+
 -- | Turn a broom into a chart with `n` curves.
 broom2chart :: (Line.Line signal) => Int -> Broom signal -> [Line.L [(Line.TyX signal, Line.TyY signal)]]
 broom2chart n (Broom xs) =
   let f i x = Line.line (show i) x
-  in zipWith f [0 :: Integer ..] (take n xs)
+  in P.zipWith f [0 :: Integer ..] (take n xs)
 
 
 

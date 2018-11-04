@@ -61,6 +61,7 @@ import qualified Trade.Analysis.ToReport as TR
 import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Analysis.TWR as TWR
 import qualified Trade.Analysis.Risk as Risk
+import qualified Trade.Analysis.OHLCData as OD
 
 import qualified Trade.TStatistics.SampleStatistics as SStat
 import qualified Trade.TStatistics.TradeStatistics as TStat
@@ -84,9 +85,11 @@ import Debug.Trace
 
 --------------------------------------------------------
 
-data OptimizationInput = OptimizationInput {
-  optSample :: Signal.Signal UTCTime OHLC.OHLC
-  , optTradeAt :: OHLC.OHLC -> O.Close
+{-
+
+data OptimizationInput t ohlc = OptimizationInput {
+  optSample :: Signal.Signal t ohlc
+  , optTradeAt :: ohlc -> O.Close
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
@@ -95,13 +98,12 @@ data OptimizationInput = OptimizationInput {
   }
   
 
-instance Opt.Optimize OptimizationInput where
-  type OptReportTy OptimizationInput = OptimizationResult
-  type OHLCTy OptimizationInput = OHLC.OHLC
-
+instance Opt.Optimize (OptimizationInput UTCTime OHLC.OHLC) where
+  type OptReportTy (OptimizationInput UTCTime OHLC.OHLC) = OptimizationResult
+  type OptInpTy (OptimizationInput UTCTime OHLC.OHLC) = ()
   
-  optimize strat optInp = do
-    let optStrat = strat optInp
+  optimize (IG.ImpulseGenerator strat) optInp = do
+    let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat ()
     
         sample = fmap (Eqty.Equity . O.unOHLC . (optTradeAt optInp)) (optSample optInp)
         len = Signal.length (optSample optInp)
@@ -113,25 +115,32 @@ instance Opt.Optimize OptimizationInput where
         mu = Black.Mu (fromIntegral len * SStat.mean sampleStats)
         sigma = Black.Sigma (sqrt (fromIntegral len) * SStat.stdDev sampleStats)
 
-    brm <- Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) mu sigma
+        toOHLC x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
+        
+    
+    brm <- fmap toOHLC $ Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) mu sigma
 
-    let eqtyBrm@(Broom.Broom (x:_)) = fmap (fmap Eqty.Equity) brm
-
-        t = optStrat x
-
-    return (optStrat, OptimizationResult eqtyBrm mu sigma sampleStats)
+    let impBrm = fmap optStrat ohlcBrm
+        
+        g = BT.equitySignal (optTradeAt optInp) (optInitialEquity optInp)
+        tradeBroom = Broom.zipWith g impBrm ohlcBrm
+        
+    return (optIG, OptimizationResult brm tradeBroom mu sigma sampleStats)
 
     
 
 data OptimizationResult = OptimizationResult {
-  broom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
+  broom :: Broom.Broom (Signal.Signal B.BarNo Double)
+  , trdBroom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
   , muOR :: Black.Mu
   , sigmaOR :: Black.Sigma
   , sampleStats :: SStat.SampleStatistics UTCTime
   }
 
-instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
-  toReport (TR.OptimizationData optInp (OptimizationResult brm mu sigma sStats)) = do
+instance (OHLC.OHLCInterface ohlc) =>
+         TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime ohlc) OptimizationResult) where
+  
+  toReport (TR.OptimizationData optInp (OptimizationResult brm trdBrm mu sigma sStats)) = do
     let toC (t, ohlc) =
           let c = E.Candle t
                   (O.unOHLC $ OHLC.ohlcLow ohlc)
@@ -171,7 +180,11 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
     Rep.subsubheader "Generated Broom"
     Rep.text ("Black-Scholes with parameters: " ++ show mu ++ ", " ++ show sigma)
     Rep.text ("Number of Monte Carlo samples: " ++ show (mcN optInp) ++ ", showing " ++ show nOfSamp)
-    Rep.chart (Style.axTitle "Bars") (Style.axTitle "Equity", Broom.broom2chart nOfSamp brm)
+    Rep.chart (Style.axTitle "Bars") (Style.axTitle "Price", Broom.broom2chart nOfSamp brm)
+
+    Rep.subsubheader "Generated Trade Broom"
+    Rep.text ("Number of Monte Carlo samples: " ++ show (mcN optInp) ++ ", showing " ++ show nOfSamp)
+    Rep.chart (Style.axTitle "Bars") (Style.axTitle "Equity when trading", Broom.broom2chart nOfSamp trdBrm)
 
 
 
@@ -205,26 +218,27 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
 
 --------------------------------------------------------
 
-data BacktestInput ohlc = BacktestInput {
+data BacktestInput t ohlc = BacktestInput {
   tradeAt :: ohlc -> O.Close
   , initialEquity :: Eqty.Equity
-  , pricesInput :: Signal.Signal UTCTime ohlc
+  , pricesInput :: Signal.Signal t ohlc
   }
     
-instance BT.Backtest BacktestInput where
-  type BacktestReportTy BacktestInput = BacktestResult
+instance (Ord t, Show t, Show ohlc) => BT.Backtest (BacktestInput t ohlc) where
+  type BacktestReportTy (BacktestInput t ohlc) = BacktestResult t
 
-  backtest optStrat (BacktestInput trdAt initEqty ps) =
+  backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput trdAt initEqty ps) =
     let impSig = optStrat ps
         es = BT.equitySignal trdAt initEqty impSig ps
     in BacktestResult impSig es
 
-data BacktestResult = BacktestResult {
-  impulses :: IS.ImpulseSignal UTCTime
-  , eqties :: ES.EquitySignal UTCTime
+data BacktestResult t = BacktestResult {
+  impulses :: IS.ImpulseSignal t
+  , eqties :: ES.EquitySignal t
   }
 
-instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
+instance (E.PlotValue t, Show t) =>
+         TR.ToReport (TR.BacktestData (BacktestInput t ohlc) (BacktestResult t)) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let Signal.Signal bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
@@ -232,7 +246,6 @@ instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
         right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (Curve.curve impSig)])
 
     Rep.subheader "Backtest Result"
-
 
     Rep.chartLR (Style.axTitle "Time") left right
     Rep.text ("Initial Equity: " ++ show inEq)
@@ -243,6 +256,15 @@ instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
         Rep.text ("Ending with equity " ++ show (Vec.last bts))
       False -> do
         Rep.text "No trades occured"
+
+        
+--------------------------------------------------------
+
+instance OD.OHLCData (OptimizationInput t ohlc) where
+  type OHLCDataTy (OptimizationInput t ohlc) = ohlc
+
+instance OD.OHLCData (BacktestInput t ohlc) where
+  type OHLCDataTy (BacktestInput t ohlc) = ohlc
 
 --------------------------------------------------------
 
@@ -263,10 +285,10 @@ example = do
 
   let trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis OptimizationInput BacktestInput
+      -- analysis :: Ana.Analysis (OptimizationInput t ) (BacktestInput t ohlc)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromMovingAverages 17 7)
+        , Ana.impulseGenerator = IG.impulsesFromMovingAverage 0.05
         , Ana.optimizationInput = OptimizationInput {
             optSample = inSample
             , optTradeAt = trdAt
@@ -284,3 +306,6 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+
+
+-}

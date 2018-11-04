@@ -12,6 +12,7 @@ import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.ToReport as TR
 import qualified Trade.Analysis.Optimize as Opt
+import qualified Trade.Analysis.OHLCData as OD
 
 import qualified Trade.Report.Report as Rep
 
@@ -21,8 +22,10 @@ data OptimizationInput = OptimizationInput
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  type OHLCTy OptimizationInput = Opt.NoOHLC
-  optimize strat OptimizationInput = return (strat OptimizationInput, OptimizationResult)
+  type OptInpTy OptimizationInput = OD.NoOHLC
+  
+  optimize (IG.ImpulseGenerator strat) OptimizationInput =
+    return (strat OD.NoOHLC, OptimizationResult)
 
 
 data OptimizationResult = OptimizationResult
@@ -34,7 +37,7 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
     
 --------------------------------------------------------
 
-data BacktestInput ohlc = BacktestInput
+data BacktestInput = BacktestInput
 
 instance BT.Backtest BacktestInput where
   type BacktestReportTy BacktestInput = BacktestResult
@@ -43,11 +46,19 @@ instance BT.Backtest BacktestInput where
 
 data BacktestResult = BacktestResult
 
-instance TR.ToReport (TR.BacktestData ohlc BacktestInput BacktestResult) where
+instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
   toReport _ = do
     Rep.subheader "Backtest"
     Rep.text "Nothing to report."
     
+--------------------------------------------------------
+
+instance OD.OHLCData OptimizationInput where
+  type OHLCDataTy OptimizationInput = OD.NoOHLC
+
+instance OD.OHLCData BacktestInput where
+  type OHLCDataTy BacktestInput = OD.NoOHLC
+
 --------------------------------------------------------
 
 example :: IO ()
