@@ -29,7 +29,7 @@ import qualified Trade.Type.Yield as Y
 
 import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.Signal.Equity as ES
-import qualified Trade.Type.Signal.Impulse as IS
+import qualified Trade.Type.ImpulseSignal as IS
 
 
 import qualified Trade.Type.Conversion.Impulse2Trade as I2T
@@ -63,7 +63,6 @@ import qualified Trade.Test.Time as T
 import qualified Trade.Test.Data as TD
 
 import qualified Trade.Report.Style as Style
-
 
 data OptimizationInput t ohlc = OptimizationInput {
   optSample :: Signal.Signal t ohlc
@@ -202,7 +201,7 @@ instance (E.PlotValue t, Show t) =>
     let Signal.Signal bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
         left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
-        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (Curve.curve impSig)])
+        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (IS.curve ps impSig)])
 
     Rep.subheader "Backtest Result"
     Rep.text "Trading at full fraction, no commissions"
@@ -216,6 +215,9 @@ instance (E.PlotValue t, Show t) =>
         Rep.text ("Ending with equity " ++ show (Vec.last bts))
       False -> do
         Rep.text "No trades occured"
+
+    Rep.text (show (Signal.length ps))
+    Rep.text (show (Signal.length es))
 
 --------------------------------------------------------
 
@@ -257,7 +259,7 @@ example = do
             , stepFunc = SF.stepFuncNoCommission -- stepFuncNoCommissionFullFraction
             , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0] -- [0.1, 0.2 .. 2]
             }
-        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 100) sample
+        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 102.5) sample
         }
 
       rep = Ana.analyze analysis
@@ -265,3 +267,4 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+

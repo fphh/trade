@@ -2,7 +2,9 @@
 
 module Trade.Type.Conversion.Impulse2Trade where
 
-import qualified Data.Vector as Vec
+import qualified Data.Vector as Vec 
+
+import qualified Data.Map as Map
 
 import Data.Maybe (isNothing)
 
@@ -11,40 +13,41 @@ import Trade.Type.Bars (Time)
 
 import Trade.Timeseries.Algorithm.SyncZip
 
-import Trade.Type.Position (Position(..))
-import Trade.Type.Impulse (Impulse(..))
+import Trade.Type.Position (Position(NoPosition))
+-- import Trade.Type.Impulse (Impulse(..))
+
 import Trade.Type.Signal (Signal(..))
-import Trade.Type.Signal.Impulse (ImpulseSignal)
+import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 import Trade.Type.Trade (Trade(..), TradeList(..))
+
+import Trade.Type.Conversion.Impulse2Position (impulse2position)
 
 import Trade.Help.SafeTail
 
 import Debug.Trace
 
 
-
 impulse2trade :: (Ord t) => Signal t ohlc -> ImpulseSignal t -> TradeList t ohlc
-impulse2trade (Signal ps) (Signal is) =
-  let ss = syncZip ps is
-      impulse (_, (_, x)) = x
+impulse2trade (Signal ps) (ImpulseSignal is) =
+  let len = Vec.length ps - 1
 
-      go vs | Vec.null vs = []
-      go vs =
-        let (a, as) = (shead "impulses2trades (1)" vs, stail "impulses2trades" vs)
+      h i (t, _) acc = maybe acc (\bs -> ((bs, i):acc)) (Map.lookup t is)      
+      ss = Vec.ifoldr' h [] ps
 
-            (xs, ys) = Vec.span (isNothing . impulse) as
-        in Vec.cons a xs : go ys
+      (fimp, fidx) = head ss
+      firstTrade =
+        case fidx > 0 of
+          True -> ([Trade NoPosition (Vec.slice 0 (fidx+1) ps)] ++)
+          False -> ([] ++)
 
-      us = go (Vec.dropWhile (isNothing . impulse) ss)
+      (limp, lidx) = last ss
+      lastTrade =
+        case lidx < len of
+          True -> (++ [Trade (impulse2position limp) (Vec.slice lidx (len-lidx+1) ps)])
+          False -> (++ [])
 
-      f as bs = Vec.snoc as (shead "impulses2trades (2)" bs)
-      ns = zipWith f us (tail us) -- ++ [last us]
-
-      g vs =
-        flip Trade (Vec.map (\(a, (b, _)) -> (a, b)) vs)
-        $ case Vec.head vs of
-            (_, (_, Just Buy)) -> Long
-            _ -> NoPosition
-          
-  in TradeList (map g ns)
+      f (c, i) (_, j) = Trade (impulse2position c) (Vec.slice i (j-i+1) ps)
+      trds = firstTrade (lastTrade (zipWith f ss (tail ss)))
+     
+  in TradeList trds
 

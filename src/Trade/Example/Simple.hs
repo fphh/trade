@@ -17,7 +17,7 @@ import qualified Trade.Type.Equity as Eqty
 import qualified Trade.Type.OHLC as O
 
 import qualified Trade.Type.Signal as Signal
-import qualified Trade.Type.Signal.Impulse as IS
+import qualified Trade.Type.ImpulseSignal as IS
 import qualified Trade.Type.Signal.Equity as ES
 import qualified Trade.Type.StepFunc as SF
 
@@ -38,7 +38,6 @@ import qualified Trade.Report.Line as Line
 import qualified Trade.Test.Data as TD
 
 import qualified Trade.Report.Style as Style
-
 
 
 ticker :: Signal.Signal UTCTime OHLC.OHLC
@@ -86,13 +85,13 @@ data BacktestInput ohlc = BacktestInput {
   , outOfSample :: Signal.Signal UTCTime ohlc
   }
     
-instance (Show ohlc) => BT.Backtest (BacktestInput ohlc) where
+instance BT.Backtest (BacktestInput ohlc) where
   type BacktestReportTy (BacktestInput ohlc) = BacktestResult
 
   backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput trdAt initEqty ps) =
     let impSig = optStrat ps
         es = BT.equitySignal trdAt SF.stepFuncNoCommissionFullFraction initEqty impSig ps
-    in BacktestResult impSig es
+    in (BacktestResult impSig es)
 
 data BacktestResult = BacktestResult {
   impulses :: IS.ImpulseSignal UTCTime
@@ -104,7 +103,7 @@ instance TR.ToReport (TR.BacktestData (BacktestInput ohlc) BacktestResult) where
     let bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
         left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
-        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (Curve.curve impSig)])
+        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (IS.curve ps impSig)])
 
     Rep.subheader "Backtest Result"
     Rep.text "Trading at full fraction, no commissions"
@@ -113,6 +112,9 @@ instance TR.ToReport (TR.BacktestData (BacktestInput ohlc) BacktestResult) where
     Rep.text ("Initial Equity: " ++ show inEq)
     Rep.text ("Starting with equity " ++ show (Vec.head $ Signal.unSignal bts))
     Rep.text ("Ending with equity " ++ show (Vec.last $ Signal.unSignal bts))
+
+    Rep.text (show (Signal.length ps))
+    Rep.text (show (Signal.length es))
 
 --------------------------------------------------------
 
@@ -134,8 +136,8 @@ example = do
       analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        -- , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.buyAtSellAtAbs 15 18)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
+        -- , Ana.impulseGenerator = IG.optImpGen2impGen (IG.buyAtSellAtAbs 15 18)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput trdAt equity ticker
         }

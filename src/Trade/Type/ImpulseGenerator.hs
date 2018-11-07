@@ -4,13 +4,15 @@ module Trade.Type.ImpulseGenerator where
 
 import qualified Data.Vector as Vec
 
+import qualified Data.Map as Map
+
 import qualified Trade.Type.OHLC as O
 
-import Trade.Type.Signal.Impulse (ImpulseSignal)
 import Trade.Type.Signal (Signal(..))
 import qualified Trade.Type.Signal as Signal
 
-import qualified Trade.Type.Signal.Impulse as IS
+import Trade.Type.ImpulseSignal (ImpulseSignal(..))
+import qualified Trade.Type.ImpulseSignal as IS
 
 import Trade.Type.Impulse (Impulse(..))
 
@@ -18,6 +20,8 @@ import qualified Trade.Timeseries.Algorithm.Intersection as Inter
 import qualified Trade.Timeseries.OHLC as OHLC
 
 import qualified Trade.Algorithm.MovingAverage as MAvg
+
+import Debug.Trace
 
 newtype OptimizedImpulseGenerator ohlc = OptimizedImpulseGenerator {
   unOptimizedImpulseGenerator :: forall t. (Ord t) => Signal t ohlc -> ImpulseSignal t
@@ -32,22 +36,19 @@ optImpGen2impGen ig = ImpulseGenerator (\_ -> ig)
 
 -- | Do nothing
 noImpulses :: OptimizedImpulseGenerator ohlc
-noImpulses =
-  let f (Signal ps) = Signal (Vec.map (fmap (const Nothing)) ps)
-  in OptimizedImpulseGenerator f
-  
+noImpulses = OptimizedImpulseGenerator (const (ImpulseSignal Map.empty))
 
 -- | Classic buy and hold
 buyAndHold :: OptimizedImpulseGenerator ohlc
 buyAndHold =
   let go (Signal ps) =
-        let f 0 = Just Buy
-            f i | i == Vec.length ps - 1 = Just Sell
-            f _ = Nothing
-        in Signal (Vec.imap (\i -> fmap (const (f i))) ps)
+        let (t0, _) = Vec.head ps
+            (tn, _) = Vec.last ps
+        in ImpulseSignal (Map.fromList [(t0, Buy), (tn, Sell)])
   in OptimizedImpulseGenerator go
-  
 
+  
+{-
 -- | Buy if index in signal is even, sell if odd
 buySell :: OptimizedImpulseGenerator ohlc
 buySell =
@@ -74,32 +75,31 @@ buyAtSellAtAbs buy sell =
                 _ -> Nothing
         in IS.alternateBuySellKeepFirstOccurrence . Signal.map f
   in OptimizedImpulseGenerator go
+-}
+
 
 -- | This impulse generator looks ahead in time, which is not possible in reality. It yields maximal profit.
 optimalBuySell :: (Ord a) => (ohlc -> a) -> OptimizedImpulseGenerator ohlc
 optimalBuySell trdAt =
   let go (Signal ps) =
-        let qs = Vec.zipWith3 f ps (Vec.tail ps) (Vec.tail (Vec.tail ps))
-            f (_, p0) (t1, p1) (_, p2)
-              | trdAt p0 < trdAt p1 && trdAt p1 > trdAt p2 = (t1, Just Sell)
-              | trdAt p0 > trdAt p1 && trdAt p1 < trdAt p2 = (t1, Just Buy)
-              | otherwise = (t1, Nothing)
-        
+        let f m ((_, p0), (t1, p1), (_, p2))
+              | trdAt p0 < trdAt p1 && trdAt p1 > trdAt p2 = Map.insert t1 Sell m
+              | trdAt p0 > trdAt p1 && trdAt p1 < trdAt p2 = Map.insert t1 Buy m
+              | otherwise = m
+                
+            m0 = Vec.foldl' f Map.empty (Vec.zip3 ps (Vec.tail ps) (Vec.tail (Vec.tail ps)))
+
             (ti0, pr0) = ps Vec.! 0
             (_, pr1) = ps Vec.! 1
-            x = case trdAt pr0 < trdAt pr1 of
-                  True -> (ti0, Just Buy)
-                  False -> (ti0, Nothing)
+            m1 = case trdAt pr0 < trdAt pr1 of
+                  True -> Map.insert ti0 Buy m0
+                  False -> m0
 
-            (tn, _) = ps Vec.! (Vec.length ps - 1)
-            y = (tn, Just Sell)
-
-                        
-        in Signal (Vec.snoc (Vec.cons x qs) y)
+        in ImpulseSignal m1
   in OptimizedImpulseGenerator go
 
 
-
+{-
 -- | Construct impulses from crosses of one moving average with the ticker
 -- Buy/Sell at 'perc' percent offset. (Uses closing price).
 
@@ -119,7 +119,7 @@ impulsesFromMovingAverage perc windowSize =
             rs = Vec.zipWith g qs avgs
         in IS.alternateBuySellKeepFirstOccurrence (Signal rs)
   in OptimizedImpulseGenerator go
-
+-}
 
 
 -- | Constuct impulses with crossing of two moving averages
@@ -135,15 +135,18 @@ impulsesFromTwoMovingAverages j k =
             avgJ = MAvg.mavgBar j qs
             avgK = MAvg.mavgBar k qs
 
-            tradeSignal Inter.Down = Just Buy
-            tradeSignal Inter.Up = Just Sell
-            tradeSignal Inter.NoIntersection = Nothing
+            g acc (t, Inter.Down) = Map.insert t Buy acc
+            g acc (t, Inter.Up) = Map.insert t Sell acc
+            g acc _ = acc
 
-        in IS.toImpulseSignal (\_ _ -> tradeSignal) (Inter.intersection avgJ avgK)
+        in ImpulseSignal (Vec.foldl' g Map.empty (Inter.intersection avgJ avgK))
+
+
+          -- IS.toImpulseSignal (\_ _ -> tradeSignal) (Inter.intersection avgJ avgK :: _)
   in OptimizedImpulseGenerator go
 
 
-
+{-
 -- | Buy after n times up, sell after m times down.
 buySellAfterNM ::
   (OHLC.OHLCInterface ohlc) => Int -> Int -> OptimizedImpulseGenerator ohlc
@@ -174,3 +177,4 @@ buySellAfterNM b s =
         in Signal res
   in OptimizedImpulseGenerator go
 
+-}

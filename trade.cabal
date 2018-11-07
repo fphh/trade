@@ -72,6 +72,7 @@ library
                         Trade.Type.Broom
                         Trade.Type.Commission
                         Trade.Type.Conversion.Equity2Yield
+                        Trade.Type.Conversion.Impulse2Position
                         Trade.Type.Conversion.Impulse2Trade
                         Trade.Type.Conversion.OffsettedNormTradeList2NormSignal
                         Trade.Type.Conversion.NormTrade2YieldSignal
@@ -83,13 +84,13 @@ library
                         Trade.Type.Equity
                         Trade.Type.Impulse
                         Trade.Type.ImpulseGenerator
+                        Trade.Type.ImpulseSignal
                         Trade.Type.NormTrade
                         Trade.Type.OffsettedNormTradeList
                         Trade.Type.OHLC
                         Trade.Type.Position
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
-                        Trade.Type.Signal.Impulse
                         Trade.Type.Signal.Price
                         Trade.Type.Signal.Yield
                         Trade.Type.StepFunc

@@ -40,7 +40,7 @@ import qualified Trade.Type.Yield as Y
 
 import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.Signal.Price as PS
-import qualified Trade.Type.Signal.Impulse as IS
+import qualified Trade.Type.ImpulseSignal as IS
 import qualified Trade.Type.Signal.Equity as ES
 
 
