@@ -48,6 +48,8 @@ impulse2trade (Signal ps) (ImpulseSignal is) =
 
       f (c, i) (_, j) = Trade (impulse2position c) (Vec.slice i (j-i+1) ps)
       trds = firstTrade (lastTrade (zipWith f ss (tail ss)))
-     
-  in TradeList trds
+      
+  in case Map.null is of
+       True -> TradeList [Trade NoPosition ps]
+       False -> TradeList trds
 

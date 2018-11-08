@@ -130,13 +130,13 @@ example :: IO ()
 example = do
   
 
-  let equity = Eqty.Equity 1
+  let equity = Eqty.Equity 9
       trdAt = OHLC.ohlcClose
   
       analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
+        , Ana.impulseGenerator = IG.optImpGen2impGen IG.noImpulses -- IG.buyAndHold -- (IG.optimalBuySell trdAt)
         -- , Ana.impulseGenerator = IG.optImpGen2impGen (IG.buyAtSellAtAbs 15 18)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput trdAt equity ticker

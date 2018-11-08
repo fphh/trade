@@ -99,15 +99,16 @@ optimalBuySell trdAt =
   in OptimizedImpulseGenerator go
 
 
-{-
+
 -- | Construct impulses from crosses of one moving average with the ticker
 -- Buy/Sell at 'perc' percent offset. (Uses closing price).
-
+{-
 impulsesFromMovingAverage ::
   (OHLC.OHLCInterface ohlc) => Double -> Int -> OptimizedImpulseGenerator ohlc
 impulsesFromMovingAverage perc windowSize =
   let go (Signal ps) =
         let f (t, x) = (t, O.unClose $ OHLC.ohlcClose x)
+        
             qs = Vec.map f ps
             avgs = MAvg.mavgBar windowSize qs
 
@@ -115,12 +116,14 @@ impulsesFromMovingAverage perc windowSize =
               | q >= (1+perc)*a = (t, Just Sell)
               | q <= (1-perc)*a = (t, Just Buy)
               | otherwise = (t, Nothing)
+
+           
               
             rs = Vec.zipWith g qs avgs
-        in IS.alternateBuySellKeepFirstOccurrence (Signal rs)
+        -- in IS.alternateBuySellKeepFirstOccurrence (Signal rs)
+        in ImpulseSignal (Vec.zip g Map.empty 
   in OptimizedImpulseGenerator go
 -}
-
 
 -- | Constuct impulses with crossing of two moving averages
 -- (Uses closing price).

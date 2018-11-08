@@ -288,7 +288,7 @@ example = do
       -- analysis :: Ana.Analysis (OptimizationInput t ) (BacktestInput t ohlc)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.impulsesFromMovingAverage 0.05
+        , Ana.impulseGenerator = IG.impulsesFromTwoMovingAverages 7 15 -- IG.impulsesFromMovingAverage 0.05
         , Ana.optimizationInput = OptimizationInput {
             optSample = inSample
             , optTradeAt = trdAt
@@ -306,6 +306,4 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
-
-
 -}
