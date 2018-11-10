@@ -200,8 +200,6 @@ instance (E.PlotValue t, Show t) =>
       False -> do
         Rep.text "No trades occured"
 
-    Rep.text (show (Signal.length ps))
-    Rep.text (show (Signal.length es))
 
 --------------------------------------------------------
 

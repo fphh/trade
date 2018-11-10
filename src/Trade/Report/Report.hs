@@ -13,8 +13,13 @@ import GHC.IO.Handle (hClose)
 
 import qualified System.IO.Temp as Temp
 
+import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BSL
+
+import qualified Data.ByteString.Lazy.Search as BSS
+
+import Data.Char (ord)
 
 
 import qualified Data.Vector as Vec
@@ -30,6 +35,7 @@ import Text.Blaze.Internal (MarkupM(..))
 
 import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
+-- import qualified Graphics.Rendering.Chart.Backend.Cairo as D
 
 import Trade.Report.Style
 import Trade.Report.Line (L(..))
@@ -160,8 +166,8 @@ toBS fopts diagram = Temp.withSystemTempFile "svg-" $
   \file h -> do
     hClose h
     D.toFile fopts file diagram
-    BSL.readFile file
-
+    bs <- BSL.readFile file
+    return (BSS.replace (BS.pack [99,108,105,112,45,112,97,116,104,61]) BSL.empty bs)
 
 candle :: String -> [Vector (E.Candle UTCTime Double)] -> HtmlIO
 candle label cs = HtmlT $ do
@@ -278,143 +284,3 @@ chart acx (acy, ls) = HtmlT $ do
         mapM_ (E.plot . toLine) ls
         
   fmap H5.unsafeLazyByteString (toBS df diagram)
-
-{-
-
-report :: [ReportItem] -> Report
-report = Report (toAs [ "font-family" .= "monospace" ])
-
-
-svg :: (E.PlotValue x, E.PlotValue y) => (AxisConfig x) -> (AxisConfig y, [LineTy x y]) -> ReportItem
-svg = SvgItem (toAs [ "clear" .= "both" ])
-
-class (Show a) => ToText a where
-  toText :: a -> ReportItem
-  toText = text . show
-
-instance (Show a) => ToText a
-
-text :: String -> ReportItem
-text =
-  let attrs =
-        [ "width" .= "760px"
-        , "margin-left" .= "40px"
-        , "clear" .= "both" ]
-  in Paragraph (toAs attrs)
-
-header :: String -> ReportItem
-header =
-  let attrs =
-        [ "font-size" .= "xx-large"
-        , "font-weight" .= "bold"
-        , "margin" .= "40px"
-        , "margin-bottom" .= "20px"
-        , "clear" .= "both" ]
-  in Paragraph (toAs attrs)
-
-subheader :: String -> ReportItem
-subheader =
-  let attrs =
-        [ "font-size" .= "large"
-        , "font-weight" .= "bold"
-        , "margin-left" .= "40px"
-        , "margin-bottom" .= "10px"
-        , "margin-top" .= "12px"
-        , "clear" .= "both" ]
-  in Paragraph (toAs attrs)
-
-divTable :: Attrs
-divTable = toAs [
-  "margin" .= "20px"
-  , "margin-left" .= "60px"
-  , "display" .= "table"
-  , "width" .= "auto"
-  , "border-spacing" .= "5px"
-  , "float" .= "left"
-  , "clear" .= "both" ]
-
-divTableRow :: Attrs
-divTableRow = toAs [
-  "display" .= "table-row"
-  , "width" .= "auto"
-  , "clear" .= "both" ]
-
-divTableCol :: Attrs
-divTableCol = toAs [
-  "float" .= "left"
-  , "display" .= "table-column"
-  , "width" .= "150px" ]
-
-hSplitTable :: Attrs
-hSplitTable = toAs [
-  "clear" .= "both"
-  ]
-
-mapCol :: Attrs -> [String] -> Builder
-mapCol as = mconcat . zipWith f [0::Integer ..] 
-  where f 0 = tag2 "div" (attr2str (Map.union divTableCol as)) . B.stringUtf8
-        f _ = tag2 "div" (attr2str divTableCol) . B.stringUtf8
-  
-mapRow :: Attrs -> Attrs -> [[String]] -> Builder
-mapRow ras cas = mconcat . zipWith f [0::Integer ..]
-  where f 0 = tag2 "div" (attr2str (Map.union ras divTableRow)) . mapCol cas
-        f _ = tag2 "div" (attr2str divTableRow) . mapCol cas
-        
-vtable :: [[String]] -> ReportItem
-vtable = Table emptyAttrs emptyAttrs (toAs [ "font-weight" .= "bold" ])
-
-htable :: [[String]] -> ReportItem
-htable = Table emptyAttrs (toAs [ "font-weight" .= "bold" ]) emptyAttrs
-
-hsplit :: ReportItem -> ReportItem -> ReportItem
-hsplit = HSplit hSplitTable
-
-renderReport :: Report -> IO ByteString
-renderReport = fmap B.toLazyByteString . renderRep
-
-renderRep :: Report -> IO Builder
-renderRep (Report as is) = do
-  items <- mapM renderItem is
-  let docType = B.stringUtf8 "<!DOCTYPE html>"
-      html = tag2 "html" mempty (hd <> bdy)
-      hd = tag2 "head" mempty title
-      title = tag2 "title" mempty (B.stringUtf8 "Report")
-      bdy = tag2 "body" (attr2str as) (mconcat items)
-  return (docType <> html)
-
-
-lines2str :: (E.PlotValue x, E.PlotValue y) => AxisConfig x -> (AxisConfig y, [LineTy x y]) -> IO Builder
-lines2str acx (acy, ls) = do
-  let fstyle = E.def {
-        E._font_name = "monospace"
-        , E._font_size = 24
-        , E._font_weight = E.FontWeightNormal
-        }
-
-      df = E.def {
-        D._fo_format = D.SVG_EMBEDDED
-        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-        , D._fo_size = chartSize
-        }
-           
-      diagram = do
-        E.setColors colors
-        
-        E.layout_x_axis E..= axisLayout acx
-        E.layout_bottom_axis_visibility E..= axisVisibility acx
-        case axisFn acx of
-          Just x -> E.layout_x_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-
-        E.layout_y_axis E..= axisLayout acy
-        E.layout_left_axis_visibility E..= axisVisibility acy
-        case axisFn acy of
-          Just x -> E.layout_y_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-
-        mapM_ E.plot ls
-  
-  fmap B.lazyByteString (toBS df diagram)
-
--}
-

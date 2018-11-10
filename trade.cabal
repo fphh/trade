@@ -107,6 +107,7 @@ library
                      , random
                      , vector
                      , bytestring
+                     , stringsearch
                      , statistics
                      , QuickCheck
                      , cassava
@@ -115,6 +116,7 @@ library
                      , primitive
                      , Chart
                      , Chart-diagrams
+                     -- , Chart-cairo
                      , uuid
                      , unix
                      , temporary

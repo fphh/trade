@@ -115,9 +115,6 @@ instance TR.ToReport (TR.BacktestData (BacktestInput ohlc) BacktestResult) where
     Rep.text ("Starting with equity " ++ show (Vec.head $ Signal.unSignal bts))
     Rep.text ("Ending with equity " ++ show (Vec.last $ Signal.unSignal bts))
 
-    Rep.text (show (Signal.length ps))
-    Rep.text (show (Signal.length es))
-
 --------------------------------------------------------
 
 instance OD.OHLCData OptimizationInput where
