@@ -14,9 +14,10 @@ import qualified Data.Vector as Vec
 import Text.Printf (printf)
 
 import Trade.Type.Bars (Time, DeltaT, diff)
-import Trade.Type.OHLC (UnOHLC, unOHLC)
 import Trade.Type.Position (Position)
 import Trade.Type.Trade (TradeList(..), ticker)
+
+import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
 
 import Trade.Analysis.Yield (sortTradesByPosition)
 
@@ -33,14 +34,16 @@ data TradeStatistics = TradeStatistics {
   } deriving (Show)
 
 
-tradeStatistics :: (UnOHLC b, Time t, Real (DeltaT t)) => (ohlc -> b) -> TradeList t ohlc -> [TradeStatistics]
+tradeStatistics ::
+  (Type2Double b, Time t, Real (DeltaT t)) =>
+  (ohlc -> b) -> TradeList t ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
   let m = sortTradesByPosition tl
 
       day = 60*60*24
 
       h v = case (Vec.head v, Vec.last v) of
-              ((tx, x), (ty, y)) -> (realToFrac (ty `diff` tx), log (unOHLC y / unOHLC x))
+              ((tx, x), (ty, y)) -> (realToFrac (ty `diff` tx), log (type2double y / type2double x))
 
       f = Vec.fromList . map (h . Vec.map (fmap extract) . ticker) . unTradeList
 

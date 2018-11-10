@@ -19,13 +19,13 @@ import Trade.Type.Signal.Equity (EquitySignal)
 import Trade.Type.StepFunc (StepFunc)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Yield (Yield)
-import Trade.Type.OHLC (UnOHLC)
 import Trade.Type.NormTrade (NormTradeList(..), NormTrade(..))
 import Trade.Type.Trade (TradeList(..), Trade(..))
 import Trade.Type.Conversion.Yield2Equity (yield2equity)
 import Trade.Type.Conversion.Trade2NormTrade (trade2normTrade)
 import Trade.Type.Conversion.Impulse2Trade (impulse2trade)
 import Trade.Type.Conversion.NormTrade2YieldSignal (normTrade2yieldSignal)
+import Trade.Type.Conversion.Type2Double (Type2Double)
 
 import qualified Trade.Report.Report as Rep
 import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
@@ -33,7 +33,7 @@ import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
 
 equitySignal ::
-  (UnOHLC a, Ord t, Time t, Num (DeltaT t)) =>
+  (Type2Double a, Ord t, Time t, Num (DeltaT t)) =>
   (ohlc -> a) ->
   StepFunc Yield -> Equity -> ImpulseSignal t -> Signal t ohlc -> EquitySignal t
 equitySignal tradeAt stepFunc eqty impSig qs@(Signal ps) =

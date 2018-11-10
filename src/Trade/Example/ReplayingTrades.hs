@@ -18,7 +18,8 @@ import qualified Data.Vector as Vec
 import Text.Printf (printf)
 
 import qualified Trade.Type.Equity as Eqty
-import qualified Trade.Type.OHLC as O
+import qualified Trade.Type.Price as P
+
 import qualified Trade.Type.Bars as B
 import qualified Trade.Type.StepFunc as SF
 import qualified Trade.Type.Broom as Broom
@@ -56,17 +57,15 @@ import qualified Trade.MonteCarlo.ResampleTrades.Broom as RTBroom
 import qualified Trade.MonteCarlo.Simulation.BlackScholes as Black
 
 import qualified Trade.Report.Report as Rep
-import qualified Trade.Report.Curve as Curve
 import qualified Trade.Report.Line as Line
 
 import qualified Trade.Test.Time as T
-import qualified Trade.Test.Data as TD
+-- import qualified Trade.Test.Data as TD
 
 import qualified Trade.Report.Style as Style
 
 data OptimizationInput t ohlc = OptimizationInput {
   optSample :: Signal.Signal t ohlc
-  , optTradeAt :: ohlc -> O.Close
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
@@ -75,15 +74,15 @@ data OptimizationInput t ohlc = OptimizationInput {
   }
   
 
-instance Opt.Optimize (OptimizationInput UTCTime OHLC.OHLC) where
-  type OptReportTy (OptimizationInput UTCTime OHLC.OHLC) = OptimizationResult
-  type OptInpTy (OptimizationInput UTCTime OHLC.OHLC) = ()
+instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
+  type OptReportTy (OptimizationInput UTCTime P.Price) = OptimizationResult
+  type OptInpTy (OptimizationInput UTCTime P.Price) = ()
 
   optimize (IG.ImpulseGenerator strat) optInp = do
     let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat ()
 
         trds = I2T.impulse2trade (optSample optInp) (optStrat (optSample optInp))
-        ntrds = T2NT.trade2normTrade (fmap (optTradeAt optInp) trds)
+        ntrds = T2NT.trade2normTrade trds
     yieldBroom <- RTBroom.normBroom (forcastHorizon optInp) (mcN optInp) ntrds
 
     let sf = stepFunc optInp
@@ -100,32 +99,20 @@ instance Opt.Optimize (OptimizationInput UTCTime OHLC.OHLC) where
     
         (twrs, rsks) = List.foldr f ([], []) (fractions optInp)
 
-        tl = fmap (optTradeAt optInp) trds
-    
-    return (optIG, OptimizationResult eqtyBrm tl twrs rsks)
+    return (optIG, OptimizationResult eqtyBrm trds twrs rsks)
 
     
 
 data OptimizationResult = OptimizationResult {
   eqtyBroom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
-  , tradeList :: Trade.TradeList UTCTime O.Close
+  , tradeList :: Trade.TradeList UTCTime P.Price
   , twr :: [(F.Fraction, Dist.CDF TWR.TWR)]
   , risk :: [(F.Fraction, Dist.CDF Risk.Risk)]
   }
 
-instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime OHLC.OHLC) OptimizationResult) where
+instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime P.Price) OptimizationResult) where
   toReport (TR.OptimizationData optInp (OptimizationResult brm trdList twrs rsks)) = do
-    let toC (t, ohlc) =
-          let c = E.Candle t
-                  (O.unOHLC $ OHLC.ohlcLow ohlc)
-                  (O.unOHLC $ OHLC.ohlcOpen ohlc)
-                  0
-                  (O.unOHLC $ OHLC.ohlcClose ohlc)
-                  (O.unOHLC $ OHLC.ohlcHigh ohlc)
-          in c
-        toCandle (Signal.Signal cs) = Vec.map toC cs
-
-        nOfSamp = 20
+    let nOfSamp = 20
 
         showFrac :: F.Fraction -> String
         showFrac (F.Fraction fr) = printf "Frac %.02f" fr
@@ -140,10 +127,10 @@ instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime OHLC.OHLC) 
           [printf "%.02f" fr, maybe "n/a" (printf "%.02f%%" . (100*) . (1-) . fst)  (Vec.find ((>0.2) . snd) vs)]
         riskTable = ["Fraction f", "P(max. drawdown > 20%)"] : map h rsks
 
-        signal = Vec.map (fmap (O.unClose . optTradeAt optInp)) (Signal.unSignal (optSample optInp))
+        signal = Vec.map (fmap P.unPrice) (Signal.unSignal (optSample optInp))
 
     Rep.subheader "Optimization Input"
-    Rep.candle "Symbol" [toCandle (optSample optInp)]
+    Rep.chart (Style.axTitle "Symbol") (Style.axTitle "Price", [Line.line "Price" (optSample optInp)])
 
     Rep.subsubheader "Sample Statistics"
     SStat.stats2para (SStat.sampleStatistics signal)
@@ -176,17 +163,16 @@ instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime OHLC.OHLC) 
 --------------------------------------------------------
 
 data BacktestInput t ohlc = BacktestInput {
-  tradeAt :: ohlc -> O.Close
-  , initialEquity :: Eqty.Equity
+  initialEquity :: Eqty.Equity
   , pricesInput :: Signal.Signal t ohlc
   }
     
-instance (Ord t, B.Time t, Num (B.DeltaT t)) => BT.Backtest (BacktestInput t ohlc) where
-  type BacktestReportTy (BacktestInput t ohlc) = BacktestResult t
+instance (Ord t, B.Time t, Num (B.DeltaT t)) => BT.Backtest (BacktestInput t P.Price) where
+  type BacktestReportTy (BacktestInput t P.Price) = BacktestResult t
 
-  backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput trdAt initEqty ps) =
+  backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput initEqty ps) =
     let impSig = optStrat ps
-        es = BT.equitySignal trdAt SF.stepFuncNoCommissionFullFraction initEqty impSig ps
+        es = BT.equitySignal id SF.stepFuncNoCommissionFullFraction initEqty impSig ps
     in BacktestResult impSig es
 
 data BacktestResult t = BacktestResult {
@@ -195,12 +181,10 @@ data BacktestResult t = BacktestResult {
   }
 
 instance (E.PlotValue t, Show t) =>
-         TR.ToReport (TR.BacktestData (BacktestInput t ohlc) (BacktestResult t)) where
+         TR.ToReport (TR.BacktestData (BacktestInput t P.Price) (BacktestResult t)) where
   
-  toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
-    let Signal.Signal bts = fmap Eqty.unEquity es
-        ps' = fmap (O.unOHLC . trdAt) ps
-        left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
+  toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult impSig es)) = do
+    let left = (Style.axTitle "Equity", [Line.line "Price" ps, Line.line "Backtest" es])
         right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (IS.curve ps impSig)])
 
     Rep.subheader "Backtest Result"
@@ -209,10 +193,10 @@ instance (E.PlotValue t, Show t) =>
     Rep.chartLR (Style.axTitle "Time") left right
     Rep.text ("Initial Equity: " ++ show inEq)
 
-    case Vec.length bts > 0 of
+    case Signal.length es > 0 of
       True -> do
-        Rep.text ("Starting with equity " ++ show (Vec.head bts))
-        Rep.text ("Ending with equity " ++ show (Vec.last bts))
+        Rep.text ("Starting with equity " ++ show (Signal.head es))
+        Rep.text ("Ending with equity " ++ show (Signal.last es))
       False -> do
         Rep.text "No trades occured"
 
@@ -231,35 +215,30 @@ instance OD.OHLCData (BacktestInput t ohlc) where
 
 example :: IO ()
 example = do
-  
-  let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
 
   let mu = Black.Mu 0.1
-      sigma = Black.Sigma 0.15
+      sigma = Black.Sigma 0.2
       start = Eqty.Equity 100
-      seed = 53
+      seed = 49
 
-  samp <- Black.blackScholesDet seed (T.yearsN 4) start mu sigma
+  sample <- Black.blackScholesDet seed (T.yearsN 4) start mu sigma
   
-  let sample = Signal.Signal (Vec.map (fmap f) samp)
+  -- let sample = Signal.Signal (Vec.map (fmap f) samp)
   -- let sample = Signal.Signal (Vec.map (fmap f) TD.test2)
 
-  let trdAt = OHLC.ohlcClose
-  
-      analysis :: Ana.Analysis (OptimizationInput UTCTime OHLC.OHLC) (BacktestInput UTCTime OHLC.OHLC)
+  let analysis :: Ana.Analysis (OptimizationInput UTCTime P.Price) (BacktestInput UTCTime P.Price)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromTwoMovingAverages 19 5)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromTwoMovingAverages P.unPrice (IG.WindowSize 11) (IG.WindowSize 19))
         , Ana.optimizationInput = OptimizationInput {
             optSample = sample
-            , optTradeAt = trdAt
             , mcN = 1000
             , optInitialEquity = Eqty.Equity 1000
             , forcastHorizon = B.Bars 1000
             , stepFunc = SF.stepFuncNoCommission -- stepFuncNoCommissionFullFraction
             , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0] -- [0.1, 0.2 .. 2]
             }
-        , Ana.backtestInput = BacktestInput trdAt (Eqty.Equity 102.5) sample
+        , Ana.backtestInput = BacktestInput (Eqty.Equity 102.5) sample
         }
 
       rep = Ana.analyze analysis

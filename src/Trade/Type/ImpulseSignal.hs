@@ -26,6 +26,13 @@ expandImpulseSignal (Signal ps) (ImpulseSignal is) =
   in Signal (Vec.map f ps)
 
 
+-- | Allow only alternating Buy/Sell
+simplify :: (Ord t) => ImpulseSignal t -> ImpulseSignal t
+simplify (ImpulseSignal m) =
+  let g (Nothing, o) k a = (Just a, Map.insert k a o)
+      g acc@(Just x, _) _ a | a == x = acc
+      g (Just x, o) k a | a /= x = (Just a, Map.insert k a o)
+  in ImpulseSignal (snd (Map.foldlWithKey' g (Nothing, Map.empty) m))
 
 curve :: (Ord t) => Signal t ohlc -> ImpulseSignal t -> Vector (t, Double)
 curve (Signal ps) (ImpulseSignal is) =

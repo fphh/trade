@@ -20,8 +20,10 @@ import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.ImpulseSignal as IS
 import qualified Trade.Type.Signal.Equity as ES
 import qualified Trade.Type.StepFunc as SF
-
 import qualified Trade.Type.ImpulseGenerator as IG
+
+import qualified Trade.Type.Conversion.Type2Double as T2D
+
 
 import qualified Trade.Timeseries.OHLC as OHLC
 
@@ -63,11 +65,11 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
   toReport (TR.OptimizationData (OptimizationInput ps) OptimizationResult) = do
     let toC (t, ohlc) =
           let c = E.Candle t
-                (O.unOHLC $ OHLC.ohlcLow ohlc)
-                (O.unOHLC $ OHLC.ohlcOpen ohlc)
+                (T2D.type2double $ OHLC.ohlcLow ohlc)
+                (T2D.type2double $ OHLC.ohlcOpen ohlc)
                 0
-                (O.unOHLC $ OHLC.ohlcClose ohlc)
-                (O.unOHLC $ OHLC.ohlcHigh ohlc)
+                (T2D.type2double $ OHLC.ohlcClose ohlc)
+                (T2D.type2double $ OHLC.ohlcHigh ohlc)
           in c
         toCandle (Signal.Signal cs) = Vec.map toC cs
 
@@ -101,7 +103,7 @@ data BacktestResult = BacktestResult {
 instance TR.ToReport (TR.BacktestData (BacktestInput ohlc) BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let bts = fmap Eqty.unEquity es
-        ps' = fmap (O.unOHLC . trdAt) ps
+        ps' = fmap (T2D.type2double . trdAt) ps
         left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
         right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (IS.curve ps impSig)])
 
@@ -136,7 +138,7 @@ example = do
       analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen IG.noImpulses -- IG.buyAndHold -- (IG.optimalBuySell trdAt)
+        , Ana.impulseGenerator = IG.optImpGen2impGen IG.buyAndHold -- (IG.optimalBuySell trdAt)
         -- , Ana.impulseGenerator = IG.optImpGen2impGen (IG.buyAtSellAtAbs 15 18)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput trdAt equity ticker

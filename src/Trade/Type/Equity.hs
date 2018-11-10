@@ -4,6 +4,8 @@ module Trade.Type.Equity where
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
+import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
+
 import Trade.Report.Pretty
 
 -- | Equity that you own at some point in time.
@@ -13,3 +15,6 @@ newtype Equity = Equity {
 
 instance Pretty Equity where
   pretty (Equity x) = "Equity=" ++ show x
+
+instance Type2Double Equity where
+  type2double (Equity x) = x

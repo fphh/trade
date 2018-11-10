@@ -78,6 +78,7 @@ library
                         Trade.Type.Conversion.NormTrade2YieldSignal
                         Trade.Type.Conversion.Trade2Equity
                         Trade.Type.Conversion.Trade2NormTrade
+                        Trade.Type.Conversion.Type2Double
                         Trade.Type.Conversion.Yield2Equity
                         Trade.Type.Distribution
                         Trade.Type.Fraction
@@ -89,6 +90,7 @@ library
                         Trade.Type.OffsettedNormTradeList
                         Trade.Type.OHLC
                         Trade.Type.Position
+                        Trade.Type.Price
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
                         Trade.Type.Signal.Price

@@ -20,6 +20,7 @@ import qualified System.Random.MWC.Distributions as Dist
 import Trade.Type.Bars (Bars(..), BarNo(..))
 import Trade.Type.Broom (Broom(..))
 import Trade.Type.Equity (Equity(..))
+import Trade.Type.Price (Price(..))
 import Trade.Type.Signal (Signal(..))
 
 
@@ -39,13 +40,14 @@ blackScholes gen interval (Equity eqty) (Mu mu) (Sigma sigma) = do
       ss = Vec.scanl f eqty rs
   return (Vec.zip interval ss)
 
-blackScholesDet :: Word32 -> Vector UTCTime -> Equity -> Mu -> Sigma -> IO (Vector (UTCTime, Double))
+blackScholesDet :: Word32 -> Vector UTCTime -> Equity -> Mu -> Sigma -> IO (Signal UTCTime Price)
 blackScholesDet seed interval eqty mu sigma =
-  MWC.initialize (Vec.singleton seed) >>= \gen -> blackScholes gen interval eqty mu sigma
+  MWC.initialize (Vec.singleton seed)
+  >>= \gen -> fmap (Signal . Vec.map (fmap Price)) (blackScholes gen interval eqty mu sigma)
 
-priceSignalBroom :: Bars -> Int -> Equity -> Mu -> Sigma -> IO (Broom (Signal BarNo Double))
+priceSignalBroom :: Bars -> Int -> Equity -> Mu -> Sigma -> IO (Broom (Signal BarNo Price))
 priceSignalBroom (Bars b) n eqty mu sigma = do
   let vs = Vec.generate b BarNo
   gen <- MWC.createSystemRandom
   broom <- replicateM n (blackScholes gen vs eqty mu sigma)
-  return (Broom (map Signal broom))
+  return (Broom (map (Signal . Vec.map (fmap Price)) broom))

@@ -8,16 +8,17 @@ import qualified Data.Vector as Vec
 import Trade.Type.Bars (Time, diff)
 
 import Trade.Type.Yield (Yield(..))
-import Trade.Type.OHLC (UnOHLC, unOHLC)
 import Trade.Type.Trade (Trade(..), TradeList(..))
 import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
+
+import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
 
 import Trade.Help.SafeTail
 
 
-trade2normTrade :: (UnOHLC ohlc, Time t) => TradeList t ohlc -> NormTradeList t
+trade2normTrade :: (Type2Double ohlc, Time t) => TradeList t ohlc -> NormTradeList t
 trade2normTrade (TradeList tl) =
-  let g (_, old) (_, new) = Yield (unOHLC new / unOHLC old)
+  let g (_, old) (_, new) = Yield (type2double new / type2double old)
 
       f (Trade st ts) =
         let (t0, _) = shead "trades2normTrades head" ts

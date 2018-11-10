@@ -5,7 +5,7 @@ module Trade.Type.Conversion.NormTrade2YieldSignal where
 
 import qualified Data.Vector as Vec
 
-import Trade.Type.Bars (BarNo(..), Time, DeltaT, add)
+import Trade.Type.Bars (Time, DeltaT, add)
 import Trade.Type.Position (Position(..))
 import Trade.Type.Yield (Yield(..))
 

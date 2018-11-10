@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 
 module Trade.Example.Optimize where
@@ -89,6 +90,7 @@ import Debug.Trace
 
 data OptimizationInput t ohlc = OptimizationInput {
   optSample :: Signal.Signal t ohlc
+  , optSpace :: [(IG.Percent, IG.WindowSize)]
   , optTradeAt :: ohlc -> O.Close
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
@@ -98,9 +100,9 @@ data OptimizationInput t ohlc = OptimizationInput {
   }
   
 
-instance Opt.Optimize (OptimizationInput UTCTime OHLC.OHLC) where
-  type OptReportTy (OptimizationInput UTCTime OHLC.OHLC) = OptimizationResult
-  type OptInpTy (OptimizationInput UTCTime OHLC.OHLC) = ()
+instance Opt.Optimize (OptimizationInput UTCTime Price) where
+  type OptReportTy (OptimizationInput UTCTime Price) = OptimizationResult
+  type OptInpTy (OptimizationInput UTCTime Price) = ()
   
   optimize (IG.ImpulseGenerator strat) optInp = do
     let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat ()
@@ -115,22 +117,22 @@ instance Opt.Optimize (OptimizationInput UTCTime OHLC.OHLC) where
         mu = Black.Mu (fromIntegral len * SStat.mean sampleStats)
         sigma = Black.Sigma (sqrt (fromIntegral len) * SStat.stdDev sampleStats)
 
-        toOHLC x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
-        
     
-    brm <- fmap toOHLC $ Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) mu sigma
+    priceBrm <- Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) mu sigma
+    
+    let impBrm = fmap optStrat priceBrm
 
-    let impBrm = fmap optStrat ohlcBrm
-        
-        g = BT.equitySignal (optTradeAt optInp) (optInitialEquity optInp)
+
+        sf = stepFunc optInp (F.Fraction 1)
+        g = BT.equitySignal (optTradeAt optInp) sf (optInitialEquity optInp)
         tradeBroom = Broom.zipWith g impBrm ohlcBrm
         
-    return (optIG, OptimizationResult brm tradeBroom mu sigma sampleStats)
+    return (optIG, OptimizationResult ohlcBrm tradeBroom mu sigma sampleStats)
 
     
 
 data OptimizationResult = OptimizationResult {
-  broom :: Broom.Broom (Signal.Signal B.BarNo Double)
+  broom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
   , trdBroom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
   , muOR :: Black.Mu
   , sigmaOR :: Black.Sigma
@@ -180,7 +182,7 @@ instance (OHLC.OHLCInterface ohlc) =>
     Rep.subsubheader "Generated Broom"
     Rep.text ("Black-Scholes with parameters: " ++ show mu ++ ", " ++ show sigma)
     Rep.text ("Number of Monte Carlo samples: " ++ show (mcN optInp) ++ ", showing " ++ show nOfSamp)
-    Rep.chart (Style.axTitle "Bars") (Style.axTitle "Price", Broom.broom2chart nOfSamp brm)
+    -- Rep.chart (Style.axTitle "Bars") (Style.axTitle "Price", Broom.broom2chart nOfSamp brm)
 
     Rep.subsubheader "Generated Trade Broom"
     Rep.text ("Number of Monte Carlo samples: " ++ show (mcN optInp) ++ ", showing " ++ show nOfSamp)
@@ -224,12 +226,14 @@ data BacktestInput t ohlc = BacktestInput {
   , pricesInput :: Signal.Signal t ohlc
   }
     
-instance (Ord t, Show t, Show ohlc) => BT.Backtest (BacktestInput t ohlc) where
+instance (Ord t, Show t, Show ohlc, B.Time t, Num (B.DeltaT t)) =>
+         BT.Backtest (BacktestInput t ohlc) where
+  
   type BacktestReportTy (BacktestInput t ohlc) = BacktestResult t
 
   backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput trdAt initEqty ps) =
     let impSig = optStrat ps
-        es = BT.equitySignal trdAt initEqty impSig ps
+        es = BT.equitySignal trdAt SF.stepFuncNoCommissionFullFraction initEqty impSig ps
     in BacktestResult impSig es
 
 data BacktestResult t = BacktestResult {
@@ -243,7 +247,7 @@ instance (E.PlotValue t, Show t) =>
     let Signal.Signal bts = fmap Eqty.unEquity es
         ps' = fmap (O.unOHLC . trdAt) ps
         left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
-        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (Curve.curve impSig)])
+        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (IS.curve ps impSig)])
 
     Rep.subheader "Backtest Result"
 
@@ -284,13 +288,17 @@ example = do
   let Signal.Sample inSample outOfSample = Signal.split 0.75 (Signal.Signal (Vec.map (fmap f) samp))
 
   let trdAt = OHLC.ohlcClose
+
+      optSpc = liftA2 (,) (map IG.Percent [0, 0.01, 0.02, 0.03, 0.04, 0.05]) (map IG.WindowSize [5, 10, 15, 20])
   
       -- analysis :: Ana.Analysis (OptimizationInput t ) (BacktestInput t ohlc)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.impulsesFromTwoMovingAverages 7 15 -- IG.impulsesFromMovingAverage 0.05
+     --    , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromTwoMovingAverages 15 7)
+        , Ana.impulseGenerator = uncurry IG.impulsesFromMovingAverage
         , Ana.optimizationInput = OptimizationInput {
             optSample = inSample
+            , optSpace = optSpc
             , optTradeAt = trdAt
             , mcN = 1000
             , optInitialEquity = Eqty.Equity 1000
@@ -306,4 +314,5 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+
 -}

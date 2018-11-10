@@ -9,6 +9,8 @@ import Prelude hiding (scanl, map, zipWith, head, last, tail)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vec
 
+import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
+
 import Trade.Report.NumberedList (ToNumberedList, toNumberedList)
 import Trade.Report.Pretty (Pretty)
 import Trade.Report.Line (Line(..), L(..))
@@ -23,10 +25,10 @@ newtype Signal t y = Signal {
 instance Functor (Signal t) where
   fmap f (Signal ps) = Signal (Vec.map (fmap f) ps)
 
-instance Line (Signal x y) where
+instance (Type2Double y) => Line (Signal x y) where
   type TyX (Signal x y) = x
-  type TyY (Signal x y) = y
-  line str (Signal ps) = L str (Vec.toList ps)
+  type TyY (Signal x y) = Double
+  line str (Signal ps) = L str (Vec.toList (Vec.map (fmap type2double) ps))
   
 
 instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where

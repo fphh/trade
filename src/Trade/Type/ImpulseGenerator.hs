@@ -6,10 +6,7 @@ import qualified Data.Vector as Vec
 
 import qualified Data.Map as Map
 
-import qualified Trade.Type.OHLC as O
-
 import Trade.Type.Signal (Signal(..))
-import qualified Trade.Type.Signal as Signal
 
 import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 import qualified Trade.Type.ImpulseSignal as IS
@@ -17,11 +14,10 @@ import qualified Trade.Type.ImpulseSignal as IS
 import Trade.Type.Impulse (Impulse(..))
 
 import qualified Trade.Timeseries.Algorithm.Intersection as Inter
-import qualified Trade.Timeseries.OHLC as OHLC
 
 import qualified Trade.Algorithm.MovingAverage as MAvg
 
-import Debug.Trace
+import qualified Trade.Timeseries.Algorithm.SyncZip as SZ
 
 newtype OptimizedImpulseGenerator ohlc = OptimizedImpulseGenerator {
   unOptimizedImpulseGenerator :: forall t. (Ord t) => Signal t ohlc -> ImpulseSignal t
@@ -99,41 +95,35 @@ optimalBuySell trdAt =
   in OptimizedImpulseGenerator go
 
 
+newtype WindowSize = WindowSize Int
+newtype Percent = Percent Double
 
 -- | Construct impulses from crosses of one moving average with the ticker
--- Buy/Sell at 'perc' percent offset. (Uses closing price).
-{-
+-- Buy/Sell at 'perc' percent offset. Mean reversion?
 impulsesFromMovingAverage ::
-  (OHLC.OHLCInterface ohlc) => Double -> Int -> OptimizedImpulseGenerator ohlc
-impulsesFromMovingAverage perc windowSize =
+  (ohlc -> Double) -> Percent -> WindowSize -> OptimizedImpulseGenerator ohlc
+impulsesFromMovingAverage trdAt (Percent perc) (WindowSize winSize) =
   let go (Signal ps) =
-        let f (t, x) = (t, O.unClose $ OHLC.ohlcClose x)
-        
-            qs = Vec.map f ps
-            avgs = MAvg.mavgBar windowSize qs
+        let qs = Vec.map (fmap trdAt) ps
+            avgs = MAvg.mavgBar winSize qs
 
-            g (t, q) (_, a)
-              | q >= (1+perc)*a = (t, Just Sell)
-              | q <= (1-perc)*a = (t, Just Buy)
-              | otherwise = (t, Nothing)
+            g acc (t, (q, a))
+              | q <= (1+perc)*a = Map.insert t Buy acc
+              | q >= (1-perc)*a = Map.insert t Sell acc
+              | otherwise = acc
 
-           
-              
-            rs = Vec.zipWith g qs avgs
-        -- in IS.alternateBuySellKeepFirstOccurrence (Signal rs)
-        in ImpulseSignal (Vec.zip g Map.empty 
+            ss = Vec.foldl' g Map.empty (SZ.syncZip qs avgs)
+
+        in IS.simplify (ImpulseSignal ss)
   in OptimizedImpulseGenerator go
--}
+
 
 -- | Constuct impulses with crossing of two moving averages
--- (Uses closing price).
 impulsesFromTwoMovingAverages ::
-  (OHLC.OHLCInterface ohlc) => Int -> Int -> OptimizedImpulseGenerator ohlc
-impulsesFromTwoMovingAverages j k =
+  (ohlc -> Double) -> WindowSize -> WindowSize -> OptimizedImpulseGenerator ohlc
+impulsesFromTwoMovingAverages trdAt (WindowSize j) (WindowSize k) =
   let go (Signal ps) =
-        let f (t, x) = (t, O.unClose $ OHLC.ohlcClose x)
-
-            qs = Vec.map f ps
+        let qs = Vec.map (fmap trdAt) ps
 
             avgJ = MAvg.mavgBar j qs
             avgK = MAvg.mavgBar k qs
@@ -143,9 +133,6 @@ impulsesFromTwoMovingAverages j k =
             g acc _ = acc
 
         in ImpulseSignal (Vec.foldl' g Map.empty (Inter.intersection avgJ avgK))
-
-
-          -- IS.toImpulseSignal (\_ _ -> tradeSignal) (Inter.intersection avgJ avgK :: _)
   in OptimizedImpulseGenerator go
 
 
