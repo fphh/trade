@@ -95,8 +95,7 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
               tw = TWR.terminalWealthRelative eq eb
               rk = Risk.risk eb
           in ((fr, tw):ts, (fr, rk):rs)
-
-    
+          
         (twrs, rsks) = List.foldr f ([], []) (fractions optInp)
 
     return (optIG, OptimizationResult eqtyBrm trds twrs rsks)
@@ -119,7 +118,7 @@ instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime P.Price) Op
 
 
         g mdf cmp (F.Fraction fr, Dist.CDF vs) =
-          [printf "%.02f" fr, maybe "n/a" (printf "%.02f%%" . (100*) . mdf . fst)  (Vec.find (cmp . snd) vs)]
+          [printf "%.02f" fr, maybe "n/a" (printf "%.02f%%" . (100*) . mdf . fst) (Vec.find (cmp . snd) vs)]
         twrTable10 = ["Fraction f", "P(TWR <= 1)"] : map (g id (not . (<= 1.0))) twrs
         twrTable12 = ["Fraction f", "P(TWR > 1.2)"] : map (g (1-) (> 1.2)) twrs
     

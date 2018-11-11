@@ -95,8 +95,8 @@ optimalBuySell trdAt =
   in OptimizedImpulseGenerator go
 
 
-newtype WindowSize = WindowSize Int
-newtype Percent = Percent Double
+newtype WindowSize = WindowSize Int deriving (Show)
+newtype Percent = Percent Double deriving (Show)
 
 -- | Construct impulses from crosses of one moving average with the ticker
 -- Buy/Sell at 'perc' percent offset. Mean reversion?

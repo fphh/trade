@@ -34,3 +34,13 @@ instance Semigroup LogYield where
 
 instance Monoid LogYield where
   mempty = LogYield 0
+
+
+class ToYield yield where
+  toYield :: Double -> Double -> yield
+
+instance ToYield Yield where
+  toYield new old = Yield (new / old)
+
+instance ToYield LogYield where
+  toYield new old = LogYield (log (new / old))

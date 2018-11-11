@@ -167,6 +167,7 @@ toBS fopts diagram = Temp.withSystemTempFile "svg-" $
     hClose h
     D.toFile fopts file diagram
     bs <- BSL.readFile file
+    -- remove clip-path attributes; clip-paths seem to be buggy in Charts-lib.
     return (BSS.replace (BS.pack [99,108,105,112,45,112,97,116,104,61]) BSL.empty bs)
 
 candle :: String -> [Vector (E.Candle UTCTime Double)] -> HtmlIO

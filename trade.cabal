@@ -74,8 +74,9 @@ library
                         Trade.Type.Conversion.Equity2Yield
                         Trade.Type.Conversion.Impulse2Position
                         Trade.Type.Conversion.Impulse2Trade
-                        Trade.Type.Conversion.OffsettedNormTradeList2NormSignal
                         Trade.Type.Conversion.NormTrade2YieldSignal
+                        Trade.Type.Conversion.OffsettedNormTradeList2NormSignal
+                        Trade.Type.Conversion.Price2Yield
                         Trade.Type.Conversion.Trade2Equity
                         Trade.Type.Conversion.Trade2NormTrade
                         Trade.Type.Conversion.Type2Double
