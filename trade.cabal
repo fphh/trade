@@ -133,6 +133,7 @@ library
                      , diagrams-svg
                      , svg-builder
                      , SVGFonts
+                     , deepseq
                      -- , operational
 
   hs-source-dirs:      src

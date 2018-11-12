@@ -3,12 +3,14 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE BangPatterns #-}
 
 
 module Trade.Example.Optimize where
 
 import Control.Monad.Trans (liftIO)
 import Control.Monad (replicateM)
+import Control.DeepSeq
 
 import Control.Applicative (liftA2)
 
@@ -103,10 +105,13 @@ data OptimizationInput t ohlc = OptimizationInput {
 data OptSingleResult = OptSingleResult {
   ig :: IG.OptimizedImpulseGenerator P.Price
   , params :: (IG.Percent, IG.WindowSize)
-  , twrTable10 :: [(F.Fraction, Maybe Dist.Percent)]
-  , twrTable12 :: [(F.Fraction, Maybe Dist.Percent)]
-  , rsks :: [(F.Fraction, Maybe Dist.Percent)]
+  , twrTable10 :: ![(F.Fraction, Maybe Dist.Percent)]
+  , twrTable12 :: ![(F.Fraction, Maybe Dist.Percent)]
+  , rsks :: ![(F.Fraction, Maybe Dist.Percent)]
   }
+
+instance NFData F.Fraction where
+  rnf (F.Fraction !x) = ()
 
 instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
   type OptReportTy (OptimizationInput UTCTime P.Price) = OptimizationResult
@@ -152,25 +157,25 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
               twr12 = map (g (1-) (> 1.2)) twrs
               rsk20 = map h rsks
           
-          in OptSingleResult optIG params twr10 twr12 rsk20
+          in OptSingleResult optIG params (force twr10) (force twr12) (force rsk20)
 
         res = map f space
 
         h ps ig (fr, b) (_, c) = (fr, b, c, ps, ig)
         g (OptSingleResult optIG params a b c) = zipWith (h params optIG) a b
 
-        p (_, x, _, _, _) = trace (show x) $
+        p (_, x, _, _, _) =
           case x of
             Nothing -> True
             Just y | y < (riskOfLoss optInp) -> True
             _ -> False
 
-        q (_, _, u, _, _) (_, _, v, _, _) = compare v u
-        (optFr, _, _, (optPerc, optWinSize), optimalIG):_ = List.sortBy q (filter p (concatMap g res))
+        q (_, _, u, _, _) (_, _, v, _, _) = compare u v
+        (optFr, _, _, (optPerc, optWinSize), optimalIG) =
+          List.maximumBy q (filter p (concatMap g res))
 
     return (optimalIG, OptimizationResult priceBrm sampleStats mu sigma res (optFr, optPerc, optWinSize))
 
-    
 
 data OptimizationResult = OptimizationResult {
   broom :: Broom.Broom (Signal.Signal B.BarNo P.Price)
@@ -186,7 +191,9 @@ instance (T2D.Type2Double ohlc) =>
   
   toReport (TR.OptimizationData optInp (OptimizationResult brm sStats mu sigma singleRes bst)) = do
     let nOfSamp = 20
-   
+
+    Rep.text "Trying to optimize a mean reversion strategy. Parameters are window size and percent of deviation from current prices. Trying to identify parameters with low risk and high yield. The Monte Carlo simulation is based on Black Scholes."
+    
     Rep.subheader "Optimization Input"
     Rep.chart (Style.axTitle "Symbol") (Style.axTitle "Price", [Line.line "Price" (optSample optInp)])
 
@@ -213,35 +220,9 @@ instance (T2D.Type2Double ohlc) =>
 
     mapM_ f singleRes
 
+    Rep.subheader "Optimization Result"
     Rep.text ("Best is " ++ show bst)
     
-{-
-    Rep.subheader "Optimization Result"
-
-    Rep.subsubheader "Trade Statistics"
-
-    Rep.divs $ map TStat.stats2para (TStat.tradeStatistics id trdList)
-
-
-    Rep.subsubheader "Generated Broom"
-    Rep.text ("Number of Monte Carlo samples: " ++ show (mcN optInp) ++ ", showing " ++ show nOfSamp)
-    Rep.chart (Style.axTitle "Bars") (Style.axTitle "Equity", Broom.broom2chart nOfSamp brm)
-
-    Rep.subsubheader "Terminal wealth relative"
-    Rep.chart (Style.axTitle "Percent") (Style.axTitle "TWR", map (\(fr, cdf) -> Line.line (showFrac fr) cdf) twrs)
-    Rep.text ("The probability that terminal wealth relative is less than factor 1.0, respectivly greater than 1.2, at fraction f:")
-    Rep.horizontal $ do
-      Rep.floatLeft $ Rep.htable twrTable10
-      Rep.floatLeft $ Rep.htable twrTable12
-
-    Rep.subsubheader "Risk of Drawdown"
-    Rep.chart (Style.axTitle "Percent") (Style.axTitle "Drawdown", map (\(fr, cdf) -> Line.line (showFrac fr) cdf) rsks)
-    Rep.text ("Risk of max. drawdown greater than 20% at fraction f:")
-    Rep.htable riskTable
--}
-
-
-
 --------------------------------------------------------
 
 data BacktestInput t ohlc = BacktestInput {
@@ -305,6 +286,8 @@ example = do
   
   let Signal.Sample inSample outOfSample = Signal.split 0.75 samp
 
+      initEq = E.Equity (P.unPrice (snd (Signal.head outOfSample)))
+
       percs = map IG.Percent [0, 0.01, 0.02, 0.03, 0.04, 0.05]
       winSizes = map IG.WindowSize [5, 10, 15, 20]
       optSpc = liftA2 (,) percs winSizes
@@ -324,7 +307,7 @@ example = do
             , stepFunc = SF.stepFuncNoCommission
             , fractions = map F.Fraction [0.1, 0.5, 1, 1.5, 2.0, 5.0]
             }
-        , Ana.backtestInput = BacktestInput (E.Equity 175) outOfSample
+        , Ana.backtestInput = BacktestInput initEq outOfSample
         }
 
       rep = Ana.analyze analysis
@@ -333,31 +316,3 @@ example = do
   
   BSL.putStrLn t
 
-
-
-{-
-
-[
-  ((Percent 3.0e-2,WindowSize 5),
-   [(Fraction {unFraction = 0.1},Just 7.3),(Fraction {unFraction = 0.5},Just 8.5)], < twr 1
-   [(Fraction {unFraction = 0.1},Just 0.10000000000000009),(Fraction {unFraction = 0.5},Just 73.7)], > twr 1.2
-   [(Fraction {unFraction = 0.1},Nothing),(Fraction {unFraction = 0.5},Just 14.500000000000002)]), drawdown > 0.2
-
- ((Percent 3.0e-2,WindowSize 10),
-  [(Fraction {unFraction = 0.1},Just 7.6),(Fraction {unFraction = 0.5},Just 8.7)],
-  [(Fraction {unFraction = 0.1},Nothing),(Fraction {unFraction = 0.5},Just 69.8)],
-  [(Fraction {unFraction = 0.1},Nothing),(Fraction {unFraction = 0.5},Just 11.799999999999999)]),
-
- ((Percent 5.0e-2,WindowSize 5),
-  [(Fraction {unFraction = 0.1},Just 5.7),(Fraction {unFraction = 0.5},Just 7.1)],
-  [(Fraction {unFraction = 0.1},Just 0.5000000000000004),(Fraction {unFraction = 0.5},Just 77.4)],
-  [(Fraction {unFraction = 0.1},Nothing),(Fraction {unFraction = 0.5},Just 14.800000000000002)]),
-
- ((Percent 5.0e-2,WindowSize 10),
-  [(Fraction {unFraction = 0.1},Just 6.3),(Fraction {unFraction = 0.5},Just 7.9)],
-  [(Fraction {unFraction = 0.1},Just 0.20000000000000018),(Fraction {unFraction = 0.5},Just 76.8)],
-  [(Fraction {unFraction = 0.1},Nothing),(Fraction {unFraction = 0.5},Just 14.000000000000002)])
-
-  ]
-
--}

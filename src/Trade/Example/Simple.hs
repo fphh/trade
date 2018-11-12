@@ -73,6 +73,8 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
           in c
         toCandle (Signal.Signal cs) = Vec.map toC cs
 
+    Rep.text "Optimally buying and selling. Not possible in reality :( ..."
+    
     Rep.subheader "Optimization Input"
     Rep.candle "Symbol" [toCandle ps]
     Rep.subheader "Optimization Result"
@@ -129,14 +131,13 @@ example :: IO ()
 example = do
   
 
-  let equity = Eqty.Equity 9
+  let equity = Eqty.Equity 2
       trdAt = OHLC.ohlcClose
   
       analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen IG.buyAndHold -- (IG.optimalBuySell trdAt)
-        -- , Ana.impulseGenerator = IG.optImpGen2impGen (IG.buyAtSellAtAbs 15 18)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput trdAt equity ticker
         }

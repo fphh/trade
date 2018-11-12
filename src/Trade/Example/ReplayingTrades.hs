@@ -128,6 +128,8 @@ instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime P.Price) Op
 
         signal = Vec.map (fmap P.unPrice) (Signal.unSignal (optSample optInp))
 
+    Rep.text "Buying/Selling at the crossing of two moving averages, window sizes 11 and 19."
+    
     Rep.subheader "Optimization Input"
     Rep.chart (Style.axTitle "Symbol") (Style.axTitle "Price", [Line.line "Price" (optSample optInp)])
 
