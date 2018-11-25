@@ -12,15 +12,12 @@ import qualified Data.Vector as Vec
 
 import Trade.Type.Bars (Time, DeltaT, diff)
 import Trade.Type.Signal (Signal(..))
-import qualified Trade.Type.Signal as Signal
-import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator)
+import Trade.Type.ImpulseGenerator (NonEmptyList, OptimizedImpulseGenerator)
 import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.Signal.Equity (EquitySignal)
 import Trade.Type.StepFunc (StepFunc)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Yield (Yield)
-import Trade.Type.NormTrade (NormTradeList(..), NormTrade(..))
-import Trade.Type.Trade (TradeList(..), Trade(..))
 import Trade.Type.Conversion.Yield2Equity (yield2equity)
 import Trade.Type.Conversion.Trade2NormTrade (trade2normTrade)
 import Trade.Type.Conversion.Impulse2Trade (impulse2trade)
@@ -51,7 +48,7 @@ equitySignal tradeAt stepFunc eqty impSig qs@(Signal ps) =
 class Backtest btInput where
   type BacktestReportTy btInput :: *
   
-  backtest :: OptimizedImpulseGenerator (OHLCDataTy btInput) -> btInput -> BacktestReportTy btInput
+  backtest :: NonEmptyList (OptimizedImpulseGenerator (OHLCDataTy btInput)) -> btInput -> BacktestReportTy btInput
 
 
 data NoBacktest = NoBacktest

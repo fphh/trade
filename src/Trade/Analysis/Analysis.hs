@@ -8,7 +8,7 @@ module Trade.Analysis.Analysis where
 
 import Control.Monad.Trans (liftIO)
 
-import Trade.Type.ImpulseGenerator (ImpulseGenerator)
+import Trade.Type.ImpulseGenerator (ImpulseGenerator, RankedStrategies(..), NonEmptyList(..))
 
 import Trade.Analysis.OHLCData (OHLCDataTy)
 import Trade.Analysis.Optimize (Optimize, OptReportTy, OptInpTy, optimize)
@@ -42,5 +42,19 @@ analyze ::
   => Analysis optInp backInp -> Rep.HtmlT IO ()
 analyze (Analysis ttle impGen optInp backInp) = do
   (optImpGen, optOut) <- liftIO (optimize impGen optInp)
+
+  let btData =
+        case optImpGen of
+          RankedStrategies [] -> Nothing
+          RankedStrategies (best:rest) ->
+            let backOut = backtest (NonEmptyList best rest) backInp
+            in Just (BacktestData backInp backOut)
+
+  report ttle (OptimizationData optInp optOut) btData
+
+{-
+analyze (Analysis ttle impGen optInp backInp) = do
+  (optImpGen, optOut) <- liftIO (optimize impGen optInp)
   let backOut = backtest optImpGen backInp
   report ttle (OptimizationData optInp optOut) (BacktestData backInp backOut)
+-}

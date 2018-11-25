@@ -25,7 +25,7 @@ instance Opt.Optimize OptimizationInput where
   type OptInpTy OptimizationInput = OD.NoOHLC
   
   optimize (IG.ImpulseGenerator strat) OptimizationInput =
-    return (strat OD.NoOHLC, OptimizationResult)
+    return (IG.RankedStrategies [strat OD.NoOHLC], OptimizationResult)
 
 
 data OptimizationResult = OptimizationResult

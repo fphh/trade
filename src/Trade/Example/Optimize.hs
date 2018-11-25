@@ -5,12 +5,24 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE BangPatterns #-}
 
+{-
+
+* GARCH models
+* Interactive Brokers
+  https://github.com/rbermani/ib-api
+
+* quantopian: zipline
+* Johansen Test for Cointegrating Time Series Analysis in R
+
+* https://hackage.haskell.org/package/inline-r
+
+-}
 
 module Trade.Example.Optimize where
 
 import Control.Monad.Trans (liftIO)
 import Control.Monad (replicateM)
-import Control.DeepSeq
+import Control.DeepSeq (force, NFData, rnf)
 
 import Control.Applicative (liftA2)
 
@@ -76,6 +88,7 @@ import qualified Trade.MonteCarlo.ResampleTrades.Broom as RTBroom
 
 
 import qualified Trade.MonteCarlo.Simulation.BlackScholes as Black
+import qualified Trade.MonteCarlo.Simulation.MEBoot as MEBoot
 
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Curve as Curve
@@ -127,7 +140,9 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
         mu = Black.Mu (fromIntegral len * SStat.mean sampleStats)
         sigma = Black.Sigma (sqrt (fromIntegral len) * SStat.stdDev sampleStats)
 
-    priceBrm <- Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) mu sigma
+    --  priceBrm <- Black.priceSignalBroom (forcastHorizon optInp) (mcN optInp) (optInitialEquity optInp) mu sigma
+
+    priceBrm <- MEBoot.mebootBroom (mcN optInp) (optSample optInp)
 
     let eqty = optInitialEquity optInp
         fracs = fractions optInp
@@ -174,11 +189,11 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
         (optFr, _, _, (optPerc, optWinSize), optimalIG) =
           List.maximumBy q (filter p (concatMap g res))
 
-    return (optimalIG, OptimizationResult priceBrm sampleStats mu sigma res (optFr, optPerc, optWinSize))
+    return (IG.RankedStrategies [optimalIG], OptimizationResult priceBrm sampleStats mu sigma res (optFr, optPerc, optWinSize))
 
 
 data OptimizationResult = OptimizationResult {
-  broom :: Broom.Broom (Signal.Signal B.BarNo P.Price)
+  broom :: Broom.Broom (Signal.Signal UTCTime P.Price)
   , sampleStats :: SStat.SampleStatistics UTCTime
   , muOR :: Black.Mu
   , sigmaOR :: Black.Sigma
@@ -235,7 +250,7 @@ instance (Ord t, Show t, Show ohlc, B.Time t, Num (B.DeltaT t), T2D.Type2Double 
   
   type BacktestReportTy (BacktestInput t ohlc) = BacktestResult t
 
-  backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput initEqty ps) =
+  backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
     let impSig = optStrat ps
         es = BT.equitySignal id SF.stepFuncNoCommissionFullFraction initEqty impSig ps
     in BacktestResult impSig es
@@ -280,7 +295,7 @@ example = do
   let mu = Black.Mu 0.5
       sigma = Black.Sigma 0.5
       start = E.Equity 100
-      seed = 41
+      seed = 100
 
   samp <- Black.blackScholesDet seed (T.yearsN 4) start mu sigma
   
@@ -288,8 +303,8 @@ example = do
 
       initEq = E.Equity (P.unPrice (snd (Signal.head outOfSample)))
 
-      percs = map IG.Percent [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-      winSizes = map IG.WindowSize [5, 10, 15, 20]
+      percs = map IG.Percent [0.01] -- [0, 0.01, 0.02, 0.03, 0.04, 0.05]
+      winSizes = map IG.WindowSize [5, 10] -- [5, 10, 15, 20]
       optSpc = liftA2 (,) percs winSizes
 
       ig = IG.ImpulseGenerator (uncurry (IG.impulsesFromMovingAverage P.unPrice))

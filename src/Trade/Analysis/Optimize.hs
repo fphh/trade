@@ -5,14 +5,12 @@
 
 module Trade.Analysis.Optimize where
 
-import Trade.Type.ImpulseGenerator (ImpulseGenerator(..), OptimizedImpulseGenerator)
+import Trade.Type.ImpulseGenerator (ImpulseGenerator(..), RankedStrategies(..))
 
 import qualified Trade.Report.Report as Rep
 import Trade.Analysis.ToReport (ToReport, toReport, OptimizationData(..))
 
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
-
-
 
 class Optimize optInput where
   type OptReportTy optInput :: *
@@ -21,7 +19,7 @@ class Optimize optInput where
   optimize ::
     ImpulseGenerator (OptInpTy optInput) (OHLCDataTy optInput)
     -> optInput
-    -> IO (OptimizedImpulseGenerator (OHLCDataTy optInput), OptReportTy optInput)
+    -> IO (RankedStrategies (OHLCDataTy optInput), OptReportTy optInput)
 
 
 data NoOptimization = NoOptimization
@@ -36,7 +34,7 @@ instance Optimize NoOptimization where
   type OptInpTy NoOptimization = NoOptimization
   
   optimize (ImpulseGenerator strat) NoOptimization =
-    return (strat NoOptimization, NoOptimizationReport)
+    return (RankedStrategies [strat NoOptimization], NoOptimizationReport)
 
 instance ToReport (OptimizationData NoOptimization NoOptimizationReport) where
   toReport _ = Rep.text "No optimization was done."

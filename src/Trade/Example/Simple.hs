@@ -34,7 +34,6 @@ import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Analysis.OHLCData as OD
 
 import qualified Trade.Report.Report as Rep
-import qualified Trade.Report.Curve as Curve
 import qualified Trade.Report.Line as Line
 
 import qualified Trade.Test.Data as TD
@@ -56,7 +55,7 @@ instance Opt.Optimize OptimizationInput where
   type OptInpTy OptimizationInput = Signal.Signal UTCTime OHLC.OHLC
   
   optimize (IG.ImpulseGenerator strat) (OptimizationInput sig) =
-    return (strat sig, OptimizationResult)
+    return (IG.RankedStrategies [strat sig], OptimizationResult)
 
 
 data OptimizationResult = OptimizationResult
@@ -92,7 +91,7 @@ data BacktestInput ohlc = BacktestInput {
 instance BT.Backtest (BacktestInput ohlc) where
   type BacktestReportTy (BacktestInput ohlc) = BacktestResult
 
-  backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput trdAt initEqty ps) =
+  backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput trdAt initEqty ps) =
     let impSig = optStrat ps
         es = BT.equitySignal trdAt SF.stepFuncNoCommissionFullFraction initEqty impSig ps
     in (BacktestResult impSig es)

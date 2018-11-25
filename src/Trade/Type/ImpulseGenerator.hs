@@ -27,6 +27,16 @@ newtype ImpulseGenerator optData ohlc = ImpulseGenerator {
   unImpulseGenerator :: optData -> OptimizedImpulseGenerator ohlc
   }
 
+newtype RankedStrategies ohlcDataTy = RankedStrategies {
+  rankedStrategies :: [OptimizedImpulseGenerator ohlcDataTy]
+  }
+
+-- | Non empty list. We should replace it by some package.
+data NonEmptyList a = NonEmptyList {
+  head :: a
+  , tail :: [a]
+  }
+
 optImpGen2impGen :: OptimizedImpulseGenerator ohlc -> ImpulseGenerator optData ohlc
 optImpGen2impGen ig = ImpulseGenerator (\_ -> ig)
 

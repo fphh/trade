@@ -98,7 +98,7 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
           
         (twrs, rsks) = List.foldr f ([], []) (fractions optInp)
 
-    return (optIG, OptimizationResult eqtyBrm trds twrs rsks)
+    return (IG.RankedStrategies [optIG], OptimizationResult eqtyBrm trds twrs rsks)
 
     
 
@@ -171,7 +171,7 @@ data BacktestInput t ohlc = BacktestInput {
 instance (Ord t, B.Time t, Num (B.DeltaT t)) => BT.Backtest (BacktestInput t P.Price) where
   type BacktestReportTy (BacktestInput t P.Price) = BacktestResult t
 
-  backtest (IG.OptimizedImpulseGenerator optStrat) (BacktestInput initEqty ps) =
+  backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
     let impSig = optStrat ps
         es = BT.equitySignal id SF.stepFuncNoCommissionFullFraction initEqty impSig ps
     in BacktestResult impSig es

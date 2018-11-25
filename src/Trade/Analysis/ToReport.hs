@@ -40,14 +40,19 @@ data BacktestData backtestInput backtestOutput = BacktestData {
   backtestInput :: backtestInput
   , backtestOutput :: backtestOutput
   }
+
+
+noBacktestDataReport :: Rep.HtmlIO
+noBacktestDataReport = do
+  Rep.subheader "Backtest Result"
+  Rep.text "No impulse generator found. No backtest done."
   
 report ::
   (ToReport (OptimizationData optInp optOut)
   , ToReport (BacktestData backInp backOut)) =>
-  String -> OptimizationData optInp optOut -> BacktestData backInp backOut -> Rep.HtmlIO
+  String -> OptimizationData optInp optOut -> Maybe (BacktestData backInp backOut) -> Rep.HtmlIO
 report ttle opt back =
   let title = Rep.header ttle
       optRep = toReport opt
-      backRep = toReport back
+      backRep = maybe noBacktestDataReport toReport back
   in liftM3 (\a b c -> a <> b <> c) title optRep backRep
-
