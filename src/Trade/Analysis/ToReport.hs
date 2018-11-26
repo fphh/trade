@@ -45,7 +45,7 @@ data BacktestData backtestInput backtestOutput = BacktestData {
 noBacktestDataReport :: Rep.HtmlIO
 noBacktestDataReport = do
   Rep.subheader "Backtest Result"
-  Rep.text "No impulse generator found. No backtest done."
+  Rep.text "No optimized impulse generator found. No backtest done."
   
 report ::
   (ToReport (OptimizationData optInp optOut)
