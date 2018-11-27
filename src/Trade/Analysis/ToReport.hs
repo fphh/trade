@@ -19,10 +19,7 @@ instance ToReport () where
   toReport _ = mempty
 
 instance (ToReport a) => ToReport (Maybe a) where
-  toReport x =
-    case x of
-      Nothing -> mempty
-      Just y -> toReport y
+  toReport = maybe mempty toReport
 
 instance (ToReport a) => ToReport [a] where
   toReport = mconcat . map toReport
