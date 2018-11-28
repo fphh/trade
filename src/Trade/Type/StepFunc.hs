@@ -18,15 +18,17 @@ class StepFunction yield where
 
 instance StepFunction Yield where
   stepFunction (Commission com) (Fraction frac) (Equity e) (Yield y) =
-    let e0 = frac * e
-        e1 = (1-frac) * e
-    in Equity (com e1 + e0*y)
+    let e0 = frac * e            -- Traded fraction
+        e1 = (1-frac) * e        -- Non traded fraction
+        c = com e0               -- Commission
+    in Equity (e1 - c + e0*y)
 
 instance StepFunction LogYield where
   stepFunction (Commission com) (Fraction frac) (Equity e) (LogYield y) =
     let e0 = frac * e
         e1 = (1-frac) * e
-    in Equity (com e1 + e0*exp y)
+        c = com e0
+    in Equity (e1 - c + e0*exp y)
 
 stepFuncNoCommission :: (StepFunction yield) => Fraction -> StepFunc yield
 stepFuncNoCommission = stepFunction noCommission
