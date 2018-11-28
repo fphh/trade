@@ -53,37 +53,6 @@ buyAndHold =
         in ImpulseSignal (Map.fromList [(t0, Buy), (tn, Sell)])
   in OptimizedImpulseGenerator go
 
-  
-{-
--- | Buy if index in signal is even, sell if odd
-buySell :: OptimizedImpulseGenerator ohlc
-buySell =
-  let go (Signal ps) =
-        let f i (t, _) =
-              (\x -> (t, Just x)) $
-              case even i of
-                True -> Buy
-                False -> Sell
-        in Signal (Vec.imap f ps)
-  in OptimizedImpulseGenerator go
-
-
--- | Buying, selling at absolute prices (using closing price).
-buyAtSellAtAbs ::
-  (OHLC.OHLCInterface ohlc) =>
-  Double -> Double -> OptimizedImpulseGenerator ohlc
-buyAtSellAtAbs buy sell =
-  let go =
-        let f (t, x) = (\u -> (t, u)) $
-              case O.unClose (OHLC.ohlcClose x) of
-                y | y > buy -> Just Buy 
-                y | y < sell -> Just Sell
-                _ -> Nothing
-        in IS.alternateBuySellKeepFirstOccurrence . Signal.map f
-  in OptimizedImpulseGenerator go
--}
-
-
 -- | This impulse generator looks ahead in time, which is not possible in reality. It yields maximal profit.
 optimalBuySell :: (Ord a) => (ohlc -> a) -> OptimizedImpulseGenerator ohlc
 optimalBuySell trdAt =
@@ -178,3 +147,36 @@ buySellAfterNM b s =
   in OptimizedImpulseGenerator go
 
 -}
+
+
+
+  
+{-
+-- | Buy if index in signal is even, sell if odd
+buySell :: OptimizedImpulseGenerator ohlc
+buySell =
+  let go (Signal ps) =
+        let f i (t, _) =
+              (\x -> (t, Just x)) $
+              case even i of
+                True -> Buy
+                False -> Sell
+        in Signal (Vec.imap f ps)
+  in OptimizedImpulseGenerator go
+
+
+-- | Buying, selling at absolute prices (using closing price).
+buyAtSellAtAbs ::
+  (OHLC.OHLCInterface ohlc) =>
+  Double -> Double -> OptimizedImpulseGenerator ohlc
+buyAtSellAtAbs buy sell =
+  let go =
+        let f (t, x) = (\u -> (t, u)) $
+              case O.unClose (OHLC.ohlcClose x) of
+                y | y > buy -> Just Buy 
+                y | y < sell -> Just Sell
+                _ -> Nothing
+        in IS.alternateBuySellKeepFirstOccurrence . Signal.map f
+  in OptimizedImpulseGenerator go
+-}
+
