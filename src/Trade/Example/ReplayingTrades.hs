@@ -33,7 +33,7 @@ import qualified Trade.Type.Signal.Equity as ES
 import qualified Trade.Type.ImpulseSignal as IS
 
 
-import qualified Trade.Type.Conversion.Impulse2Trade as I2T
+import qualified Trade.Type.Conversion.Impulse2TradeList as I2TL
 import qualified Trade.Type.Conversion.Trade2NormTrade as T2NT
 
 
@@ -81,7 +81,7 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
   optimize (IG.ImpulseGenerator strat) optInp = do
     let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat ()
 
-        trds = I2T.impulse2trade (optSample optInp) (optStrat (optSample optInp))
+        trds = I2TL.impulse2tradeList (optSample optInp) (optStrat (optSample optInp))
         ntrds = T2NT.trade2normTrade trds
     yieldBroom <- RTBroom.normBroom (forcastHorizon optInp) (mcN optInp) ntrds
 

@@ -60,8 +60,6 @@ import qualified Trade.Type.Signal.Price as PS
 import qualified Trade.Type.ImpulseSignal as IS
 import qualified Trade.Type.Signal.Equity as ES
 
-
-import qualified Trade.Type.Conversion.Impulse2Trade as I2T
 import qualified Trade.Type.Conversion.Trade2NormTrade as T2NT
 import qualified Trade.Type.Conversion.Price2Yield as P2Y
 import qualified Trade.Type.Conversion.Type2Double as T2D

@@ -74,7 +74,7 @@ library
                         Trade.Type.Commission
                         Trade.Type.Conversion.Equity2Yield
                         Trade.Type.Conversion.Impulse2Position
-                        Trade.Type.Conversion.Impulse2Trade
+                        Trade.Type.Conversion.Impulse2TradeList
                         Trade.Type.Conversion.NormTrade2YieldSignal
                         Trade.Type.Conversion.OffsettedNormTradeList2NormSignal
                         Trade.Type.Conversion.Price2Yield

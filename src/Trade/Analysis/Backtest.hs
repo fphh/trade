@@ -20,7 +20,7 @@ import Trade.Type.Equity (Equity(..))
 import Trade.Type.Yield (Yield)
 import Trade.Type.Conversion.Yield2Equity (yield2equity)
 import Trade.Type.Conversion.Trade2NormTrade (trade2normTrade)
-import Trade.Type.Conversion.Impulse2Trade (impulse2trade)
+import Trade.Type.Conversion.Impulse2TradeList (impulse2tradeList)
 import Trade.Type.Conversion.NormTrade2YieldSignal (normTrade2yieldSignal)
 import Trade.Type.Conversion.Type2Double (Type2Double)
 
@@ -39,7 +39,7 @@ equitySignal tradeAt stepFunc eqty impSig qs@(Signal ps) =
           (Just (t0, _), Just (t1, _)) -> (t0, t1 `diff` t0)
           _ -> error "Trade.Analysis.Backtest.equitySignal: price signal to short"
 
-      ts = impulse2trade qs impSig
+      ts = impulse2tradeList qs impSig
       nts = trade2normTrade (fmap tradeAt ts)
       res = yield2equity stepFunc eqty (normTrade2yieldSignal start dt nts)
 
