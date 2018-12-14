@@ -100,6 +100,7 @@ import qualified Trade.Report.Style as Style
 
 import Debug.Trace
 
+
 --------------------------------------------------------
 
 data OptimizationInput t ohlc = OptimizationInput {
@@ -261,12 +262,14 @@ data BacktestResult t = BacktestResult {
 instance (Easy.PlotValue t, Show t, T2D.Type2Double ohlc) =>
          TR.ToReport (TR.BacktestData (BacktestInput t ohlc) (BacktestResult t)) where
   toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult impSig es)) = do
-    let left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps, Line.line "Backtest" es])
-        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (IS.curve ps impSig)])
-
+    
     Rep.subheader "Backtest Result"
 
-    Rep.chartLR (Style.axTitle "Time") left right
+    Rep.backtestChart
+      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Equity" ps, Line.line "Backtest" es])
+      (Rep.impulseSignalCharts [IS.curve ps impSig])
+
+    
     Rep.text ("Initial Equity: " ++ show inEq)
 
     case Signal.length es > 0 of
@@ -301,12 +304,13 @@ example = do
 
       initEq = E.Equity (P.unPrice (snd (Signal.head outOfSample)))
 
-      percs = map IG.Percent [0.01] -- [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-      winSizes = map IG.WindowSize [5, 10] -- [5, 10, 15, 20]
+      percs = map IG.Percent [0, 0.01, 0.02, 0.03, 0.04, 0.05]
+      winSizes = map IG.WindowSize [5, 10, 15, 20]
       optSpc = liftA2 (,) percs winSizes
 
-      ig = IG.ImpulseGenerator (uncurry (IG.impulsesFromMovingAverage P.unPrice))
-  
+      -- ig = IG.ImpulseGenerator (uncurry (IG.impulsesFromMovingAverage P.unPrice))
+      ig = IG.impulsesFromMovingAverage P.unPrice
+
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
         , Ana.impulseGenerator = ig
@@ -328,4 +332,3 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
-

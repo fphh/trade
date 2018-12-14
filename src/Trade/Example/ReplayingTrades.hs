@@ -64,8 +64,11 @@ import qualified Trade.Test.Time as T
 
 import qualified Trade.Report.Style as Style
 
+
+
 data OptimizationInput t ohlc = OptimizationInput {
   optSample :: Signal.Signal t ohlc
+  , igInput :: (IG.WindowSize, IG.WindowSize)
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
@@ -76,10 +79,10 @@ data OptimizationInput t ohlc = OptimizationInput {
 
 instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
   type OptReportTy (OptimizationInput UTCTime P.Price) = OptimizationResult
-  type OptInpTy (OptimizationInput UTCTime P.Price) = ()
+  type OptInpTy (OptimizationInput UTCTime P.Price) = (IG.WindowSize, IG.WindowSize)
 
   optimize (IG.ImpulseGenerator strat) optInp = do
-    let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat ()
+    let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat (igInput optInp)
 
         trds = I2TL.impulse2tradeList (optSample optInp) (optStrat (optSample optInp))
         ntrds = T2NT.trade2normTrade trds
@@ -185,13 +188,15 @@ instance (E.PlotValue t, Show t) =>
          TR.ToReport (TR.BacktestData (BacktestInput t P.Price) (BacktestResult t)) where
   
   toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult impSig es)) = do
-    let left = (Style.axTitle "Equity", [Line.line "Price" ps, Line.line "Backtest" es])
-        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (IS.curve ps impSig)])
-
+ 
     Rep.subheader "Backtest Result"
     Rep.text "Trading at full fraction, no commissions"
 
-    Rep.chartLR (Style.axTitle "Time") left right
+    Rep.backtestChart
+      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Equity" ps, Line.line "Backtest" es])
+      (Rep.impulseSignalCharts [IS.curve ps impSig])
+
+    
     Rep.text ("Initial Equity: " ++ show inEq)
 
     case Signal.length es > 0 of
@@ -228,9 +233,10 @@ example = do
   let analysis :: Ana.Analysis (OptimizationInput UTCTime P.Price) (BacktestInput UTCTime P.Price)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.impulsesFromTwoMovingAverages P.unPrice (IG.WindowSize 11) (IG.WindowSize 19))
+        , Ana.impulseGenerator = IG.impulsesFromTwoMovingAverages P.unPrice
         , Ana.optimizationInput = OptimizationInput {
             optSample = sample
+            , igInput = (IG.WindowSize 11, IG.WindowSize 23)
             , mcN = 1000
             , optInitialEquity = Eqty.Equity 1000
             , forcastHorizon = B.Bars 1000

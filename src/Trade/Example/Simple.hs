@@ -105,13 +105,15 @@ instance TR.ToReport (TR.BacktestData (BacktestInput ohlc) BacktestResult) where
   toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
     let bts = fmap Eqty.unEquity es
         ps' = fmap (T2D.type2double . trdAt) ps
-        left = (Style.axTitle "Equity", [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
-        right = (Style.impulseAxisConf, [Line.line "down buy / up sell" (IS.curve ps impSig)])
 
     Rep.subheader "Backtest Result"
     Rep.text "Trading at full fraction, no commissions"
 
-    Rep.chartLR (Style.axTitle "Time") left right
+    Rep.backtestChart
+      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
+      (Rep.impulseSignalCharts [IS.curve ps impSig])
+
+    
     Rep.text ("Initial Equity: " ++ show inEq)
     Rep.text ("Starting with equity " ++ show (Vec.head $ Signal.unSignal bts))
     Rep.text ("Ending with equity " ++ show (Vec.last $ Signal.unSignal bts))

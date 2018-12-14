@@ -19,8 +19,6 @@ import qualified Data.ByteString.Lazy as BSL
 
 import qualified Data.ByteString.Lazy.Search as BSS
 
-import Data.Char (ord)
-
 
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
@@ -33,12 +31,18 @@ import qualified Text.Blaze.Html.Renderer.Utf8 as HtmlBSL
 import qualified Text.Blaze.Html5.Attributes as H5A
 import Text.Blaze.Internal (MarkupM(..))
 
+import Graphics.Rendering.Chart.Grid (Grid, aboveN, above, gridToRenderable, weights, tval, tspan)
+import Graphics.Rendering.Chart.Layout (LayoutPick, layoutToGrid)
+import Graphics.Rendering.Chart.Renderable (Renderable)
+
 import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
 -- import qualified Graphics.Rendering.Chart.Backend.Cairo as D
 
-import Trade.Report.Style
+import Trade.Report.Style (AxisConfig(..), colors, impulseAxisConf)
 import Trade.Report.Line (L(..))
+
+import Trade.Type.Impulse (Impulse)
 
 markupValue :: MarkupM a -> a
 markupValue m0 = case m0 of
@@ -156,16 +160,22 @@ renderReport html = do
 chartSize :: (Double, Double)
 chartSize = (1000, 520)
 
-
-colors :: [E.AlphaColour Double]
-colors = map E.opaque [ E.red, E.blue, E.green, E.magenta, E.orange, E.darkcyan, E.black, E.gray, E.purple, E.pink ] ++ colors
-
 -- | TODO: use sockets or pipes?
 toBS :: (E.Default l, E.ToRenderable l) => D.FileOptions -> E.EC l () -> IO ByteString
 toBS fopts diagram = Temp.withSystemTempFile "svg-" $
   \file h -> do
     hClose h
     D.toFile fopts file diagram
+    bs <- BSL.readFile file
+    -- remove clip-path attributes; clip-paths seem to be buggy in Charts-lib.
+    return (BSS.replace (BS.pack [99,108,105,112,45,112,97,116,104,61]) BSL.empty bs)
+
+-- | TODO: use sockets or pipes?
+toBS2 :: D.FileOptions -> Renderable a -> IO ByteString
+toBS2 fopts r = Temp.withSystemTempFile "svg-" $
+  \file h -> do
+    hClose h
+    D.renderableToFile fopts file r
     bs <- BSL.readFile file
     -- remove clip-path attributes; clip-paths seem to be buggy in Charts-lib.
     return (BSS.replace (BS.pack [99,108,105,112,45,112,97,116,104,61]) BSL.empty bs)
@@ -202,13 +212,12 @@ candle label cs = HtmlT $ do
     
   fmap H5.unsafeLazyByteString (toBS df (E.plot diagram))
 
-
+{-
 chartLR ::
-  (E.PlotValue x, E.PlotValue y1, E.PlotValue y2) =>
-  AxisConfig x ->
-  (AxisConfig y1, [L [(x, y1)]]) ->
-  (AxisConfig y2, [L [(x, y2)]]) ->
-  HtmlIO
+  AxisConfig x0 b
+  -> (AxisConfig y10 b1, [L [(x0, y10)]])
+  -> (AxisConfig y20 b2, [L [(x0, y20)]])
+  -> HtmlT IO ()
 chartLR acx (acL, lsL) (acR, lsR) = HtmlT $ do
   let fstyle = E.def {
         E._font_name = "monospace"
@@ -222,22 +231,23 @@ chartLR acx (acL, lsL) (acR, lsR) = HtmlT $ do
         , D._fo_size = chartSize
         }
 
+  
       diagram = do
         E.setColors colors
 
-        E.layoutlr_x_axis E..= axisLayout acx
+        E.layoutlr_x_axis E..= xAxisLayout acx
         E.layoutlr_bottom_axis_visibility E..= axisVisibility acx
         case axisFn acx of
           Just x -> E.layoutlr_x_axis . E.laxis_generate E..= x
           Nothing -> return ()
 
-        E.layoutlr_left_axis E..= axisLayout acL
+        E.layoutlr_left_axis E..= xAxisLayout acL
         E.layoutlr_left_axis_visibility E..= axisVisibility acL
         case axisFn acL of
           Just x -> E.layoutlr_left_axis . E.laxis_generate E..= x
           Nothing -> return ()
 
-        E.layoutlr_right_axis E..= axisLayout acR
+        E.layoutlr_right_axis E..= xAxisLayout acR
         E.layoutlr_right_axis_visibility E..= axisVisibility acR
         case axisFn acR of
           Just x -> E.layoutlr_right_axis . E.laxis_generate E..= x
@@ -249,9 +259,11 @@ chartLR acx (acL, lsL) (acR, lsR) = HtmlT $ do
         mapM_ E.plotRight (map toLine lsR)
 
   fmap H5.unsafeLazyByteString (toBS df diagram)
+-}
 
-
-chart :: (E.PlotValue x, E.PlotValue y) => AxisConfig x -> (AxisConfig y, [L [(x, y)]]) -> HtmlIO
+chart ::
+  (E.PlotValue x, E.PlotValue y) =>
+  AxisConfig x b -> (AxisConfig y c, [L [(x, y)]]) -> HtmlT IO ()
 chart acx (acy, ls) = HtmlT $ do
   let fstyle = E.def {
         E._font_name = "monospace"
@@ -268,13 +280,13 @@ chart acx (acy, ls) = HtmlT $ do
       diagram = do
         E.setColors colors
         
-        E.layout_x_axis E..= axisLayout acx
+        E.layout_x_axis E..= xAxisLayout acx
         E.layout_bottom_axis_visibility E..= axisVisibility acx
         case axisFn acx of
           Just x -> E.layout_x_axis . E.laxis_generate E..= x
           Nothing -> return ()
 
-        E.layout_y_axis E..= axisLayout acy
+        E.layout_y_axis E..= xAxisLayout acy
         E.layout_left_axis_visibility E..= axisVisibility acy
         case axisFn acy of
           Just x -> E.layout_y_axis . E.laxis_generate E..= x
@@ -285,3 +297,78 @@ chart acx (acy, ls) = HtmlT $ do
         mapM_ (E.plot . toLine) ls
         
   fmap H5.unsafeLazyByteString (toBS df diagram)
+
+
+gridChart ::
+  (E.PlotValue y, Ord y, E.PlotValue x) =>
+  AxisConfig x y -> [L [(x, y)]] -> E.StackedLayout x
+gridChart  ac ls =
+  let fstyle = E.def {
+        E._font_name = "monospace"
+        , E._font_size = 24
+        , E._font_weight = E.FontWeightNormal
+        }
+
+      df = E.def {
+        D._fo_format = D.SVG_EMBEDDED
+        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
+        , D._fo_size = chartSize
+        }
+           
+      diagram = E.execEC $ do
+        E.setColors colors
+ 
+        E.layout_x_axis E..= xAxisLayout ac
+        E.layout_y_axis E..= yAxisLayout ac
+        E.layout_bottom_axis_visibility E..= axisVisibility ac
+        
+        case axisFn ac of
+          Just x -> E.layout_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        let toLine (L str vs) = E.line str [vs]
+
+        mapM_ (E.plot . toLine) ls
+
+  in E.StackedLayout diagram
+
+impulseSignalCharts ::
+  (Ord x, E.PlotValue x) =>
+  [Vector (x, Maybe Impulse)] -> [E.StackedLayout x]
+impulseSignalCharts is =
+  let toChart sty ls = E.execEC $ do
+        E.setColors [ E.opaque E.darkgreen ]
+        
+        E.layout_x_axis E..= xAxisLayout sty
+        E.layout_legend E..= Nothing
+        E.layout_bottom_axis_visibility E..= (E.axis_show_labels E..~ False $ E.def)
+        
+        E.layout_y_axis E..= yAxisLayout sty
+        E.layout_left_axis_visibility E..= axisVisibility sty
+        
+        case axisFn sty of
+          Just x -> E.layout_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        mapM_ E.plot ls
+      
+      f impSig = toChart impulseAxisConf [E.line "down buy / up sell" (map Vec.toList is)]
+  in map (E.StackedLayout . f) is
+
+backtestChart :: (Ord x) => E.StackedLayout x -> [E.StackedLayout x] -> HtmlIO
+backtestChart a as =  HtmlT $ do
+  let fstyle = E.def {
+        E._font_name = "monospace"
+        , E._font_size = 24
+        , E._font_weight = E.FontWeightNormal
+        }
+
+      df = E.def {
+        D._fo_format = D.SVG_EMBEDDED
+        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
+        , D._fo_size = chartSize
+        }
+
+      layouts = E.StackedLayouts (a : as) False
+      
+  fmap H5.unsafeLazyByteString (toBS2 df (E.renderStackedLayouts layouts))

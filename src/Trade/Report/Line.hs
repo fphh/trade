@@ -8,6 +8,8 @@ module Trade.Report.Line where
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
+import Trade.Type.Impulse (Impulse(..))
+
 data L a = L String a
 
 class Line a where

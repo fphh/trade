@@ -9,7 +9,6 @@ import qualified Data.Map as Map
 import Trade.Type.Signal (Signal(..))
 
 import Trade.Type.ImpulseSignal (ImpulseSignal(..))
-import qualified Trade.Type.ImpulseSignal as IS
 
 import Trade.Type.Impulse (Impulse(..))
 
@@ -37,8 +36,18 @@ data NonEmptyList a = NonEmptyList {
   , tail :: [a]
   }
 
+toImpGen :: (optData -> (forall t. Ord t => Signal t ohlc -> ImpulseSignal t)) -> ImpulseGenerator optData ohlc
+toImpGen ig = ImpulseGenerator (\optData -> OptimizedImpulseGenerator (ig optData))
+
 optImpGen2impGen :: OptimizedImpulseGenerator ohlc -> ImpulseGenerator optData ohlc
 optImpGen2impGen ig = ImpulseGenerator (\_ -> ig)
+
+
+-- 
+-- TODO: Verify:
+-- \f optData -> ((\(ImpulseGenerator ig) -> optImGen2impGen (ig optData) == toImpGen f)  (toImpGen f))
+-- Is it true? Somehow...
+--
 
 -- | Do nothing
 noImpulses :: OptimizedImpulseGenerator ohlc
@@ -80,9 +89,9 @@ newtype Percent = Percent Double deriving (Show)
 -- | Construct impulses from crosses of one moving average with the ticker
 -- Buy/Sell at 'perc' percent offset. Mean reversion?
 impulsesFromMovingAverage ::
-  (ohlc -> Double) -> Percent -> WindowSize -> OptimizedImpulseGenerator ohlc
-impulsesFromMovingAverage trdAt (Percent perc) (WindowSize winSize) =
-  let go (Signal ps) =
+  (ohlc -> Double) -> ImpulseGenerator (Percent, WindowSize) ohlc
+impulsesFromMovingAverage trdAt =
+  let go (Percent perc, WindowSize winSize) (Signal ps) =
         let qs = Vec.map (fmap trdAt) ps
             avgs = MAvg.mavgBar winSize qs
 
@@ -92,11 +101,31 @@ impulsesFromMovingAverage trdAt (Percent perc) (WindowSize winSize) =
               | otherwise = acc
 
             ss = Vec.foldl' g Map.empty (SZ.syncZip qs avgs)
+            
+        in ImpulseSignal ss
+        
+  in toImpGen go
 
-        in IS.simplify (ImpulseSignal ss)
-  in OptimizedImpulseGenerator go
 
+-- | Constuct impulses with crossing of two moving averages
+impulsesFromTwoMovingAverages ::
+  (ohlc -> Double) -> ImpulseGenerator (WindowSize, WindowSize) ohlc
+impulsesFromTwoMovingAverages trdAt =
+  let go (WindowSize j, WindowSize k) (Signal ps) =
+        let qs = Vec.map (fmap trdAt) ps
 
+            avgJ = MAvg.mavgBar j qs
+            avgK = MAvg.mavgBar k qs
+
+            g acc (t, Inter.Down) = Map.insert t Buy acc
+            g acc (t, Inter.Up) = Map.insert t Sell acc
+            g acc _ = acc
+
+        in ImpulseSignal (Vec.foldl' g Map.empty (Inter.intersection avgJ avgK))
+        
+  in toImpGen go
+
+{-
 -- | Constuct impulses with crossing of two moving averages
 impulsesFromTwoMovingAverages ::
   (ohlc -> Double) -> WindowSize -> WindowSize -> OptimizedImpulseGenerator ohlc
@@ -113,6 +142,7 @@ impulsesFromTwoMovingAverages trdAt (WindowSize j) (WindowSize k) =
 
         in ImpulseSignal (Vec.foldl' g Map.empty (Inter.intersection avgJ avgK))
   in OptimizedImpulseGenerator go
+-}
 
 
 {-
