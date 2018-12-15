@@ -46,7 +46,7 @@ optImpGen2impGen ig = ImpulseGenerator (\_ -> ig)
 -- 
 -- TODO: Verify:
 -- \f optData -> ((\(ImpulseGenerator ig) -> optImGen2impGen (ig optData) == toImpGen f)  (toImpGen f))
--- Is it true? Somehow...
+-- Is it true? Somehow... quantification of optData is not ok...
 --
 
 -- | Do nothing

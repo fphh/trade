@@ -20,7 +20,7 @@ instance StepFunction Yield where
   stepFunction (Commission com) (Fraction frac) (Equity e) (Yield y) =
     let e0 = frac * e            -- Traded fraction
         e1 = (1-frac) * e        -- Non traded fraction
-    in Equity (com e1 + e0 * y)  -- Paying fees on out of non traded fraction
+    in Equity (com e1 + e0 * y)  -- Deducing fees from non traded fraction
 
 instance StepFunction LogYield where
   stepFunction (Commission com) (Fraction frac) (Equity e) (LogYield y) =
