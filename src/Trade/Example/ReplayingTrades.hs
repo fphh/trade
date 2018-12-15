@@ -103,7 +103,7 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
           
         (twrs, rsks) = List.foldr f ([], []) (fractions optInp)
 
-    return (IG.RankedStrategies [optIG], OptimizationResult eqtyBrm trds twrs rsks)
+    return (IG.RankedStrategies [optIG], OptimizationResult eqtyBrm trds twrs rsks (igInput optInp))
 
     
 
@@ -112,10 +112,11 @@ data OptimizationResult = OptimizationResult {
   , tradeList :: Trade.TradeList UTCTime P.Price
   , twr :: [(F.Fraction, Dist.CDF TWR.TWR)]
   , risk :: [(F.Fraction, Dist.CDF Risk.Risk)]
+  , optWindowSize :: (MAvg.WindowSize, MAvg.WindowSize)
   }
 
 instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime P.Price) OptimizationResult) where
-  toReport (TR.OptimizationData optInp (OptimizationResult brm trdList twrs rsks)) = do
+  toReport (TR.OptimizationData optInp (OptimizationResult brm trdList twrs rsks (winK, winJ))) = do
     let nOfSamp = 20
 
         showFrac :: F.Fraction -> String
@@ -133,10 +134,13 @@ instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime P.Price) Op
 
         signal = Vec.map (fmap P.unPrice) (Signal.unSignal (optSample optInp))
 
-    Rep.text "Buying/Selling at the crossing of two moving averages, window sizes 11 and 19."
+        mavgK =  MAvg.mavgBar winK signal
+        mavgJ =  MAvg.mavgBar winJ signal
+
+    Rep.text ("Buying/Selling at the crossing of two moving averages, " ++ show winK ++ " and " ++ show winJ ++ ".")
     
     Rep.subheader "Optimization Input"
-    Rep.chart (Style.axTitle "Symbol") (Style.axTitle "Price", [Line.line "Price" (optSample optInp)])
+    Rep.chart (Style.axTitle "Symbol") (Style.axTitle "Price", [Line.line "Price" (optSample optInp), Line.line (show winK) mavgK, Line.line (show winJ) mavgJ])
 
     Rep.subsubheader "Sample Statistics"
     SStat.stats2para (SStat.sampleStatistics signal)
@@ -238,7 +242,7 @@ example = do
         , Ana.impulseGenerator = IG.impulsesFromTwoMovingAverages P.unPrice
         , Ana.optimizationInput = OptimizationInput {
             optSample = sample
-            , igInput = (MAvg.WindowSize 11, MAvg.WindowSize 23)
+            , igInput = (MAvg.WindowSize 12, MAvg.WindowSize 27)
             , mcN = 1000
             , optInitialEquity = Eqty.Equity 1000
             , forcastHorizon = B.Bars 1000

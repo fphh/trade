@@ -43,6 +43,19 @@ optImpGen2impGen :: OptimizedImpulseGenerator ohlc -> ImpulseGenerator optData o
 optImpGen2impGen ig = ImpulseGenerator (\_ -> ig)
 
 
+mapIG :: (Impulse -> Impulse) -> ImpulseGenerator optData ohlc -> ImpulseGenerator optData ohlc
+mapIG f (ImpulseGenerator ig) =
+  let newIS (ImpulseSignal m) = ImpulseSignal (fmap f m)
+      newOIG (OptimizedImpulseGenerator oig) = OptimizedImpulseGenerator (\signal -> newIS (oig signal))
+  in ImpulseGenerator (\d -> newOIG (ig d))
+
+inverse :: ImpulseGenerator optData ohlc -> ImpulseGenerator optData ohlc
+inverse =
+  let f Sell = Buy
+      f Buy = Sell
+  in mapIG f
+
+
 -- 
 -- TODO: Verify:
 -- \f optData -> ((\(ImpulseGenerator ig) -> optImGen2impGen (ig optData) == toImpGen f)  (toImpGen f))
