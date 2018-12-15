@@ -43,20 +43,3 @@ intersection vs us =
              _ -> (x1, if (y0 < y0') then Up else Down)
   in Vec.zipWith f ss (stail "intersection" ss)
 
-
-data IntersectionArgs = IntersectionArgs {
-  middle :: Double
-  , spikeLength :: Double
-  } deriving (Show)
-
-
-
-intersectionToLine :: IntersectionArgs -> Vector (t, Intersection) -> Vector (t, Double)
-intersectionToLine (IntersectionArgs m len) =
-  let l = m-len
-      h = m+len
-      f (t, Up) = [(t, m), (t, h), (t, m)]
-      f (t, Down) = [(t, m), (t, l), (t, m)]
-      f _ = []
-  in Vec.fromList . concatMap f . Vec.toList
-
