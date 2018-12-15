@@ -105,7 +105,7 @@ import Debug.Trace
 
 data OptimizationInput t ohlc = OptimizationInput {
   optSample :: Signal.Signal t ohlc
-  , optSpace :: [(IG.Percent, IG.WindowSize)]
+  , optSpace :: [(IG.Percent, MAvg.WindowSize)]
   , riskOfLoss :: Double
   , mcN :: Int
   , optInitialEquity :: E.Equity
@@ -116,7 +116,7 @@ data OptimizationInput t ohlc = OptimizationInput {
 
 data OptSingleResult = OptSingleResult {
   ig :: IG.OptimizedImpulseGenerator P.Price
-  , params :: (IG.Percent, IG.WindowSize)
+  , params :: (IG.Percent, MAvg.WindowSize)
   , twrTable10 :: ![(F.Fraction, Maybe Dist.Percent)]
   , twrTable12 :: ![(F.Fraction, Maybe Dist.Percent)]
   , rsks :: ![(F.Fraction, Maybe Dist.Percent)]
@@ -127,7 +127,7 @@ instance NFData F.Fraction where
 
 instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
   type OptReportTy (OptimizationInput UTCTime P.Price) = OptimizationResult
-  type OptInpTy (OptimizationInput UTCTime P.Price) = (IG.Percent, IG.WindowSize)
+  type OptInpTy (OptimizationInput UTCTime P.Price) = (IG.Percent, MAvg.WindowSize)
   
   optimize (IG.ImpulseGenerator strat) optInp = do
     let len = Signal.length (optSample optInp)
@@ -197,7 +197,7 @@ data OptimizationResult = OptimizationResult {
   , muOR :: Black.Mu
   , sigmaOR :: Black.Sigma
   , optSingleResults :: [OptSingleResult]
-  , best :: (F.Fraction, IG.Percent, IG.WindowSize)
+  , best :: (F.Fraction, IG.Percent, MAvg.WindowSize)
   }
 
 instance (T2D.Type2Double ohlc) =>
@@ -226,7 +226,7 @@ instance (T2D.Type2Double ohlc) =>
 
         f (OptSingleResult _ params b c d) = do
           let g (fr, b) (_, c) (_, d) = [ showFrac fr, format b, format c, format d ]
-              headerFormat (IG.Percent p, IG.WindowSize ws) =
+              headerFormat (IG.Percent p, MAvg.WindowSize ws) =
                 printf "Moving Window %d bars, triggering at %.02f%% deviation from actual price" ws (100*p)
           
           Rep.subsubheader (headerFormat params)
@@ -305,7 +305,7 @@ example = do
       initEq = E.Equity (P.unPrice (snd (Signal.head outOfSample)))
 
       percs = map IG.Percent [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-      winSizes = map IG.WindowSize [5, 10, 15, 20]
+      winSizes = map MAvg.WindowSize [5, 10, 15, 20]
       optSpc = liftA2 (,) percs winSizes
 
       -- ig = IG.ImpulseGenerator (uncurry (IG.impulsesFromMovingAverage P.unPrice))

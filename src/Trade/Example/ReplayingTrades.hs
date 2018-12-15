@@ -41,6 +41,8 @@ import qualified Trade.Type.ImpulseGenerator as IG
 
 import qualified Trade.Timeseries.OHLC as OHLC
 
+import qualified Trade.Algorithm.MovingAverage as MAvg
+
 import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.ToReport as TR
@@ -68,7 +70,7 @@ import qualified Trade.Report.Style as Style
 
 data OptimizationInput t ohlc = OptimizationInput {
   optSample :: Signal.Signal t ohlc
-  , igInput :: (IG.WindowSize, IG.WindowSize)
+  , igInput :: (MAvg.WindowSize, MAvg.WindowSize)
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
@@ -79,7 +81,7 @@ data OptimizationInput t ohlc = OptimizationInput {
 
 instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
   type OptReportTy (OptimizationInput UTCTime P.Price) = OptimizationResult
-  type OptInpTy (OptimizationInput UTCTime P.Price) = (IG.WindowSize, IG.WindowSize)
+  type OptInpTy (OptimizationInput UTCTime P.Price) = (MAvg.WindowSize, MAvg.WindowSize)
 
   optimize (IG.ImpulseGenerator strat) optInp = do
     let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat (igInput optInp)
@@ -236,7 +238,7 @@ example = do
         , Ana.impulseGenerator = IG.impulsesFromTwoMovingAverages P.unPrice
         , Ana.optimizationInput = OptimizationInput {
             optSample = sample
-            , igInput = (IG.WindowSize 11, IG.WindowSize 23)
+            , igInput = (MAvg.WindowSize 11, MAvg.WindowSize 23)
             , mcN = 1000
             , optInitialEquity = Eqty.Equity 1000
             , forcastHorizon = B.Bars 1000

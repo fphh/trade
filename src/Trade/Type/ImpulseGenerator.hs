@@ -83,15 +83,14 @@ optimalBuySell trdAt =
   in OptimizedImpulseGenerator go
 
 
-newtype WindowSize = WindowSize Int deriving (Show)
 newtype Percent = Percent Double deriving (Show)
 
 -- | Construct impulses from crosses of one moving average with the ticker
 -- Buy/Sell at 'perc' percent offset. Mean reversion?
 impulsesFromMovingAverage ::
-  (ohlc -> Double) -> ImpulseGenerator (Percent, WindowSize) ohlc
+  (ohlc -> Double) -> ImpulseGenerator (Percent, MAvg.WindowSize) ohlc
 impulsesFromMovingAverage trdAt =
-  let go (Percent perc, WindowSize winSize) (Signal ps) =
+  let go (Percent perc, winSize) (Signal ps) =
         let qs = Vec.map (fmap trdAt) ps
             avgs = MAvg.mavgBar winSize qs
 
@@ -109,9 +108,9 @@ impulsesFromMovingAverage trdAt =
 
 -- | Constuct impulses with crossing of two moving averages
 impulsesFromTwoMovingAverages ::
-  (ohlc -> Double) -> ImpulseGenerator (WindowSize, WindowSize) ohlc
+  (ohlc -> Double) -> ImpulseGenerator (MAvg.WindowSize, MAvg.WindowSize) ohlc
 impulsesFromTwoMovingAverages trdAt =
-  let go (WindowSize j, WindowSize k) (Signal ps) =
+  let go (j, k) (Signal ps) =
         let qs = Vec.map (fmap trdAt) ps
 
             avgJ = MAvg.mavgBar j qs
@@ -128,8 +127,8 @@ impulsesFromTwoMovingAverages trdAt =
 {-
 -- | Constuct impulses with crossing of two moving averages
 impulsesFromTwoMovingAverages ::
-  (ohlc -> Double) -> WindowSize -> WindowSize -> OptimizedImpulseGenerator ohlc
-impulsesFromTwoMovingAverages trdAt (WindowSize j) (WindowSize k) =
+  (ohlc -> Double) -> MAvg.WindowSize -> MAvg.WindowSize -> OptimizedImpulseGenerator ohlc
+impulsesFromTwoMovingAverages trdAt (MAvg.WindowSize j) (MAvg.WindowSize k) =
   let go (Signal ps) =
         let qs = Vec.map (fmap trdAt) ps
 

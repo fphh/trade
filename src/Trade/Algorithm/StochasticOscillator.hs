@@ -6,7 +6,7 @@ module Trade.Algorithm.StochasticOscillator where
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Algorithm.MovingAverage (mavg)
+import Trade.Algorithm.MovingAverage (mavg, WindowSize(..))
 
 -- Probably slow implementation
 oscV :: Int -> Vector Double -> Vector (Double, Double)
@@ -33,7 +33,7 @@ oscillator :: Int -> Vector Double -> StochasticOscillator
 oscillator l v =
   let o = oscV l v
       os = Vec.map snd o
-      tp = mavg 3 os
+      tp = mavg (WindowSize 3) os
       l' = fromIntegral l
       f (j, x) = (j+l', x)
   in StochasticOscillator {

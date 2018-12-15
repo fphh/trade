@@ -31,8 +31,8 @@ impulseAxisConf =
       -- yal = E.axis_show_labels E..~ True
       --      $ E.def
       av = id -- E.axis_show_labels E..~ True
-           -- $ E.axis_show_ticks E..~ True
-           -- $ E.axis_labels E..~ [[(-1, "Buy"), (1, "Sell")]]
+           --  $ E.axis_show_ticks E..~ True
+           --  $ E.axis_labels E..~ [[(-1, "Buy"), (1, "Sell")]]
            $ E.def
       af = Nothing -- E.scaledAxis E.def (-1,10)
   in AxisConfig xal E.def av af -- (Just af)
