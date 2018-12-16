@@ -96,7 +96,6 @@ library
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
                         Trade.Type.Signal.Price
-                        Trade.Type.Signal.Yield
                         Trade.Type.StepFunc
                         Trade.Type.Strategy
                         Trade.Type.Trade
