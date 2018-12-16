@@ -26,7 +26,6 @@ instance StepFunction LogYield where
   stepFunction (Commission com) (Fraction frac) (Equity e) (LogYield y) =
     let e0 = frac * e
         e1 = (1-frac) * e
-        c = com e0
     in Equity (com e1 + e0 * exp y)
 
 
