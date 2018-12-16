@@ -3,20 +3,18 @@
 module Trade.Type.NormTrade where
 
 import Data.Vector (Vector)
-import qualified Data.Vector as Vec
 
 import Trade.Type.Bars (DeltaT)
 
 import Trade.Type.Position (Position)
-import Trade.Type.Yield (Yield)
 
-data NormTrade t = NormTrade {
+data NormTrade yield t = NormTrade {
   normTradePosition :: Position
   , normTradeDuration :: DeltaT t
-  , normedYield :: Vector Yield
+  , normedYield :: Vector yield
   } -- deriving (Show)
 
 
-newtype NormTradeList t = NormTradeList {
-  unNormTradeList :: [NormTrade t]
+newtype NormTradeList yield t = NormTradeList {
+  unNormTradeList :: [NormTrade yield t]
   } -- deriving (Show)

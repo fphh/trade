@@ -48,6 +48,7 @@ import qualified Trade.Type.OHLC as O
 import qualified Trade.Type.Price as P
 import qualified Trade.Type.Bars as B
 import qualified Trade.Type.StepFunc as SF
+import qualified Trade.Type.Strategy as Strat
 import qualified Trade.Type.Broom as Broom
 import qualified Trade.Type.Distribution as Dist
 import qualified Trade.Type.Fraction as F
@@ -100,6 +101,9 @@ import qualified Trade.Report.Style as Style
 
 import Debug.Trace
 
+--------------------------------------------------------
+
+type Steps = SF.StepFunc Y.Yield
 
 --------------------------------------------------------
 
@@ -110,7 +114,7 @@ data OptimizationInput t ohlc = OptimizationInput {
   , mcN :: Int
   , optInitialEquity :: E.Equity
   , forcastHorizon :: B.Bars
-  , stepFunc :: F.Fraction -> SF.StepFunc Y.Yield
+  , stepFunc :: F.Fraction -> Steps
   , fractions :: [F.Fraction]
   }
 
@@ -153,8 +157,8 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
 
               wealthAndRisk fr (ts, rs) =
                 let sf = stepFunc optInp fr
-                    g = BT.equitySignal id sf eqty
-                    eqtyBroom = Broom.zipWith g impBrm priceBrm
+                    g = BT.Experiment Strat.Long id sf eqty
+                    eqtyBroom = Broom.zipWith (\is ps -> BT.equitySignal (g is ps)) impBrm priceBrm
                     tw = TWR.terminalWealthRelative eqty eqtyBroom
                     rk = Risk.risk eqtyBroom
                 in ((fr, tw):ts, (fr, rk):rs)
@@ -251,7 +255,10 @@ instance (Ord t, Show t, Show ohlc, B.Time t, Num (B.DeltaT t), T2D.Type2Double 
 
   backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
     let impSig = optStrat ps
-        es = BT.equitySignal id SF.stepFuncNoCommissionFullFraction initEqty impSig ps
+        sf :: Steps
+        sf =  SF.stepFuncNoCommissionFullFraction
+        exp = BT.Experiment Strat.Long id sf initEqty impSig ps
+        es = BT.equitySignal exp
     in BacktestResult impSig es
 
 data BacktestResult t = BacktestResult {

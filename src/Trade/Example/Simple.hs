@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE RankNTypes #-}
 
 
 module Trade.Example.Simple where
@@ -20,7 +20,9 @@ import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.ImpulseSignal as IS
 import qualified Trade.Type.Signal.Equity as ES
 import qualified Trade.Type.StepFunc as SF
+import qualified Trade.Type.Strategy as Strat
 import qualified Trade.Type.ImpulseGenerator as IG
+import qualified Trade.Type.Yield as Y
 
 import qualified Trade.Type.Conversion.Type2Double as T2D
 
@@ -93,7 +95,10 @@ instance BT.Backtest (BacktestInput ohlc) where
 
   backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput trdAt initEqty ps) =
     let impSig = optStrat ps
-        es = BT.equitySignal trdAt SF.stepFuncNoCommissionFullFraction initEqty impSig ps
+        sf :: SF.StepFunc Y.LogYield
+        sf = SF.stepFuncNoCommissionFullFraction
+        expmnt = BT.Experiment Strat.Long trdAt sf initEqty impSig ps
+        es = BT.equitySignal expmnt
     in (BacktestResult impSig es)
 
 data BacktestResult = BacktestResult {
@@ -138,7 +143,7 @@ example = do
       analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.invert (IG.invert (IG.optImpGen2impGen (IG.optimalBuySell trdAt)))
+        , Ana.impulseGenerator = (IG.optImpGen2impGen (IG.optimalBuySell trdAt))
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput trdAt equity ticker
         }

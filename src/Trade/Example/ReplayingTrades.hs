@@ -21,10 +21,11 @@ import qualified Trade.Type.Equity as Eqty
 import qualified Trade.Type.Price as P
 
 import qualified Trade.Type.Bars as B
-import qualified Trade.Type.StepFunc as SF
 import qualified Trade.Type.Broom as Broom
 import qualified Trade.Type.Distribution as Dist
 import qualified Trade.Type.Fraction as F
+import qualified Trade.Type.StepFunc as SF
+import qualified Trade.Type.Strategy as Strat
 import qualified Trade.Type.Trade as Trade
 import qualified Trade.Type.Yield as Y
 
@@ -67,6 +68,11 @@ import qualified Trade.Test.Time as T
 import qualified Trade.Report.Style as Style
 
 
+-------------------------------------------------------------------------
+
+type Steps = SF.StepFunc Y.LogYield
+
+-------------------------------------------------------------------------
 
 data OptimizationInput t ohlc = OptimizationInput {
   optSample :: Signal.Signal t ohlc
@@ -74,7 +80,7 @@ data OptimizationInput t ohlc = OptimizationInput {
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
   , forcastHorizon :: B.Bars
-  , stepFunc :: F.Fraction -> SF.StepFunc Y.Yield
+  , stepFunc :: F.Fraction -> Steps
   , fractions :: [F.Fraction]
   }
   
@@ -182,7 +188,10 @@ instance (Ord t, B.Time t, Num (B.DeltaT t)) => BT.Backtest (BacktestInput t P.P
 
   backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
     let impSig = optStrat ps
-        es = BT.equitySignal id SF.stepFuncNoCommissionFullFraction initEqty impSig ps
+        sf :: Steps
+        sf = SF.stepFuncNoCommissionFullFraction
+        expmnt = BT.Experiment Strat.Long id sf initEqty impSig ps
+        es = BT.equitySignal expmnt
     in BacktestResult impSig es
 
 data BacktestResult t = BacktestResult {

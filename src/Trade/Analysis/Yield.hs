@@ -16,23 +16,23 @@ import Trade.Type.NormTrade (NormTradeList(..), NormTrade(..))
 
 -- import Trade.Type.Yield (Yield(..), forwardYield, ToYield)
 
+sortTradesByPosition :: TradeList t ohlc -> Map Position (TradeList t ohlc)
+sortTradesByPosition (TradeList tl) =
+  let f acc t@(Trade stat _) = Map.insertWith (++) stat [t] acc 
+  in fmap TradeList (List.foldl' f Map.empty tl)
+
+sortNormTradesByPosition :: NormTradeList yield t -> Map Position (NormTradeList yield t)
+sortNormTradesByPosition (NormTradeList tl) =
+  let f acc t@(NormTrade stat _ _) = Map.insertWith (++) stat [t] acc 
+  in fmap NormTradeList (List.foldl' f Map.empty tl)
+
+
 {-
 normTrade2stats :: NormTradeList ohlc -> TS.TradeStatistics
 normTrade2stats (NormTradeList tl) =
   let f (NormTrade _ dur vs) = (dur, log (Vec.product (Vec.map unYield vs)))
   in TS.tradeStatistics (Vec.fromList (map f tl))
 -}
-
-sortTradesByPosition :: TradeList t ohlc -> Map Position (TradeList t ohlc)
-sortTradesByPosition (TradeList tl) =
-  let f acc t@(Trade stat _) = Map.insertWith (++) stat [t] acc 
-  in fmap TradeList (List.foldl' f Map.empty tl)
-
-sortNormTradesByPosition :: NormTradeList t -> Map Position (NormTradeList t)
-sortNormTradesByPosition (NormTradeList tl) =
-  let f acc t@(NormTrade stat _ _) = Map.insertWith (++) stat [t] acc 
-  in fmap NormTradeList (List.foldl' f Map.empty tl)
-
 
 {-
 yields2stats :: YieldSignal ohlc -> TS.SampleStatistics 

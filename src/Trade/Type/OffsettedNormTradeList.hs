@@ -5,8 +5,8 @@ module Trade.Type.OffsettedNormTradeList where
 import Trade.Type.Bars (Bars(..))
 import Trade.Type.NormTrade (NormTradeList(..))
 
-data OffsettedNormTradeList t = OffsettedNormTradeList {
+data OffsettedNormTradeList yield t = OffsettedNormTradeList {
   offset :: Bars
-  , tradeList :: NormTradeList t
+  , tradeList :: NormTradeList yield t
   } -- deriving (Show)
 

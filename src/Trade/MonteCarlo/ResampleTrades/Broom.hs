@@ -16,7 +16,7 @@ import Trade.Type.Broom (Broom(..))
 import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
 import Trade.Type.OffsettedNormTradeList (OffsettedNormTradeList(..))
 import Trade.Type.Signal (Signal(..))
-import Trade.Type.Yield (Yield(..))
+import Trade.Type.Yield (NoYield)
 
 import Trade.Type.Conversion.OffsettedNormTradeList2NormSignal (offsettedNormTradeList2normSignal)
 import Trade.Type.Conversion.NormTrade2YieldSignal (yieldAccordingToPosition)
@@ -24,7 +24,7 @@ import Trade.Type.Conversion.NormTrade2YieldSignal (yieldAccordingToPosition)
 import Trade.Analysis.Yield (sortNormTradesByPosition)
 
 
-startingOffsets :: NormTradeList t -> (Int -> Bars)
+startingOffsets :: NormTradeList yield t -> (Int -> Bars)
 startingOffsets (NormTradeList tl) =
   let f (NormTrade _ _ ys) = Vec.imap (\i _ -> Bars i) ys
       table = Vec.concat (map f tl)
@@ -32,7 +32,7 @@ startingOffsets (NormTradeList tl) =
   in \n -> table Vec.! (n `mod` len)
 
 
-randomYieldSignal' :: NormTradeList t -> [Int] -> NormTradeList t
+randomYieldSignal' :: NormTradeList yield t -> [Int] -> NormTradeList yield t
 randomYieldSignal' _ [] = error "randomYieldSignal': no random numbers"
 randomYieldSignal' ys (i:is) =
   let j = i `mod` 2
@@ -66,7 +66,7 @@ randomYieldSignal' ys (i:is) =
   in NormTradeList trades
 
 
-randomYieldSignal :: NormTradeList t -> (Int -> Bars) -> IO (OffsettedNormTradeList t)
+randomYieldSignal :: NormTradeList yield t -> (Int -> Bars) -> IO (OffsettedNormTradeList yield t)
 randomYieldSignal ys offsetTable = do
     gen <- newStdGen
     let i:is = map abs (randoms gen)
@@ -75,7 +75,7 @@ randomYieldSignal ys offsetTable = do
     return (OffsettedNormTradeList offs rysig)
 
 
-normBroom :: Bars -> Int -> NormTradeList t -> IO (Broom (Signal BarNo Yield))
+normBroom :: (NoYield yield) => Bars -> Int -> NormTradeList yield t -> IO (Broom (Signal BarNo yield))
 normBroom bs n ntl = do
   let soffs = startingOffsets ntl
       ntl' = NormTradeList (map yieldAccordingToPosition (unNormTradeList ntl))
