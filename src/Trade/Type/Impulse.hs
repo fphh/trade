@@ -8,8 +8,6 @@ import qualified Graphics.Rendering.Chart.Easy as E
 
 import Trade.Report.Pretty
 
-import Debug.Trace
-
 -- | Impulse at some point in time.
 data Impulse =
   Buy
@@ -30,11 +28,15 @@ instance E.PlotValue (Maybe Impulse) where
       Just Sell -> 1
       Just Buy -> -1
 
-  -- fromValue = undefined
+  fromValue = error "fromValue: E.PlotValue (Maybe Impulse)"
 
-  autoAxis xs =
-    let f xs = ["Buy", "", "Sell"]
+  autoAxis _ =
+    let f _ = ["Buy", "", "Sell"]
         ax = E.makeAxis f ([Just Buy, Nothing, Just Sell], [Just Buy, Nothing, Just Sell], [Just Buy, Nothing, Just Sell])
         g = E._axis_viewport ax
     in (E.axisGridHide ax) { E._axis_viewport = \x y -> g x y / 2 }
-  
+
+
+invert :: Impulse -> Impulse
+invert Sell = Buy
+invert Buy = Sell

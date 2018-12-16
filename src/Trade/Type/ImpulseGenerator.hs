@@ -11,6 +11,7 @@ import Trade.Type.Signal (Signal(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 
 import Trade.Type.Impulse (Impulse(..))
+import qualified Trade.Type.Impulse as Imp
 
 import qualified Trade.Timeseries.Algorithm.Intersection as Inter
 
@@ -49,11 +50,8 @@ mapIG f (ImpulseGenerator ig) =
       newOIG (OptimizedImpulseGenerator oig) = OptimizedImpulseGenerator (\signal -> newIS (oig signal))
   in ImpulseGenerator (\d -> newOIG (ig d))
 
-inverse :: ImpulseGenerator optData ohlc -> ImpulseGenerator optData ohlc
-inverse =
-  let f Sell = Buy
-      f Buy = Sell
-  in mapIG f
+invert :: ImpulseGenerator optData ohlc -> ImpulseGenerator optData ohlc
+invert = mapIG Imp.invert
 
 
 -- 
