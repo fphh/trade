@@ -8,8 +8,8 @@ import Trade.Report.Pretty
 -- | The trader's position.
 -- TODO: Being short.
 data Position =
-  Long
-  -- -- | Short
+  LongPosition
+  | ShortPosition
   | NoPosition
   deriving (Show, Eq, Ord)
 

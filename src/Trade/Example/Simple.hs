@@ -14,6 +14,9 @@ import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Data.Vector as Vec
 
 import qualified Trade.Type.Equity as Eqty
+
+import qualified Trade.Type.Fraction as F
+
 import qualified Trade.Type.OHLC as O
 
 import qualified Trade.Type.Signal as Signal
@@ -90,13 +93,14 @@ data BacktestInput ohlc = BacktestInput {
   , outOfSample :: Signal.Signal UTCTime ohlc
   }
     
-instance BT.Backtest (BacktestInput ohlc) where
+instance (Show ohlc) => BT.Backtest (BacktestInput ohlc) where
   type BacktestReportTy (BacktestInput ohlc) = BacktestResult
 
   backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput trdAt initEqty ps) =
     let impSig = optStrat ps
-        sf :: SF.StepFunc Y.LogYield
-        sf = SF.stepFuncNoCommissionFullFraction
+        sf :: SF.StepFunc Y.Yield
+        -- sf = SF.stepFuncNoCommissionFullFraction
+        sf = SF.stepFuncRelativePrice 0.07 (F.Fraction 0.5)
         expmnt = BT.Experiment Strat.Long trdAt sf initEqty impSig ps
         es = BT.equitySignal expmnt
     in (BacktestResult impSig es)
@@ -137,7 +141,7 @@ example :: IO ()
 example = do
   
 
-  let equity = Eqty.Equity 2
+  let equity = Eqty.Equity 100
       trdAt = OHLC.ohlcClose
   
       analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)

@@ -248,7 +248,7 @@ data BacktestInput t ohlc = BacktestInput {
   , pricesInput :: Signal.Signal t ohlc
   }
     
-instance (Ord t, Show t, Show ohlc, B.Time t, Num (B.DeltaT t), T2D.Type2Double ohlc) =>
+instance (Ord t, Show t, Show ohlc, B.Time t, Num (B.DeltaT t), T2D.Type2Double ohlc, Show (B.DeltaT t)) =>
          BT.Backtest (BacktestInput t ohlc) where
   
   type BacktestReportTy (BacktestInput t ohlc) = BacktestResult t

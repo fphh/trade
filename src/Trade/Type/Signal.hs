@@ -1,5 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+-- {-# LANGUAGE DeriveFoldable #-}
+-- {-# LANGUAGE DeriveTraversable #-}
 
 
 module Trade.Type.Signal where
@@ -8,6 +11,10 @@ import Prelude hiding (scanl, map, zipWith, head, last, tail)
 
 import Data.Vector (Vector)
 import qualified Data.Vector as Vec
+
+import qualified Data.List as List
+
+import qualified Data.Foldable as Fold
 
 import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
 
@@ -20,7 +27,7 @@ import Trade.Help.SafeTail (stail, shead, slast)
 
 newtype Signal t y = Signal {
   unSignal :: Vector (t, y)
-  } deriving (Show, Read, Eq)
+  } deriving (Show, Read, Eq, Semigroup, Monoid)
 
 instance Functor (Signal t) where
   fmap f (Signal ps) = Signal (Vec.map (fmap f) ps)
@@ -49,11 +56,13 @@ data Sample t x = Sample {
 map :: ((p, q) -> (r, s)) -> Signal p q -> Signal r s
 map f (Signal xs) = Signal (Vec.map f xs)
 
+
 scanl :: (b -> a -> b) -> b -> Signal t a -> Signal t b
 scanl f x (Signal xs) =
   let start = fmap (const x) (Vec.head xs)
       g (_, x) (t, y) = (t, f x y)
   in Signal (Vec.scanl g start (Vec.tail xs))
+
 
 zipWith ::(a -> a -> b) -> b -> Signal t a -> Signal t b
 zipWith f x (Signal xs) =
@@ -91,8 +100,12 @@ split q (Signal vs) =
       (i, o) = Vec.splitAt n vs
   in Sample (Signal i) (Signal o)
 
-noSignal :: Signal t x
-noSignal = Signal (Vec.empty)
+empty :: Signal t x
+empty = Signal (Vec.empty)
 
-noSample :: Sample t x
-noSample = Sample noSignal noSignal
+emptySample :: Sample t x
+emptySample = Sample empty empty
+
+
+singleton :: (t, x) -> Signal t x
+singleton = Signal . Vec.singleton

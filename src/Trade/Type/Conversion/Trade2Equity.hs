@@ -15,6 +15,7 @@ import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
 
 import Trade.Help.SafeTail
 
+{-
 trade2equity :: (Type2Double a) => (ohlc -> a) -> Equity -> TradeList t ohlc -> EquitySignal t
 trade2equity tradeAt (Equity eqty) (TradeList tl) =
   let g yys =
@@ -24,7 +25,8 @@ trade2equity tradeAt (Equity eqty) (TradeList tl) =
            (Vec.zip (stail "trade2equity (1)" tts) (Vec.zipWith (/) (stail "trade2equity (2)" zs) zs))
 
       unCl (Trade NoPosition vs) = Vec.map (fmap (const 1.0)) vs
-      unCl (Trade Long vs) = Vec.map (fmap (type2double . tradeAt)) vs
+      unCl (Trade LongPosition vs) = Vec.map (fmap (type2double . tradeAt)) vs
+      unCl _ = error "trade2equity: ShortPosition"
       
       cs = map (g . unCl) tl
 
@@ -33,3 +35,4 @@ trade2equity tradeAt (Equity eqty) (TradeList tl) =
       ysNew = Vec.map Equity (stail "trade2equity" (Vec.scanl (*) eqty ys))
       
   in Signal (Vec.zip ts ysNew)
+-}

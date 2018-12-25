@@ -1,10 +1,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Trade.Type.Yield where
 
 import Debug.Trace
 
 import Trade.Report.Pretty
+
+
 
 -- | Yield: `end / start` equity
 newtype Yield = Yield {
@@ -25,7 +28,7 @@ instance Monoid Yield where
 -- | LogYield: `log (end / start)` equity
 newtype LogYield = LogYield {
   unLogYield :: Double
-  } deriving (Show, Eq, Ord, Num)
+  } deriving (Show, Eq, Ord, Num, Fractional)
 
 instance Pretty LogYield where
   pretty = show . unLogYield
@@ -47,8 +50,16 @@ instance NoYield LogYield
 class ToYield yield where
   toYield :: Double -> Double -> yield
 
+  yield :: Double -> yield
+
 instance ToYield Yield where
   toYield new old = Yield (new / old)
 
+  yield = Yield
+
 instance ToYield LogYield where
   toYield new old = LogYield (log (new / old))
+
+  yield = LogYield . log
+
+

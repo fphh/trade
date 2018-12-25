@@ -7,6 +7,7 @@ import Trade.Type.Equity (Equity(..))
 import Trade.Type.Yield (Yield(..), LogYield(..))
 import Trade.Type.Commission (Commission(..), noCommission)
 
+import Debug.Trace
 
 -- | StepFunc takes a yield and an equity and returns the equity with the yield applied.
 type StepFunc yield = Equity -> yield -> Equity

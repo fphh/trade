@@ -92,7 +92,7 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
   optimize (IG.ImpulseGenerator strat) optInp = do
     let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat (igInput optInp)
 
-        trds = I2TL.impulse2tradeList (optSample optInp) (optStrat (optSample optInp))
+        trds = I2TL.impulse2tradeList Strat.Long (optSample optInp) (optStrat (optSample optInp))
         ntrds = T2NT.trade2normTrade trds
     yieldBroom <- RTBroom.normBroom (forcastHorizon optInp) (mcN optInp) ntrds
 
@@ -183,7 +183,7 @@ data BacktestInput t ohlc = BacktestInput {
   , pricesInput :: Signal.Signal t ohlc
   }
     
-instance (Ord t, B.Time t, Num (B.DeltaT t)) => BT.Backtest (BacktestInput t P.Price) where
+instance (Ord t, B.Time t, Num (B.DeltaT t), Show t, Show (B.DeltaT t)) => BT.Backtest (BacktestInput t P.Price) where
   type BacktestReportTy (BacktestInput t P.Price) = BacktestResult t
 
   backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =

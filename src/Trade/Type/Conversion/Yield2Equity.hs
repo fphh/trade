@@ -2,6 +2,8 @@
 
 module Trade.Type.Conversion.Yield2Equity where
 
+import Control.Applicative (liftA2)
+
 import Trade.Type.Yield (Yield, LogYield)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Signal (Signal(..))

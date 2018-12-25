@@ -18,7 +18,7 @@ import Trade.Type.Signal.Equity (EquitySignal)
 import Trade.Type.StepFunc (StepFunc)
 import Trade.Type.Strategy (Strategy(..))
 import Trade.Type.Equity (Equity(..))
-import Trade.Type.Yield (ToYield, NoYield, Yield, LogYield)
+import Trade.Type.Yield (ToYield, NoYield)
 import Trade.Type.Conversion.Yield2Equity (Yield2Equity, yield2equity)
 import Trade.Type.Conversion.Trade2NormTrade (trade2normTrade)
 import Trade.Type.Conversion.Impulse2TradeList (impulse2tradeList)
@@ -29,6 +29,10 @@ import qualified Trade.Report.Report as Rep
 import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
 
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
+
+
+import Debug.Trace
+
 
 data Experiment yield t ohlc a = Experiment {
   strategy :: Strategy
@@ -42,19 +46,24 @@ data Experiment yield t ohlc a = Experiment {
 
 
 equitySignal ::
-  (Type2Double a, Ord t, Time t, Num (DeltaT t), NoYield yield, ToYield yield, Yield2Equity yield) =>
+  (Show a, Type2Double a, Ord t, Time t, Num (DeltaT t), NoYield yield, ToYield yield, Yield2Equity yield, Show t, Show ohlc, Show yield, Num yield, Show (DeltaT t), Show yield) =>
   Experiment yield t ohlc a -> EquitySignal t
-equitySignal (Experiment Long tradeAt stepFunc eqty impSig qs@(Signal ps)) =
+equitySignal (Experiment stgy tradeAt stepFunc eqty impSig qs@(Signal ps)) =
   let (start, dt) =
         case (ps Vec.!? 0, ps Vec.!? 1) of
           (Just (t0, _), Just (t1, _)) -> (t0, t1 `diff` t0)
           _ -> error "Trade.Analysis.Backtest.equitySignal: price signal to short"
 
-      ts = impulse2tradeList qs impSig
+      ts = impulse2tradeList stgy qs impSig
       nts = trade2normTrade (fmap tradeAt ts)
-      res = yield2equity stepFunc eqty (normTrade2yieldSignal start dt nts)
+      -- res = yield2equity stepFunc eqty (normTrade2yieldSignal start dt nts)
+      res = normTrade2yieldSignal stepFunc eqty start dt nts
 
   in res
+
+-- equitySignal (Experiment Short tradeAt stepFunc eqty impSig qs@(Signal ps)) =
+  
+
 
 class Backtest btInput where
   type BacktestReportTy btInput :: *
