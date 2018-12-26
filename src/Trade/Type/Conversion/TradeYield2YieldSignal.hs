@@ -2,9 +2,11 @@
 {-# LANGUAGE GADTs #-}
 
 
-module Trade.Type.Conversion.NormTrade2YieldSignal where
+module Trade.Type.Conversion.TradeYield2YieldSignal where
 
 import qualified Data.Vector as Vec
+import Data.Vector (Vector)
+
 import qualified Data.List as List
 
 import Trade.Type.Bars (Time, DeltaT, add)
@@ -19,16 +21,18 @@ import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal.Equity (EquitySignal(..))
 
 
-import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
+import Trade.Type.TradeYield (TradeYield(..), TradeYieldList(..))
+
+import Trade.Help.SafeTail (slast, sinit, stail)
 
 import Debug.Trace
 
 -- | TODO: check wether correct
-yieldAccordingToPosition :: (NoYield yield) => NormTrade yield t -> NormTrade yield t
-yieldAccordingToPosition (NormTrade NoPosition t vs) =
-  NormTrade NoPosition t (Vec.replicate (Vec.length vs) noYield)
-yieldAccordingToPosition (NormTrade state t vs) =
-  NormTrade state t vs
+yieldAccordingToPosition :: TradeYield -> TradeYield
+yieldAccordingToPosition (TradeYield NoPosition vs) =
+  TradeYield NoPosition (Vec.replicate (Vec.length vs) noYield)
+yieldAccordingToPosition (TradeYield state vs) =
+  TradeYield state vs
 
 {-
 -- | TODO: check wether correct
@@ -43,41 +47,29 @@ normTrade2yieldSignal start dt (NormTradeList nts) = trace (show nts) $
 -}
 
 
-normTrade2yieldSignal ::
-  (Time t, Num (DeltaT t), NoYield yield, Show (DeltaT t), Show yield) =>
-  StepFunc yield -> Equity -> t -> DeltaT t -> NormTradeList yield t -> EquitySignal t
 
-normTrade2yieldSignal _ _ _ _ (NormTradeList []) =
+nt2eqty :: Vector Equity -> TradeYield -> Vector Equity
+nt2eqty eqty (TradeYield _ ny) =
+  let f vs (Yield y) = vs `Vec.snoc` Equity (y * unEquity (slast "f" vs))
+      res = Vec.foldl' f eqty (stail "stail" ny)
+  in trace (show (Vec.length ny) ++ " " ++ show (Vec.length res)) res
+
+
+tradeYield2yieldSignal ::
+  (Show t, Time t, Num (DeltaT t), Show (DeltaT t)) =>
+  StepFunc Yield -> Equity -> t -> DeltaT t -> TradeYieldList -> EquitySignal t
+
+tradeYield2yieldSignal _ _ _ _ (TradeYieldList []) =
   error "normTrade2yieldSignal: no trades in list"
-normTrade2yieldSignal stepFunc eqty start dt (NormTradeList (nt:nts)) =
+tradeYield2yieldSignal stepFunc eqty start dt (TradeYieldList nts) = trace (show start) $ 
   let xs = map yieldAccordingToPosition nts
 
-      g (t, Equity e) (Yield y) = (t, Equity (e*y))
+      f acc nt = acc Vec.++ nt2eqty acc nt
 
-      ntNew =
-        case nt of
-          NormTrade NoPosition dt ny -> Vec.scanl g (start, eqty) ny
-
-                                        
-  {-
-      f :: Signal t Equity -> NormTrade yield t -> Signal t Equity
-      f sig (NormTrade NoPosition _ vs) =
-        let (tn, en) = Signal.last sig
-            g i (t, _) = (tn `add` (fromIntegral i * dt), en)
-            
-        in undefined {- sig <> Signal.imap f (Signal (Vec.tail vs)) -}
-
-        -}
-
-      f sig (NormTrade LongPosition _ vs) =
-        let (tn, en) = Signal.last sig
-        in undefined
-     
-
-  in Signal (mconcat [ntNew])
+      ntsi = List.foldl' f (Vec.singleton eqty) xs
 
 
-    -- (List.scanl f (Signal.singleton (start, eqty)) xs)
+  in Signal (Vec.imap (\i e ->  (start `add` (fromIntegral i * dt), e)) ntsi)
 
 
 {-

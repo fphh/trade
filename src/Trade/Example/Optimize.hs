@@ -53,7 +53,6 @@ import qualified Trade.Type.Broom as Broom
 import qualified Trade.Type.Distribution as Dist
 import qualified Trade.Type.Fraction as F
 import qualified Trade.Type.Trade as Trade
-import qualified Trade.Type.OffsettedNormTradeList as ONTL
 import qualified Trade.Type.Yield as Y
 
 import qualified Trade.Type.Signal as Signal
@@ -61,7 +60,6 @@ import qualified Trade.Type.Signal.Price as PS
 import qualified Trade.Type.ImpulseSignal as IS
 import qualified Trade.Type.Signal.Equity as ES
 
-import qualified Trade.Type.Conversion.Trade2NormTrade as T2NT
 import qualified Trade.Type.Conversion.Price2Yield as P2Y
 import qualified Trade.Type.Conversion.Type2Double as T2D
 

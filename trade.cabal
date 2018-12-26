@@ -75,11 +75,11 @@ library
                         Trade.Type.Conversion.Equity2Yield
                         Trade.Type.Conversion.Impulse2Position
                         Trade.Type.Conversion.Impulse2TradeList
-                        Trade.Type.Conversion.NormTrade2YieldSignal
-                        Trade.Type.Conversion.OffsettedNormTradeList2NormSignal
+                        Trade.Type.Conversion.TradeYield2YieldSignal
+                        Trade.Type.Conversion.OffsettedTradeYieldList2NormSignal
                         Trade.Type.Conversion.Price2Yield
                         Trade.Type.Conversion.Trade2Equity
-                        Trade.Type.Conversion.Trade2NormTrade
+                        Trade.Type.Conversion.Trade2TradeYield
                         Trade.Type.Conversion.Type2Double
                         Trade.Type.Conversion.Yield2Equity
                         Trade.Type.Distribution
@@ -88,8 +88,7 @@ library
                         Trade.Type.Impulse
                         Trade.Type.ImpulseGenerator
                         Trade.Type.ImpulseSignal
-                        Trade.Type.NormTrade
-                        Trade.Type.OffsettedNormTradeList
+                        Trade.Type.OffsettedTradeYieldList
                         Trade.Type.OHLC
                         Trade.Type.Position
                         Trade.Type.Price
@@ -99,6 +98,7 @@ library
                         Trade.Type.StepFunc
                         Trade.Type.Strategy
                         Trade.Type.Trade
+                        Trade.Type.TradeYield
                         Trade.Type.Yield
   -- other-modules:
   -- other-extensions:

@@ -12,7 +12,7 @@ import qualified Data.List as List
 -- import Trade.Trade.Signal (Signals(..), YieldSignal(..), curve)
 import Trade.Type.Position (Position)
 import Trade.Type.Trade (Trade(..), TradeList(..))
-import Trade.Type.NormTrade (NormTradeList(..), NormTrade(..))
+import Trade.Type.TradeYield (TradeYield(..), TradeYieldList(..))
 
 -- import Trade.Type.Yield (Yield(..), forwardYield, ToYield)
 
@@ -21,10 +21,10 @@ sortTradesByPosition (TradeList tl) =
   let f acc t@(Trade stat _) = Map.insertWith (++) stat [t] acc 
   in fmap TradeList (List.foldl' f Map.empty tl)
 
-sortNormTradesByPosition :: NormTradeList yield t -> Map Position (NormTradeList yield t)
-sortNormTradesByPosition (NormTradeList tl) =
-  let f acc t@(NormTrade stat _ _) = Map.insertWith (++) stat [t] acc 
-  in fmap NormTradeList (List.foldl' f Map.empty tl)
+sortTradeYieldsByPosition :: TradeYieldList -> Map Position TradeYieldList
+sortTradeYieldsByPosition (TradeYieldList tl) =
+  let f acc t@(TradeYield stat _) = Map.insertWith (++) stat [t] acc 
+  in fmap TradeYieldList (List.foldl' f Map.empty tl)
 
 
 {-

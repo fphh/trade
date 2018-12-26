@@ -13,33 +13,33 @@ import Control.Monad (replicateM)
 
 import Trade.Type.Bars (Bars(..), BarNo)
 import Trade.Type.Broom (Broom(..))
-import Trade.Type.NormTrade (NormTrade(..), NormTradeList(..))
-import Trade.Type.OffsettedNormTradeList (OffsettedNormTradeList(..))
+import Trade.Type.TradeYield (TradeYield(..), TradeYieldList(..))
+import Trade.Type.OffsettedTradeYieldList (OffsettedTradeYieldList(..))
 import Trade.Type.Signal (Signal(..))
-import Trade.Type.Yield (NoYield)
+import Trade.Type.Yield (Yield)
 
-import Trade.Type.Conversion.OffsettedNormTradeList2NormSignal (offsettedNormTradeList2normSignal)
-import Trade.Type.Conversion.NormTrade2YieldSignal (yieldAccordingToPosition)
+import Trade.Type.Conversion.OffsettedTradeYieldList2NormSignal (offsettedTradeYieldList2normSignal)
+import Trade.Type.Conversion.TradeYield2YieldSignal (yieldAccordingToPosition)
 
-import Trade.Analysis.Yield (sortNormTradesByPosition)
+import Trade.Analysis.Yield (sortTradeYieldsByPosition)
 
 
-startingOffsets :: NormTradeList yield t -> (Int -> Bars)
-startingOffsets (NormTradeList tl) =
-  let f (NormTrade _ _ ys) = Vec.imap (\i _ -> Bars i) ys
+startingOffsets :: TradeYieldList -> (Int -> Bars)
+startingOffsets (TradeYieldList tl) =
+  let f (TradeYield _ ys) = Vec.imap (\i _ -> Bars i) ys
       table = Vec.concat (map f tl)
       len = Vec.length table
   in \n -> table Vec.! (n `mod` len)
 
 
-randomYieldSignal' :: NormTradeList yield t -> [Int] -> NormTradeList yield t
+randomYieldSignal' :: TradeYieldList -> [Int] -> TradeYieldList
 randomYieldSignal' _ [] = error "randomYieldSignal': no random numbers"
 randomYieldSignal' ys (i:is) =
   let j = i `mod` 2
       tradeTypes = j:(1 - j):tradeTypes
       
-      (_, NormTradeList ys0'):(_, NormTradeList ys1'):_ =
-        case Map.toList (sortNormTradesByPosition ys) of
+      (_, TradeYieldList ys0'):(_, TradeYieldList ys1'):_ =
+        case Map.toList (sortTradeYieldsByPosition ys) of
           cs@(_:_:_) -> cs
           _ -> error "randomYieldSignal': not enough types of trades available"
       
@@ -63,22 +63,22 @@ randomYieldSignal' ys (i:is) =
 
       trades = zipWith f tradeTypes is
       
-  in NormTradeList trades
+  in TradeYieldList trades
 
 
-randomYieldSignal :: NormTradeList yield t -> (Int -> Bars) -> IO (OffsettedNormTradeList yield t)
+randomYieldSignal :: TradeYieldList -> (Int -> Bars) -> IO (OffsettedTradeYieldList)
 randomYieldSignal ys offsetTable = do
     gen <- newStdGen
     let i:is = map abs (randoms gen)
         offs = offsetTable i
         rysig = randomYieldSignal' ys is
-    return (OffsettedNormTradeList offs rysig)
+    return (OffsettedTradeYieldList offs rysig)
 
 
-normBroom :: (NoYield yield) => Bars -> Int -> NormTradeList yield t -> IO (Broom (Signal BarNo yield))
+normBroom :: Bars -> Int -> TradeYieldList -> IO (Broom (Signal BarNo Yield))
 normBroom bs n ntl = do
   let soffs = startingOffsets ntl
-      ntl' = NormTradeList (map yieldAccordingToPosition (unNormTradeList ntl))
+      ntl' = TradeYieldList (map yieldAccordingToPosition (unTradeYieldList ntl))
   offsTls <- replicateM n (randomYieldSignal ntl' soffs)
-  return (Broom (map (offsettedNormTradeList2normSignal bs) offsTls))
+  return (Broom (map (offsettedTradeYieldList2normSignal bs) offsTls))
 

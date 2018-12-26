@@ -35,7 +35,7 @@ import qualified Trade.Type.ImpulseSignal as IS
 
 
 import qualified Trade.Type.Conversion.Impulse2TradeList as I2TL
-import qualified Trade.Type.Conversion.Trade2NormTrade as T2NT
+import qualified Trade.Type.Conversion.Trade2TradeYield as T2TY
 
 
 import qualified Trade.Type.ImpulseGenerator as IG
@@ -70,7 +70,7 @@ import qualified Trade.Report.Style as Style
 
 -------------------------------------------------------------------------
 
-type Steps = SF.StepFunc Y.LogYield
+type Steps = SF.StepFunc Y.Yield
 
 -------------------------------------------------------------------------
 
@@ -93,7 +93,7 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
     let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat (igInput optInp)
 
         trds = I2TL.impulse2tradeList Strat.Long (optSample optInp) (optStrat (optSample optInp))
-        ntrds = T2NT.trade2normTrade trds
+        ntrds = T2TY.trade2tradeYield trds
     yieldBroom <- RTBroom.normBroom (forcastHorizon optInp) (mcN optInp) ntrds
 
     let sf = stepFunc optInp

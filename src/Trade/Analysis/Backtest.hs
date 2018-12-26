@@ -18,11 +18,11 @@ import Trade.Type.Signal.Equity (EquitySignal)
 import Trade.Type.StepFunc (StepFunc)
 import Trade.Type.Strategy (Strategy(..))
 import Trade.Type.Equity (Equity(..))
-import Trade.Type.Yield (ToYield, NoYield)
+import Trade.Type.Yield (Yield(..))
 import Trade.Type.Conversion.Yield2Equity (Yield2Equity, yield2equity)
-import Trade.Type.Conversion.Trade2NormTrade (trade2normTrade)
+import Trade.Type.Conversion.Trade2TradeYield (trade2tradeYield)
 import Trade.Type.Conversion.Impulse2TradeList (impulse2tradeList)
-import Trade.Type.Conversion.NormTrade2YieldSignal (normTrade2yieldSignal)
+import Trade.Type.Conversion.TradeYield2YieldSignal (tradeYield2yieldSignal)
 import Trade.Type.Conversion.Type2Double (Type2Double)
 
 import qualified Trade.Report.Report as Rep
@@ -45,9 +45,15 @@ data Experiment yield t ohlc a = Experiment {
 
 
 
+{-
 equitySignal ::
   (Show a, Type2Double a, Ord t, Time t, Num (DeltaT t), NoYield yield, ToYield yield, Yield2Equity yield, Show t, Show ohlc, Show yield, Num yield, Show (DeltaT t), Show yield) =>
   Experiment yield t ohlc a -> EquitySignal t
+-}
+
+equitySignal ::
+  (Show a, Type2Double a, Ord t, Time t, Num (DeltaT t), Show t, Show ohlc, Show (DeltaT t)) =>
+  Experiment Yield t ohlc a -> EquitySignal t
 equitySignal (Experiment stgy tradeAt stepFunc eqty impSig qs@(Signal ps)) =
   let (start, dt) =
         case (ps Vec.!? 0, ps Vec.!? 1) of
@@ -55,9 +61,9 @@ equitySignal (Experiment stgy tradeAt stepFunc eqty impSig qs@(Signal ps)) =
           _ -> error "Trade.Analysis.Backtest.equitySignal: price signal to short"
 
       ts = impulse2tradeList stgy qs impSig
-      nts = trade2normTrade (fmap tradeAt ts)
+      nts = trade2tradeYield (fmap tradeAt ts)
       -- res = yield2equity stepFunc eqty (normTrade2yieldSignal start dt nts)
-      res = normTrade2yieldSignal stepFunc eqty start dt nts
+      res = tradeYield2yieldSignal stepFunc eqty start dt nts
 
   in res
 

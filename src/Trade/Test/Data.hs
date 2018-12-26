@@ -35,7 +35,7 @@ test2 =
       up4 = [ 7 .. 17 ]
       down4 = [ 18, 17 .. 10]
       
-      ys = up ++ down ++ up2 ++ down2 ++ up3 ++ down3 ++ up4 ++ down4
+      ys = up ++ down -- ++ up2 ++ down2 ++ up3 ++ down3 ++ up4 ++ down4
   in Vec.zip (Vec.concat [jan2017, feb2017, mar2017, apr2017, may2017]) (Vec.fromList ys)
 
 
