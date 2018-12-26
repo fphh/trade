@@ -99,6 +99,7 @@ import qualified Trade.Report.Style as Style
 
 import Debug.Trace
 
+{-
 --------------------------------------------------------
 
 type Steps = SF.StepFunc Y.Yield
@@ -246,7 +247,7 @@ data BacktestInput t ohlc = BacktestInput {
   , pricesInput :: Signal.Signal t ohlc
   }
     
-instance (Ord t, Show t, Show ohlc, B.Time t, Num (B.DeltaT t), T2D.Type2Double ohlc, Show (B.DeltaT t)) =>
+instance (Ord t, Show t, Num ohlc, Show ohlc, B.Time t, Num (B.DeltaT t), T2D.Type2Double ohlc, Show (B.DeltaT t)) =>
          BT.Backtest (BacktestInput t ohlc) where
   
   type BacktestReportTy (BacktestInput t ohlc) = BacktestResult t
@@ -337,3 +338,6 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+
+
+-}

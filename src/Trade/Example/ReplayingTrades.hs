@@ -68,6 +68,8 @@ import qualified Trade.Test.Time as T
 import qualified Trade.Report.Style as Style
 
 
+{-
+
 -------------------------------------------------------------------------
 
 type Steps = SF.StepFunc Y.Yield
@@ -267,3 +269,5 @@ example = do
   
   BSL.putStrLn t
 
+
+-}

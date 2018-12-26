@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 
 module Trade.Example.Simple where
@@ -12,6 +14,8 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Graphics.Rendering.Chart.Easy as E
 
 import qualified Data.Vector as Vec
+
+import qualified Trade.Type.Delta as D
 
 import qualified Trade.Type.Equity as Eqty
 
@@ -141,13 +145,13 @@ example :: IO ()
 example = do
   
 
-  let equity = Eqty.Equity 100
+  let equity = Eqty.Equity 20
       trdAt = OHLC.ohlcClose
   
       analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = (IG.optImpGen2impGen (IG.optimalBuySell trdAt))
+        , Ana.impulseGenerator = IG.invert (IG.optImpGen2impGen (IG.optimalBuySell trdAt))
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput trdAt equity ticker
         }

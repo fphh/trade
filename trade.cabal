@@ -82,6 +82,8 @@ library
                         Trade.Type.Conversion.Trade2TradeYield
                         Trade.Type.Conversion.Type2Double
                         Trade.Type.Conversion.Yield2Equity
+                        Trade.Type.Delta
+                        Trade.Type.DeltaSignal
                         Trade.Type.Distribution
                         Trade.Type.Fraction
                         Trade.Type.Equity
@@ -92,6 +94,7 @@ library
                         Trade.Type.OHLC
                         Trade.Type.Position
                         Trade.Type.Price
+                        Trade.Type.Scale
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
                         Trade.Type.Signal.Price

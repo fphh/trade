@@ -1,11 +1,16 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Trade.Type.OHLC where
 
 import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
 
 import Trade.Report.Pretty (Pretty, pretty)
+
+import Trade.Type.Delta (Delta(..), CDelta, DeltaType, DeltaTy, Add, add, diff)
+import Trade.Type.Scale (Scale, scale, factor)
 
 
 import qualified Data.ByteString.Char8 as BS
@@ -29,7 +34,7 @@ instance Pretty Open where
 -- | Close.
 newtype Close = Close {
   unClose :: Double
-  } deriving (Show, Read, Eq, Ord)
+  } deriving (Show, Read, Eq, Ord, Num)
 
 instance FromField Close where
   parseField =  return . Close . read . BS.unpack
@@ -39,6 +44,23 @@ instance Type2Double Close where
 
 instance Pretty Close where
   pretty (Close x) = "Close=" ++ show x
+
+instance DeltaType Close where
+  type DeltaTy Close = CDelta Close
+
+instance Add Close where
+  add (Delta dx) (Close x) = Close (x+dx)
+  diff (Close p) (Close q) = Delta (p-q)
+
+instance Scale Close where
+  factor q (Close x) = q/x
+  scale q (Close x) = Close (q*x)
+
+{-
+instance Scale (Delta Close) where
+  factor q (Delta dx) = q/dx
+  scale q (Delta dx) = Delta (q*dx)
+-}
 
 -- | High.
 newtype High = High {

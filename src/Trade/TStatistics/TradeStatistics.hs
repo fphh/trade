@@ -13,7 +13,8 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
-import Trade.Type.Bars (Time, DeltaT, diff)
+import Trade.Type.Delta (DeltaTy, Add, diff)
+
 import Trade.Type.Position (Position)
 import Trade.Type.Trade (TradeList(..), ticker)
 
@@ -35,7 +36,7 @@ data TradeStatistics = TradeStatistics {
 
 
 tradeStatistics ::
-  (Type2Double b, Time t, Real (DeltaT t)) =>
+  (Type2Double b, Add t, Real (DeltaTy t)) =>
   (ohlc -> b) -> TradeList t ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
   let m = sortTradesByPosition tl

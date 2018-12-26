@@ -32,6 +32,7 @@ newtype Signal t y = Signal {
 instance Functor (Signal t) where
   fmap f (Signal ps) = Signal (Vec.map (fmap f) ps)
 
+
 instance (Type2Double y) => Line (Signal x y) where
   type TyX (Signal x y) = x
   type TyY (Signal x y) = Double
@@ -100,11 +101,11 @@ split q (Signal vs) =
       (i, o) = Vec.splitAt n vs
   in Sample (Signal i) (Signal o)
 
-empty :: Signal t x
-empty = Signal (Vec.empty)
+-- empty :: Signal t x
+-- empty = Signal (Vec.empty)
 
 emptySample :: Sample t x
-emptySample = Sample empty empty
+emptySample = Sample mempty mempty
 
 
 singleton :: (t, x) -> Signal t x
