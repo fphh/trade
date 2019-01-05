@@ -1,17 +1,19 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module Trade.Type.DeltaSignal where
 
+import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
 
 import qualified Data.Vector as Vec
 
-import Trade.Type.Delta (Delta(..), DeltaTy, DDelta, CDelta, Add, add, diff)
-import Trade.Type.Scale (Scale, scale, factor)
+import qualified Data.List as List
 
 import Trade.Type.Equity (Equity(..))
+import Trade.Type.Price (Price(..))
 
 import Trade.Type.Signal (Signal(..))
 import qualified Trade.Type.Signal as Signal
@@ -19,58 +21,50 @@ import qualified Trade.Type.Signal as Signal
 
 import Trade.Help.SafeTail (shead)
 
-data DeltaSignal t ohlc = DeltaSignal {
-  basis :: (t, ohlc)
-  , delta :: Signal (DeltaTy t) (DeltaTy ohlc)
-  }
+data Delta ty = Delta Double deriving (Show)
 
-deriving instance (Show t, Show ohlc, Show (DeltaTy t), Show (DeltaTy ohlc)) => Show (DeltaSignal t ohlc)
 
-scaleDeltaSignal ::
-  (Scale ohlc, Scale (DeltaTy ohlc)) =>
-  Double -> DeltaSignal t ohlc -> DeltaSignal t ohlc
-scaleDeltaSignal q (DeltaSignal x (Signal dxs)) =
-  let f (t, dx) = (t, scale q dx)
-  in DeltaSignal (fmap (scale q) x) (Signal (Vec.map f dxs))
+data DeltaSignal = DeltaSignal {
+  start :: UTCTime
+  , delta :: Signal NominalDiffTime (Delta Price)
+  } deriving (Show)
 
-factorDeltaSignal :: (Scale ohlc) => Double -> DeltaSignal t ohlc -> Double
-factorDeltaSignal q (DeltaSignal (_, b) _) = factor q b
-
-constDeltaSignal :: (DeltaTy ohlc ~ CDelta ohlc) => DeltaSignal t ohlc -> DeltaSignal t ohlc
-constDeltaSignal (DeltaSignal b (Signal dxs)) =
+constDeltaSignal :: DeltaSignal -> DeltaSignal
+constDeltaSignal (DeltaSignal t (Signal dxs)) =
   let f = const (Delta 0.0)
-  in DeltaSignal b (Signal (Vec.map (fmap f) dxs))
+  in DeltaSignal t (Signal (Vec.map (fmap f) dxs))
+
 
 shortDeltaSignal ::
-  (Scale ohlc, Scale (DeltaTy ohlc)) => DeltaSignal t ohlc -> DeltaSignal t ohlc
-shortDeltaSignal (DeltaSignal x (Signal dxs)) =
-  let f (t, dx) = (t, scale (-1) dx)
-  in DeltaSignal x (Signal (Vec.map f dxs))
+  DeltaSignal -> DeltaSignal
+shortDeltaSignal (DeltaSignal t0 (Signal dxs)) =
+  let f (t, Delta dx) = (t, Delta (negate dx))
+  in DeltaSignal t0 (Signal (Vec.map f dxs))
 
--- | TODO: Check, wether `toDeltaSignal . fromDeltaSignal = id`.
+
+-- | TODO: Check, wether `toDeltaSignal . fromDeltaSignal y0 = id`.
 toDeltaSignal ::
-  (Add t, Add ohlc) => Signal t ohlc -> DeltaSignal t ohlc
+  Signal UTCTime Price -> DeltaSignal
 toDeltaSignal (Signal as) =
-  let a = shead "toDeltaSignal" as
-  in DeltaSignal a (Signal (Vec.map (flip diff a) as))
+  let (t0, Price y0) = Vec.head as
+      f (t, Price y) = (t `diffUTCTime` t0, Delta ((y - y0) / y0))
+  in DeltaSignal t0 (Signal (Vec.map f as))
+
+
 
 fromDeltaSignal ::
-  (Add t, Add ohlc) => DeltaSignal t ohlc -> Signal t ohlc
-fromDeltaSignal (DeltaSignal a (Signal as)) =
-  Signal (Vec.map (flip add a) as)
+  Equity -> DeltaSignal -> Signal UTCTime Equity
+fromDeltaSignal (Equity a) (DeltaSignal t (Signal as)) =
+  let f (dt, Delta dy) = (dt `addUTCTime` t, Equity ((dy * a) + a))
+  in Signal (Vec.map f as)
 
 
-rebaseDeltaSignal :: (t, ohlc) -> DeltaSignal t ohlc -> DeltaSignal t ohlc
-rebaseDeltaSignal b (DeltaSignal _ xs) = DeltaSignal b xs
 
-concatDeltaSignal ::
-  (Add t, Add ohlc, Scale ohlc, Scale (DeltaTy ohlc)) =>
-  Equity -> DeltaSignal t ohlc -> DeltaSignal t ohlc -> Signal t ohlc -- Equity
-concatDeltaSignal (Equity eqty) d0@(DeltaSignal (t0, y0) dxs0) d1@(DeltaSignal (t1, y1) dxs1) =
-  let f = factorDeltaSignal eqty d0
-      s = scaleDeltaSignal f d0
-      sig0 = fromDeltaSignal s
-      l0 = Signal.last sig0
-      newD1 = rebaseDeltaSignal l0 d1
-      sig1 = fromDeltaSignal newD1
-  in sig0 <> sig1
+concatDeltaSignals ::
+  Equity -> [DeltaSignal] -> Signal UTCTime Equity
+concatDeltaSignals _ [] = mempty
+concatDeltaSignals a (d:ds) =
+  let f sig ds = sig <> fromDeltaSignal (snd (Signal.last sig)) ds
+  in List.foldl' f (fromDeltaSignal a d) ds
+
+

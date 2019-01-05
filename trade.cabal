@@ -82,7 +82,6 @@ library
                         Trade.Type.Conversion.Trade2TradeYield
                         Trade.Type.Conversion.Type2Double
                         Trade.Type.Conversion.Yield2Equity
-                        Trade.Type.Delta
                         Trade.Type.DeltaSignal
                         Trade.Type.Distribution
                         Trade.Type.Fraction

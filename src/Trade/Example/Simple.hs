@@ -29,6 +29,7 @@ import qualified Trade.Type.Signal.Equity as ES
 import qualified Trade.Type.StepFunc as SF
 import qualified Trade.Type.Strategy as Strat
 import qualified Trade.Type.ImpulseGenerator as IG
+import qualified Trade.Type.Price as P
 import qualified Trade.Type.Yield as Y
 
 import qualified Trade.Type.Conversion.Type2Double as T2D
@@ -53,7 +54,7 @@ import qualified Trade.Report.Style as Style
 ticker :: Signal.Signal UTCTime OHLC.OHLC
 ticker =
   let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
-  in Signal.Signal (Vec.map (fmap f) TD.test2)
+  in Signal.Signal (Vec.map (fmap f) TD.test4)
   
 --------------------------------------------------------
 
@@ -91,21 +92,26 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
 
 --------------------------------------------------------
 
-data BacktestInput ohlc = BacktestInput {
-  tradeAt :: ohlc -> O.Close
-  , initialEquity :: Eqty.Equity
-  , outOfSample :: Signal.Signal UTCTime ohlc
-  }
-    
-instance (Show ohlc) => BT.Backtest (BacktestInput ohlc) where
-  type BacktestReportTy (BacktestInput ohlc) = BacktestResult
+toPrice :: OHLC.OHLC -> P.Price
+toPrice (OHLC.OHLC _ _ _ (O.Close c) _) = P.Price c
 
-  backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput trdAt initEqty ps) =
+data BacktestInput = BacktestInput {
+  initialEquity :: Eqty.Equity
+  , outOfSample :: Signal.Signal UTCTime OHLC.OHLC
+  }
+  
+instance T2D.Type2Double P.Price where
+  type2double (P.Price p) = p
+                   
+instance BT.Backtest BacktestInput where
+  type BacktestReportTy BacktestInput = BacktestResult
+
+  backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
     let impSig = optStrat ps
-        sf :: SF.StepFunc Y.Yield
+        -- sf :: SF.StepFunc Y.Yield
         -- sf = SF.stepFuncNoCommissionFullFraction
-        sf = SF.stepFuncRelativePrice 0.07 (F.Fraction 0.5)
-        expmnt = BT.Experiment Strat.Long trdAt sf initEqty impSig ps
+        -- sf = SF.stepFuncRelativePrice 0.07 (F.Fraction 0.5)
+        expmnt = BT.Experiment Strat.Short {- trdAt sf -} initEqty impSig (fmap toPrice  ps)
         es = BT.equitySignal expmnt
     in (BacktestResult impSig es)
 
@@ -114,10 +120,10 @@ data BacktestResult = BacktestResult {
   , eqties :: ES.EquitySignal UTCTime
   }
 
-instance TR.ToReport (TR.BacktestData (BacktestInput ohlc) BacktestResult) where
-  toReport (TR.BacktestData (BacktestInput trdAt inEq ps) (BacktestResult impSig es)) = do
+instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
+  toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult impSig es)) = do
     let bts = fmap Eqty.unEquity es
-        ps' = fmap (T2D.type2double . trdAt) ps
+        ps' = fmap toPrice ps
 
     Rep.subheader "Backtest Result"
     Rep.text "Trading at full fraction, no commissions"
@@ -136,8 +142,9 @@ instance TR.ToReport (TR.BacktestData (BacktestInput ohlc) BacktestResult) where
 instance OD.OHLCData OptimizationInput where
   type OHLCDataTy OptimizationInput = OHLC.OHLC
 
-instance OD.OHLCData (BacktestInput ohlc) where
-  type OHLCDataTy (BacktestInput ohlc) = ohlc
+
+instance OD.OHLCData BacktestInput where
+  type OHLCDataTy BacktestInput = OHLC.OHLC
 
 --------------------------------------------------------
 
@@ -145,15 +152,15 @@ example :: IO ()
 example = do
   
 
-  let equity = Eqty.Equity 20
+  let equity = Eqty.Equity 3
       trdAt = OHLC.ohlcClose
   
-      analysis :: Ana.Analysis OptimizationInput (BacktestInput OHLC.OHLC)
+      analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
         , Ana.impulseGenerator = IG.invert (IG.optImpGen2impGen (IG.optimalBuySell trdAt))
         , Ana.optimizationInput = OptimizationInput ticker
-        , Ana.backtestInput = BacktestInput trdAt equity ticker
+        , Ana.backtestInput = BacktestInput equity ticker
         }
 
       rep = Ana.analyze analysis

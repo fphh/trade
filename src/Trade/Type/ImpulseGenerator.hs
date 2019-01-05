@@ -78,8 +78,8 @@ optimalBuySell :: (Ord a) => (ohlc -> a) -> OptimizedImpulseGenerator ohlc
 optimalBuySell trdAt =
   let go (Signal ps) =
         let f m ((_, p0), (t1, p1), (_, p2))
-              | trdAt p0 < trdAt p1 && trdAt p1 > trdAt p2 = Map.insert t1 Sell m
-              | trdAt p0 > trdAt p1 && trdAt p1 < trdAt p2 = Map.insert t1 Buy m
+              | trdAt p0 < trdAt p1 && trdAt p1 >= trdAt p2 = Map.insert t1 Sell m
+              | trdAt p0 > trdAt p1 && trdAt p1 <= trdAt p2 = Map.insert t1 Buy m
               | otherwise = m
                 
             m0 = Vec.foldl' f Map.empty (Vec.zip3 ps (Vec.tail ps) (Vec.tail (Vec.tail ps)))
