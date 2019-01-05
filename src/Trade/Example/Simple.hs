@@ -15,8 +15,6 @@ import qualified Graphics.Rendering.Chart.Easy as E
 
 import qualified Data.Vector as Vec
 
-import qualified Trade.Type.Delta as D
-
 import qualified Trade.Type.Equity as Eqty
 
 import qualified Trade.Type.Fraction as F
@@ -54,7 +52,7 @@ import qualified Trade.Report.Style as Style
 ticker :: Signal.Signal UTCTime OHLC.OHLC
 ticker =
   let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
-  in Signal.Signal (Vec.map (fmap f) TD.test4)
+  in Signal.Signal (Vec.map (fmap f) TD.test2)
   
 --------------------------------------------------------
 

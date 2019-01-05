@@ -93,7 +93,6 @@ library
                         Trade.Type.OHLC
                         Trade.Type.Position
                         Trade.Type.Price
-                        Trade.Type.Scale
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
                         Trade.Type.Signal.Price

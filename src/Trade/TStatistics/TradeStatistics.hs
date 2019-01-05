@@ -4,6 +4,8 @@
 module Trade.TStatistics.TradeStatistics where
 
 
+import Data.Time.Clock (UTCTime, diffUTCTime)
+
 import qualified Data.Map as Map
 
 
@@ -13,7 +15,7 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
-import Trade.Type.Delta (DeltaTy, Add, diff)
+-- import Trade.Type.Delta (DeltaTy, Add, diff)
 
 import Trade.Type.Position (Position)
 import Trade.Type.Trade (TradeList(..), ticker)
@@ -36,15 +38,15 @@ data TradeStatistics = TradeStatistics {
 
 
 tradeStatistics ::
-  (Type2Double b, Add t, Real (DeltaTy t)) =>
-  (ohlc -> b) -> TradeList t ohlc -> [TradeStatistics]
+  (Type2Double b) =>
+  (ohlc -> b) -> TradeList UTCTime ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
   let m = sortTradesByPosition tl
 
       day = 60*60*24
 
       h v = case (Vec.head v, Vec.last v) of
-              ((tx, x), (ty, y)) -> (realToFrac (ty `diff` tx), log (type2double y / type2double x))
+              ((tx, x), (ty, y)) -> (realToFrac (ty `diffUTCTime` tx), log (type2double y / type2double x))
 
       f = Vec.fromList . map (h . Vec.map (fmap extract) . ticker) . unTradeList
 
