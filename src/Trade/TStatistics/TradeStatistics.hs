@@ -15,8 +15,6 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
--- import Trade.Type.Delta (DeltaTy, Add, diff)
-
 import Trade.Type.Position (Position)
 import Trade.Type.Trade (TradeList(..), ticker)
 
