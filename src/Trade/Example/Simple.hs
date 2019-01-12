@@ -10,57 +10,40 @@ module Trade.Example.Simple where
 import Data.Time.Clock (UTCTime)
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
-
-import qualified Graphics.Rendering.Chart.Easy as E
-
 import qualified Data.Vector as Vec
 
-import qualified Trade.Type.Equity as Eqty
-
--- import qualified Trade.Type.Fraction as F
-
-import qualified Trade.Type.OHLC as O
-
-import qualified Trade.Type.Signal as Signal
-import qualified Trade.Type.ImpulseSignal as IS
-import qualified Trade.Type.Signal.Equity as ES
--- import qualified Trade.Type.StepFunc as SF
-import qualified Trade.Type.Strategy as Strat
-import qualified Trade.Type.ImpulseGenerator as IG
-import qualified Trade.Type.Price as P
-import qualified Trade.Type.Yield as Y
-
-import qualified Trade.Type.Conversion.Type2Double as T2D
-
-
-import qualified Trade.Timeseries.OHLC as OHLC
-
-import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.Analysis as Ana
-import qualified Trade.Analysis.ToReport as TR
-import qualified Trade.Analysis.Optimize as Opt
+import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.OHLCData as OD
-
-import qualified Trade.Report.Report as Rep
-import qualified Trade.Report.Line as Line
+import qualified Trade.Analysis.Optimize as Opt
+import qualified Trade.Analysis.ToReport as TR
 
 import qualified Trade.Test.Data as TD
 
+import Trade.Type.Equity (Equity(..))
+import Trade.Type.Price (Price(..))
+import Trade.Type.Signal (Signal(..))
+
+import qualified Trade.Type.ImpulseGenerator as IG
+import qualified Trade.Type.ImpulseSignal as IS
+import qualified Trade.Type.Strategy as Strat
+
+
+import qualified Trade.Report.Line as Line
+import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
 
 
-ticker :: Signal.Signal UTCTime OHLC.OHLC
-ticker =
-  let f x = OHLC.OHLC (O.Open (x+0.5)) (O.High (x+1)) (O.Low (x-1)) (O.Close x) (O.Volume 1000)
-  in Signal.Signal (Vec.map (fmap f) TD.test2)
+ticker :: Signal UTCTime Price
+ticker = Signal (Vec.map (fmap Price) TD.test2)
   
 --------------------------------------------------------
 
-data OptimizationInput = OptimizationInput (Signal.Signal UTCTime OHLC.OHLC)
+data OptimizationInput = OptimizationInput (Signal UTCTime Price)
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
-  type OptInpTy OptimizationInput = Signal.Signal UTCTime OHLC.OHLC
+  type OptInpTy OptimizationInput = Signal UTCTime Price
   
   optimize (IG.ImpulseGenerator strat) (OptimizationInput sig) =
     return (IG.RankedStrategies [strat sig], OptimizationResult)
@@ -70,76 +53,59 @@ data OptimizationResult = OptimizationResult
 
 instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
   toReport (TR.OptimizationData (OptimizationInput ps) OptimizationResult) = do
-    let toC (t, ohlc) =
-          let c = E.Candle t
-                (T2D.type2double $ OHLC.ohlcLow ohlc)
-                (T2D.type2double $ OHLC.ohlcOpen ohlc)
-                0
-                (T2D.type2double $ OHLC.ohlcClose ohlc)
-                (T2D.type2double $ OHLC.ohlcHigh ohlc)
-          in c
-        toCandle (Signal.Signal cs) = Vec.map toC cs
-
     Rep.text "Optimally buying and selling. Not possible in reality :( ..."
     
     Rep.subheader "Optimization Input"
-    Rep.candle "Symbol" [toCandle ps]
+    Rep.chart (Style.axTitle "Symbol") (Style.axTitle "Price", [Line.line "Price" ps])
     Rep.subheader "Optimization Result"
     Rep.text "No optimization has been done."
 
 
 --------------------------------------------------------
 
-toPrice :: OHLC.OHLC -> P.Price
-toPrice (OHLC.OHLC _ _ _ (O.Close c) _) = P.Price c
-
 data BacktestInput = BacktestInput {
-  initialEquity :: Eqty.Equity
-  , outOfSample :: Signal.Signal UTCTime OHLC.OHLC
+  initialEquity :: Equity
+  , outOfSample :: Signal UTCTime Price
   }
-  
-instance T2D.Type2Double P.Price where
-  type2double (P.Price p) = p
-                   
+
 instance BT.Backtest BacktestInput where
   type BacktestReportTy BacktestInput = BacktestResult
 
   backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
     let impSig = optStrat ps
-        expmnt = BT.Experiment Strat.Long initEqty impSig (fmap toPrice  ps)
+        expmnt = BT.Experiment Strat.Long initEqty impSig ps
         es = BT.equitySignal expmnt
     in (BacktestResult impSig es)
 
 data BacktestResult = BacktestResult {
   impulses :: IS.ImpulseSignal UTCTime
-  , eqties :: ES.EquitySignal UTCTime
+  , equities :: Signal UTCTime Equity
   }
 
 instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
   toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult impSig es)) = do
-    let bts = fmap Eqty.unEquity es
-        ps' = fmap toPrice ps
+    let bts = fmap unEquity es
 
     Rep.subheader "Backtest Result"
     Rep.text "Trading at full fraction, no commissions"
 
     Rep.backtestChart
-      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Symbol at Close" ps', Line.line "Backtest" bts])
+      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Symbol at Close" ps, Line.line "Backtest" bts])
       (Rep.impulseSignalCharts [IS.curve ps impSig])
 
     
     Rep.text ("Initial Equity: " ++ show inEq)
-    Rep.text ("Starting with equity " ++ show (Vec.head $ Signal.unSignal bts))
-    Rep.text ("Ending with equity " ++ show (Vec.last $ Signal.unSignal bts))
+    Rep.text ("Starting with equity " ++ show (Vec.head $ unSignal bts))
+    Rep.text ("Ending with equity " ++ show (Vec.last $ unSignal bts))
 
 --------------------------------------------------------
 
 instance OD.OHLCData OptimizationInput where
-  type OHLCDataTy OptimizationInput = OHLC.OHLC
+  type OHLCDataTy OptimizationInput = Price
 
 
 instance OD.OHLCData BacktestInput where
-  type OHLCDataTy BacktestInput = OHLC.OHLC
+  type OHLCDataTy BacktestInput = Price
 
 --------------------------------------------------------
 
@@ -147,13 +113,12 @@ example :: IO ()
 example = do
   
 
-  let equity = Eqty.Equity 10
-      trdAt = OHLC.ohlcClose
+  let equity = Equity 10
   
       analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell unPrice)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput equity ticker
         }
