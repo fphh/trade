@@ -13,12 +13,3 @@ data Step t = Step {
   , commission :: Commission
   , shortInterests :: Maybe (Interests t)
   }
-
-
-
-step :: (Real (DeltaTy t)) => Step t
-step = Step {
-  fraction = Fraction 0.5
-  , commission = Commission (\c -> 0.1*c)
-  , shortInterests = Just (Interests (interests 0.05))
-  }

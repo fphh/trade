@@ -12,6 +12,7 @@ import Data.Map (Map)
 
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Impulse (Impulse(..))
+import qualified Trade.Type.Impulse as Imp
 
 
 newtype ImpulseSignal t = ImpulseSignal {
@@ -54,3 +55,6 @@ curve (Signal ps) (ImpulseSignal is) =
       (t0, _) = Vec.head ps
       (tn, _) = Vec.last ps
   in Vec.snoc (Vec.fromList (Map.foldrWithKey' f [(t0, Nothing)] is)) (tn, Nothing)
+
+invert :: ImpulseSignal t -> ImpulseSignal t
+invert (ImpulseSignal m) = ImpulseSignal (fmap Imp.invert m)

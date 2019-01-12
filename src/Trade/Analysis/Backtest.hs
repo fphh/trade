@@ -7,11 +7,8 @@
 
 module Trade.Analysis.Backtest where
 
-import Data.Time.Clock (UTCTime)
 
-import qualified Data.Vector as Vec
-
-import Trade.Type.Bars (DeltaTy, Add)
+import Trade.Type.Bars (Add)
 
 import Trade.Type.Conversion.Impulse2TradeList (impulse2tradeList)
 
@@ -24,9 +21,8 @@ import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (NonEmptyList, OptimizedImpulseGenerator)
 import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.Position (Position(..))
-import Trade.Type.Price (Price)
 import Trade.Type.Signal (Signal(..))
-import Trade.Type.Signal.Equity (EquitySignal)
+import Trade.Type.Step (Step)
 import Trade.Type.Strategy (Strategy(..))
 import Trade.Type.Trade (Trade(..), TradeList(..))
 
@@ -36,13 +32,11 @@ import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
 
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
 
-import Trade.Help.SafeTail (shead)
-
-import Debug.Trace
 
 
 data Experiment t ohlc = Experiment {
   strategy :: Strategy
+  , step :: Step t
   , equity :: Equity
   , impulseSignal :: ImpulseSignal t
   , signal :: Signal t ohlc
@@ -57,12 +51,12 @@ trade2deltaTrade (TradeList tl) =
 
 
 equitySignal ::
-  (ToDelta ohlc, Ord t, Add t, Real (DeltaTy t)) =>
+  (ToDelta ohlc, Ord t, Add t) => -- , Real (DeltaTy t)) =>
   Experiment t ohlc -> Signal t Equity
-equitySignal (Experiment stgy eqty impSig qs@(Signal ps)) =
-  let ts = impulse2tradeList stgy qs impSig
+equitySignal (Experiment stgy stp eqty impSig ps) =
+  let ts = impulse2tradeList stgy ps impSig
       dts = trade2deltaTrade ts
-  in concatDeltaSignals eqty dts
+  in concatDeltaSignals stp eqty dts
 
 
 class Backtest btInput where

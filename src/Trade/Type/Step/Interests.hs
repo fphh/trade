@@ -12,9 +12,7 @@ newtype Interests t = Interests {
   unInterests :: Equity -> DeltaTy t -> Double
   }
 
-interests :: (Real (DeltaTy t)) => Double -> Equity -> DeltaTy t -> Double
-interests i (Equity e) dt =
-  let i' = 1+i
-      day = 60*60*24
-      dt' = realToFrac dt / day
-  in e*(i' ** dt') - e
+interests :: (DeltaTy t -> Double) -> Double -> Equity -> DeltaTy t -> Double
+interests interestPeriod interests (Equity eqty) dt =
+  let i' = 1+interests
+  in eqty*(i' ** (interestPeriod dt)) - eqty
