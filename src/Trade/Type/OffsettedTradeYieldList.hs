@@ -2,11 +2,10 @@
 module Trade.Type.OffsettedTradeYieldList where
 
 
-import Trade.Type.Bars (Bars(..))
+import Trade.Type.Bars (DeltaTy, BarNo)
 import Trade.Type.TradeYield (TradeYieldList(..))
 
 data OffsettedTradeYieldList = OffsettedTradeYieldList {
-  offset :: Bars
+  offset :: DeltaTy BarNo
   , tradeList :: TradeYieldList
   } deriving (Show)
-

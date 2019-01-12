@@ -91,6 +91,20 @@ tail (Signal ps) = Signal (stail "Signal.head" ps)
 last :: Signal t y -> (t, y)
 last (Signal ps) = slast "Signal.tail" ps
 
+mapFirst :: (y -> y) -> Signal t y -> Signal t y
+mapFirst f (Signal ps)
+  | Vec.length ps == 0 = error "Signal.setLast: empty vector"
+  | otherwise =
+      let ([(t, y)], ps') = (\(as, bs) -> (Vec.toList as, bs)) (Vec.splitAt 1 ps)
+      in Signal ((t, f y) `Vec.cons` ps')
+
+mapLast :: (y -> y) -> Signal t y -> Signal t y
+mapLast f (Signal ps)
+  | Vec.length ps == 0 = error "Signal.setLast: empty vector"
+  | otherwise =
+      let (ps', [(t, y)]) = fmap Vec.toList (Vec.splitAt (Vec.length ps-1) ps)
+      in Signal (ps' `Vec.snoc` (t, f y))
+
 length :: Signal x y -> Int
 length (Signal xs) = Vec.length xs
 

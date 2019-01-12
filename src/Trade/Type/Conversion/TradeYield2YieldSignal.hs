@@ -13,7 +13,7 @@ import qualified Data.List as List
 -- import Trade.Type.Bars (Time, DeltaT, addT)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Position (Position(..))
-import Trade.Type.StepFunc (StepFunc)
+-- import Trade.Type.StepFunc (StepFunc)
 import Trade.Type.Yield (NoYield, noYield, Yield(..))
 
 import Trade.Type.Signal (Signal(..))

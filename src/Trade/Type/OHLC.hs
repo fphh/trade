@@ -7,10 +7,6 @@ module Trade.Type.OHLC where
 
 import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
 
--- import Trade.Type.Delta (Delta(..), CDelta, DeltaType, DeltaTy, Add, add, diff)
--- import Trade.Type.Mult (Mult, MultTy, mult, Div, DivTy, div)
--- import Trade.Type.Scale (Scale, scale, factor)
-
 import Trade.Type.Equity (Equity(..))
 
 import Trade.Report.Pretty (Pretty, pretty)
@@ -48,38 +44,6 @@ instance Type2Double Close where
 
 instance Pretty Close where
   pretty (Close x) = "Close=" ++ show x
-
-{-
-instance DeltaType Close where
-  type DeltaTy Close = CDelta Close
-
-instance Add Close where
-  add (Delta dx) (Close x) = Close (x+dx)
-  diff (Close p) (Close q) = Delta (p-q)
-
-instance Mult Close (Delta Double CloseUnit) where
-  type MultTy Close (Delta Double CloseUnit) = Delta Double Close
-  mult (Close p) (Delta dp) = Delta (p*dp)
-
-instance Mult (Delta Double CloseUnit) Close where
-  type MultTy (Delta Double CloseUnit) Close = Delta Double Close
-  mult (Delta dp) (Close p) = Delta (p*dp)
-
-instance Div (Delta Double Close) Close where
-  type DivTy (Delta Double Close) Close = Delta Double CloseUnit
-  div (Delta dp) (Close p) = Delta (dp/p)
-
-
-instance Scale Close where
-  factor q (Close x) = q/x
-  scale q (Close x) = Close (q*x)
--}
-
-{-
-instance Scale (Delta Close) where
-  factor q (Delta dx) = q/dx
-  scale q (Delta dx) = Delta (q*dx)
--}
 
 -- | High.
 newtype High = High {

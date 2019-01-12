@@ -47,11 +47,11 @@ import qualified Trade.Type.Equity as E
 import qualified Trade.Type.OHLC as O
 import qualified Trade.Type.Price as P
 import qualified Trade.Type.Bars as B
-import qualified Trade.Type.StepFunc as SF
+--import qualified Trade.Type.StepFunc as SF
 import qualified Trade.Type.Strategy as Strat
 import qualified Trade.Type.Broom as Broom
 import qualified Trade.Type.Distribution as Dist
-import qualified Trade.Type.Fraction as F
+--import qualified Trade.Type.Fraction as F
 import qualified Trade.Type.Trade as Trade
 import qualified Trade.Type.Yield as Y
 

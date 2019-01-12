@@ -1,18 +1,17 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 
 
 module Trade.Type.Price where
 
 
-import Prelude hiding ((+), (*), (/))
-import qualified Prelude as Prelude
+import Trade.Type.Delta (Delta(..), ToDelta, toDelta)
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
 newtype Price = Price {
   unPrice :: Double
   } deriving (Show, Eq, Ord, E.PlotValue)
+
+instance ToDelta Price where
+  toDelta (Price y0) (Price y) = Delta ((y - y0) / y0)

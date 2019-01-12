@@ -1,6 +1,6 @@
 
 
-module Trade.Type.Commission where
+module Trade.Type.Step.Commission where
 
 import Trade.Report.Pretty
 

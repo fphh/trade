@@ -5,7 +5,7 @@ import qualified Data.List as List
 
 import qualified Data.Vector as Vec
 
-import Trade.Type.Bars (Bars(..), BarNo(..))
+import Trade.Type.Bars (DeltaTy(Bars), BarNo(..))
 import Trade.Type.TradeYield (TradeYield(..), TradeYieldList(..))
 import Trade.Type.OffsettedTradeYieldList (OffsettedTradeYieldList(..))
 import Trade.Type.Signal (Signal(..))
@@ -13,8 +13,9 @@ import Trade.Type.Position (Position(..))
 import Trade.Type.Yield (Yield(..))
 
 
+
 offsettedTradeYieldList2normSignal ::
-  Bars -> OffsettedTradeYieldList -> Signal BarNo Yield
+  DeltaTy BarNo -> OffsettedTradeYieldList -> Signal BarNo Yield
 offsettedTradeYieldList2normSignal (Bars bs) (OffsettedTradeYieldList (Bars offs) (TradeYieldList ntl)) =
   let f (o, TradeYield position vs : xs) =
         let len = o + Vec.length vs

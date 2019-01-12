@@ -71,7 +71,6 @@ library
                         Trade.TStatistics.TradeStatistics
                         Trade.Type.Bars
                         Trade.Type.Broom
-                        Trade.Type.Commission
                         Trade.Type.Conversion.Equity2Yield
                         Trade.Type.Conversion.Impulse2Position
                         Trade.Type.Conversion.Impulse2TradeList
@@ -82,9 +81,10 @@ library
                         Trade.Type.Conversion.Trade2TradeYield
                         Trade.Type.Conversion.Type2Double
                         Trade.Type.Conversion.Yield2Equity
+                        Trade.Type.Delta
                         Trade.Type.DeltaSignal
+                        Trade.Type.DeltaSignal.Algorithm                        
                         Trade.Type.Distribution
-                        Trade.Type.Fraction
                         Trade.Type.Equity
                         Trade.Type.Impulse
                         Trade.Type.ImpulseGenerator
@@ -96,7 +96,11 @@ library
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
                         Trade.Type.Signal.Price
-                        Trade.Type.StepFunc
+                        Trade.Type.Step
+                        Trade.Type.Step.Algorithm
+                        Trade.Type.Step.Commission
+                        Trade.Type.Step.Fraction
+                        Trade.Type.Step.Interests
                         Trade.Type.Strategy
                         Trade.Type.Trade
                         Trade.Type.TradeYield

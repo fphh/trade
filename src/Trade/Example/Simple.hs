@@ -17,14 +17,14 @@ import qualified Data.Vector as Vec
 
 import qualified Trade.Type.Equity as Eqty
 
-import qualified Trade.Type.Fraction as F
+-- import qualified Trade.Type.Fraction as F
 
 import qualified Trade.Type.OHLC as O
 
 import qualified Trade.Type.Signal as Signal
 import qualified Trade.Type.ImpulseSignal as IS
 import qualified Trade.Type.Signal.Equity as ES
-import qualified Trade.Type.StepFunc as SF
+-- import qualified Trade.Type.StepFunc as SF
 import qualified Trade.Type.Strategy as Strat
 import qualified Trade.Type.ImpulseGenerator as IG
 import qualified Trade.Type.Price as P
@@ -106,10 +106,7 @@ instance BT.Backtest BacktestInput where
 
   backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
     let impSig = optStrat ps
-        -- sf :: SF.StepFunc Y.Yield
-        -- sf = SF.stepFuncNoCommissionFullFraction
-        -- sf = SF.stepFuncRelativePrice 0.07 (F.Fraction 0.5)
-        expmnt = BT.Experiment Strat.Short {- trdAt sf -} initEqty impSig (fmap toPrice  ps)
+        expmnt = BT.Experiment Strat.Long initEqty impSig (fmap toPrice  ps)
         es = BT.equitySignal expmnt
     in (BacktestResult impSig es)
 
@@ -150,13 +147,13 @@ example :: IO ()
 example = do
   
 
-  let equity = Eqty.Equity 3
+  let equity = Eqty.Equity 10
       trdAt = OHLC.ohlcClose
   
       analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "An Example Report"
-        , Ana.impulseGenerator = IG.invert (IG.optImpGen2impGen (IG.optimalBuySell trdAt))
+        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell trdAt)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput equity ticker
         }

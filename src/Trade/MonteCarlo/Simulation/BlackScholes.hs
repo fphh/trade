@@ -16,8 +16,7 @@ import Control.Monad.Primitive (PrimState)
 import qualified System.Random.MWC as MWC
 import qualified System.Random.MWC.Distributions as Dist
 
-
-import Trade.Type.Bars (Bars(..), BarNo(..))
+import Trade.Type.Bars (DeltaTy(Bars), BarNo(..))
 import Trade.Type.Broom (Broom(..))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Price (Price(..))
@@ -44,8 +43,8 @@ blackScholesDet :: Word32 -> Vector UTCTime -> Equity -> Mu -> Sigma -> IO (Sign
 blackScholesDet seed interval eqty mu sigma =
   MWC.initialize (Vec.singleton seed)
   >>= \gen -> fmap (Signal . Vec.map (fmap Price)) (blackScholes gen interval eqty mu sigma)
-
-priceSignalBroom :: Bars -> Int -> Equity -> Mu -> Sigma -> IO (Broom (Signal BarNo Price))
+  
+priceSignalBroom :: DeltaTy BarNo -> Int -> Equity -> Mu -> Sigma -> IO (Broom (Signal BarNo Price))
 priceSignalBroom (Bars b) n eqty mu sigma = do
   let vs = Vec.generate b BarNo
   gen <- MWC.createSystemRandom

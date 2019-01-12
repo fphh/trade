@@ -11,7 +11,7 @@ import qualified Data.Vector as Vec
 
 import Control.Monad (replicateM)
 
-import Trade.Type.Bars (Bars(..), BarNo)
+import Trade.Type.Bars (DeltaTy(Bars), BarNo)
 import Trade.Type.Broom (Broom(..))
 import Trade.Type.TradeYield (TradeYield(..), TradeYieldList(..))
 import Trade.Type.OffsettedTradeYieldList (OffsettedTradeYieldList(..))
@@ -24,7 +24,7 @@ import Trade.Type.Conversion.TradeYield2YieldSignal (yieldAccordingToPosition)
 import Trade.Analysis.Yield (sortTradeYieldsByPosition)
 
 
-startingOffsets :: TradeYieldList -> (Int -> Bars)
+startingOffsets :: TradeYieldList -> (Int -> DeltaTy BarNo)
 startingOffsets (TradeYieldList tl) =
   let f (TradeYield _ ys) = Vec.imap (\i _ -> Bars i) ys
       table = Vec.concat (map f tl)
@@ -66,7 +66,7 @@ randomYieldSignal' ys (i:is) =
   in TradeYieldList trades
 
 
-randomYieldSignal :: TradeYieldList -> (Int -> Bars) -> IO (OffsettedTradeYieldList)
+randomYieldSignal :: TradeYieldList -> (Int -> DeltaTy BarNo) -> IO (OffsettedTradeYieldList)
 randomYieldSignal ys offsetTable = do
     gen <- newStdGen
     let i:is = map abs (randoms gen)
@@ -75,7 +75,7 @@ randomYieldSignal ys offsetTable = do
     return (OffsettedTradeYieldList offs rysig)
 
 
-normBroom :: Bars -> Int -> TradeYieldList -> IO (Broom (Signal BarNo Yield))
+normBroom :: DeltaTy BarNo -> Int -> TradeYieldList -> IO (Broom (Signal BarNo Yield))
 normBroom bs n ntl = do
   let soffs = startingOffsets ntl
       ntl' = TradeYieldList (map yieldAccordingToPosition (unTradeYieldList ntl))

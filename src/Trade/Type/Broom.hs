@@ -7,7 +7,7 @@ import Prelude hiding (zip, zipWith)
 
 import Trade.Type.Equity (Equity)
 import Trade.Type.Signal (Signal)
-import Trade.Type.StepFunc (StepFunc)
+-- import Trade.Type.StepFunc (StepFunc)
 
 import qualified Trade.Type.Conversion.Equity2Yield as E2Y
 import qualified Trade.Type.Conversion.Yield2Equity as Y2E
@@ -20,7 +20,7 @@ newtype Broom signal = Broom {
   unBroom :: [signal]
   } deriving (Show, Eq)
 
-
+{-
 instance Functor Broom where
   fmap f (Broom hs) = Broom (map f hs)
 
@@ -49,3 +49,5 @@ yield2equity step eqty = fmap (Y2E.yield2equity step eqty)
 
 equity2yield :: (E2Y.Equity2Yield yield) => Broom (Signal t Equity) -> Broom (Signal t yield)
 equity2yield = fmap E2Y.equity2yield
+
+-}

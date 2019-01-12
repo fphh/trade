@@ -2,6 +2,7 @@
 
 module Trade.Type.Conversion.Yield2Equity where
 
+{-
 import Control.Applicative (liftA2)
 
 import Trade.Type.Yield (Yield, LogYield)
@@ -16,3 +17,4 @@ class Yield2Equity yield where
 
 instance Yield2Equity Yield
 instance Yield2Equity LogYield
+-}

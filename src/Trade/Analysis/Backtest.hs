@@ -20,7 +20,10 @@ import qualified Data.Vector as Vec
 --import Trade.Type.Mult (Mult, MultTy, Div, DivTy)
 --import Trade.Type.Scale (Scale, scale, factor)
 
-import Trade.Type.DeltaSignal (DeltaSignal, toDeltaSignal, shortDeltaSignal, constDeltaSignal, concatDeltaSignals)
+import Trade.Type.Bars (DeltaTy, Add)
+import Trade.Type.Delta (ToDelta)
+import Trade.Type.DeltaSignal (DeltaSignal)
+import Trade.Type.DeltaSignal.Algorithm (toDeltaSignal, shortDeltaSignal, constDeltaSignal, concatDeltaSignals)
 
 import Trade.Type.Equity (Equity(..))
 
@@ -30,15 +33,15 @@ import Trade.Type.Position (Position(..))
 import Trade.Type.Price (Price)
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Signal.Equity (EquitySignal)
-import Trade.Type.StepFunc (StepFunc)
+--import Trade.Type.StepFunc (StepFunc)
 import Trade.Type.Strategy (Strategy(..))
 import Trade.Type.Trade (Trade(..), TradeList(..))
-import Trade.Type.Yield (Yield(..))
-import Trade.Type.Conversion.Yield2Equity (Yield2Equity, yield2equity)
+-- import Trade.Type.Yield (Yield(..))
+-- import Trade.Type.Conversion.Yield2Equity (Yield2Equity, yield2equity)
 -- import Trade.Type.Conversion.Trade2TradeYield (trade2tradeYield)
 import Trade.Type.Conversion.Impulse2TradeList (impulse2tradeList)
 -- import Trade.Type.Conversion.TradeYield2YieldSignal (tradeYield2yieldSignal)
-import Trade.Type.Conversion.Type2Double (Type2Double)
+-- import Trade.Type.Conversion.Type2Double (Type2Double)
 
 import qualified Trade.Report.Report as Rep
 import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
@@ -52,14 +55,12 @@ import Debug.Trace
 
 data Experiment t ohlc = Experiment {
   strategy :: Strategy
-  -- , tradeAt :: ohlc -> a
-  -- , stepFunc :: StepFunc yield
   , equity :: Equity
   , impulseSignal :: ImpulseSignal t
   , signal :: Signal t ohlc
   }
 
-trade2deltaTrade :: TradeList UTCTime Price -> [DeltaSignal]
+trade2deltaTrade :: (ToDelta ohlc, Add t) => TradeList t ohlc -> [DeltaSignal t ohlc]
 trade2deltaTrade (TradeList tl) =
   let f (Trade NoPosition ts) = constDeltaSignal (toDeltaSignal (Signal ts))
       f (Trade LongPosition ts) = toDeltaSignal (Signal ts)
@@ -67,24 +68,12 @@ trade2deltaTrade (TradeList tl) =
   in map f tl
 
 
-equitySignal :: Experiment UTCTime Price -> Signal UTCTime Equity
-equitySignal (Experiment stgy {- tradeAt stepFunc -} eqty impSig qs@(Signal ps)) =
-  let {-
-      (start, dt) =
-        case (ps Vec.!? 0, ps Vec.!? 1) of
-          (Just (t0, _), Just (t1, _)) -> (t0, t1 `diff` t0)
-          _ -> error "Trade.Analysis.Backtest.equitySignal: price signal to short"
--}
-    
-      -- rs = fmap tradeAt qs
-      ts = impulse2tradeList stgy qs impSig
-      dts = trade2deltaTrade ts -- (fmap tradeAt ts)
-
-      
-      
-      -- nts = trade2tradeYield ss
-      -- res = tradeYield2yieldSignal stepFunc eqty start dt nts
-
+equitySignal ::
+  (ToDelta ohlc, Ord t, Add t, Real (DeltaTy t)) =>
+  Experiment t ohlc -> Signal t Equity
+equitySignal (Experiment stgy eqty impSig qs@(Signal ps)) =
+  let ts = impulse2tradeList stgy qs impSig
+      dts = trade2deltaTrade ts
   in concatDeltaSignals eqty dts
 
 
@@ -107,4 +96,3 @@ instance Backtest NoBacktest where
 
 instance ToReport (BacktestData NoBacktest NoBacktestReport) where
   toReport _ = Rep.text "No backtest done."
-  
