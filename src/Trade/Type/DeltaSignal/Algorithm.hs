@@ -22,6 +22,9 @@ import qualified Trade.Type.Signal as Signal
 import Trade.Type.Step (Step)
 import Trade.Type.Step.Algorithm (stepFunction)
 
+import Trade.Help.SafeTail (shead)
+
+
 constDeltaSignal :: DeltaSignal t ohlc -> DeltaSignal t ohlc
 constDeltaSignal (DeltaSignal t _ (Signal dxs)) =
   let f = const Delta.zero
@@ -34,7 +37,7 @@ shortDeltaSignal (DeltaSignal t0 _ (Signal dxs)) =
 -- | TODO: Check, wether `toDeltaSignal . fromDeltaSignal y0 = id`.
 toDeltaSignal :: (ToDelta ohlc, Add t) => Signal t ohlc -> DeltaSignal t ohlc
 toDeltaSignal (Signal as) =
-  let (t0, y0) = Vec.head as
+  let (t0, y0) = shead "toDeltaSignal: empty signal" as
       f (t, y) = (t `diff` t0, toDelta y0 y)
   in DeltaSignal t0 LongPosition (Signal (Vec.map f as))
 
