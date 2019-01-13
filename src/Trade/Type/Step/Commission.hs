@@ -14,4 +14,4 @@ instance Pretty Commission where
 
 
 noCommission :: Commission
-noCommission = Commission id
+noCommission = Commission (const 0)

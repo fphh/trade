@@ -21,8 +21,8 @@ import qualified Trade.Analysis.ToReport as TR
 import qualified Trade.Test.Data as TD
 
 import Trade.Type.Step (Step(..))
-import Trade.Type.Step.Commission (Commission(..))
-import Trade.Type.Step.Fraction (Fraction(..))
+import Trade.Type.Step.Commission (Commission(..), noCommission)
+import Trade.Type.Step.Fraction (Fraction(..), fullFraction)
 import Trade.Type.Step.Interests (Interests(..), interests)
 
 import Trade.Type.Bars (DeltaTy(NDT))
@@ -82,12 +82,21 @@ instance BT.Backtest BacktestInput where
     let rtf dt =
           let day = 24*60*60
           in realToFrac dt / day
-          
-        stp = Step {
-          fraction = Fraction 0.5
-          , commission = Commission (\c -> 0.1*c)
-          , shortInterests = Nothing -- Just (Interests (interests rtf 0.05))
+
+        stp0 = Step {
+          fraction = fullFraction
+          , commission = noCommission
+          , shortInterests = Nothing
           }
+
+        stp1 :: Step UTCTime
+        stp1 = Step {
+          fraction = Fraction 0.5
+          , commission = Commission (\c -> 0.05*c)
+          , shortInterests = Just (Interests (interests rtf 0.02))
+          }
+
+        stp = stp1
 
         impSig = optStrat ps
         invImpSig = IS.invert impSig
@@ -103,7 +112,7 @@ instance BT.Backtest BacktestInput where
 
         expmntSL = BT.Experiment Strat.Short stp initEqty invImpSig ps
         esSL = BT.equitySignal expmntSL
-        
+
     in (BacktestResult impSig invImpSig esLW esSW esLL esSL)
 
 data BacktestResult = BacktestResult {
@@ -120,7 +129,13 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
 
     let hd = show . Vec.head . unSignal
         lst = show . Vec.last . unSignal
-    
+
+    Rep.text (show impSig)
+
+    Rep.subheader "Fees"
+
+    Rep.text "Trading at fraction 0.5, commission per buy/sell 5%, short interests 2% per day."
+
     Rep.subheader "Backtest Result, Long, Winning"
     
     Rep.backtestChart
@@ -131,9 +146,7 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
     Rep.text ("Starting with equity " ++ hd esLW)
     Rep.text ("Ending with equity " ++ lst esLW)
 
-
-
-    Rep.subheader "Backtest Result, Short, Wining"
+    Rep.subheader "Backtest Result, Short, Winning"
 
     Rep.backtestChart
       (Rep.gridChart (Style.axTitle "Equity") [Line.line "Symbol at Close" ps, Line.line "Backtest" esSW])
@@ -142,7 +155,6 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
     Rep.text ("Initial Equity: " ++ show inEq)
     Rep.text ("Starting with equity " ++ hd esSW)
     Rep.text ("Ending with equity " ++ lst esSW)
-
 
 
     Rep.subheader "Backtest Result, Long, Losing"

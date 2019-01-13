@@ -39,8 +39,7 @@ toDeltaSignal (Signal as) =
   in DeltaSignal t0 LongPosition (Signal (Vec.map f as))
 
 concatDeltaSignals ::
-  (Add t) => -- , Real (DeltaTy t)) =>
-  Step t -> Equity -> [DeltaSignal t ohlc] -> Signal t Equity
+  (Add t) => Step t -> Equity -> [DeltaSignal t ohlc] -> Signal t Equity
 concatDeltaSignals _ _ [] = mempty
 concatDeltaSignals step a (d:ds) =
   let f sig es = sig <> stepFunction step (snd (Signal.last sig)) es

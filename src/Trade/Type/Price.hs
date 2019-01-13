@@ -11,6 +11,7 @@ import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
+
 newtype Price = Price {
   unPrice :: Double
   } deriving (Show, Eq, Ord, E.PlotValue)

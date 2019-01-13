@@ -17,7 +17,7 @@ import qualified Trade.Type.Impulse as Imp
 
 newtype ImpulseSignal t = ImpulseSignal {
   unImpulseSignal :: Map t Impulse
-  }
+  } deriving (Show)
 
 expandImpulseSignal :: (Ord t) => Signal t ohlc -> ImpulseSignal t -> Signal t (Maybe Impulse)
 expandImpulseSignal (Signal ps) (ImpulseSignal is) =

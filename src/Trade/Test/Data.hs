@@ -57,9 +57,8 @@ test3 =
 
 test4 :: Vector (UTCTime, Double)
 test4 =
-  let up = [1,2,3]
-      down = [2,1]
-      ys = up ++ down
-  in Vec.zip (Vec.concat [jan2017]) (Vec.fromList ys)
+  let ys = [6, 7, 8, 9]
+      zs = [10, 9, 8, 7]
+  in Vec.zip (Vec.concat [jan2017, feb2017, mar2017, apr2017, may2017]) (Vec.fromList (ys++zs++ys++zs++ys++zs++ys++zs++ys++zs))
 
 

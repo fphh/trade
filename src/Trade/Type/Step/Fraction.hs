@@ -8,8 +8,8 @@ newtype Fraction = Fraction {
   } deriving (Show)
 
 
-fullFrac :: Fraction
-fullFrac = Fraction 1.0
+fullFraction :: Fraction
+fullFraction = Fraction 1.0
 
 inverse :: Fraction -> Fraction
 inverse (Fraction x) =
