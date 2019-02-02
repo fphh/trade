@@ -31,10 +31,11 @@ import Debug.Trace
 
 -- | TODO: check wether correct
 yieldAccordingToPosition :: TradeYield -> TradeYield
-yieldAccordingToPosition (TradeYield NoPosition vs) =
-  TradeYield NoPosition (Vec.replicate (Vec.length vs) noYield)
+yieldAccordingToPosition (TradeYield NotInvested vs) =
+  TradeYield NotInvested (Vec.replicate (Vec.length vs) noYield)
 yieldAccordingToPosition (TradeYield state vs) =
   TradeYield state vs
+
 
 {-
 

@@ -1,17 +1,20 @@
 
-
 module Trade.Type.Position where
+
+import qualified Test.QuickCheck as QC
 
 import Trade.Report.Pretty
 
 
 -- | The trader's position.
--- TODO: Being short.
+-- If this means short or long is given by the strategy.
 data Position =
-  LongPosition
-  | ShortPosition
-  | NoPosition
+  Invested
+  | NotInvested
   deriving (Show, Eq, Ord)
+
+instance QC.Arbitrary Position where
+  arbitrary = QC.elements [Invested, NotInvested]
 
 instance Pretty Position where
   pretty = show

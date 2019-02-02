@@ -20,11 +20,11 @@ newtype Broom signal = Broom {
   unBroom :: [signal]
   } deriving (Show, Eq)
 
-{-
+
 instance Functor Broom where
   fmap f (Broom hs) = Broom (map f hs)
 
-
+{-
 zipWith :: (a -> b -> c) -> Broom a -> Broom b -> Broom c
 zipWith f (Broom xs) (Broom ys) = Broom (P.zipWith f xs ys)
 
@@ -49,5 +49,6 @@ yield2equity step eqty = fmap (Y2E.yield2equity step eqty)
 
 equity2yield :: (E2Y.Equity2Yield yield) => Broom (Signal t Equity) -> Broom (Signal t yield)
 equity2yield = fmap E2Y.equity2yield
+
 
 -}

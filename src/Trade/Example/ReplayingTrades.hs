@@ -20,7 +20,9 @@ import Text.Printf (printf)
 import qualified Trade.Type.Equity as Eqty
 import qualified Trade.Type.Price as P
 
-import qualified Trade.Type.Bars as B
+import Trade.Type.Bars (DeltaTy(Bars))
+import Trade.Type.Step.Fraction (Fraction(..))
+
 import qualified Trade.Type.Broom as Broom
 import qualified Trade.Type.Distribution as Dist
 -- import qualified Trade.Type.Fraction as F
@@ -67,12 +69,7 @@ import qualified Trade.Test.Time as T
 
 import qualified Trade.Report.Style as Style
 
-
 {-
-
--------------------------------------------------------------------------
-
-type Steps = SF.StepFunc Y.Yield
 
 -------------------------------------------------------------------------
 
@@ -81,9 +78,8 @@ data OptimizationInput t ohlc = OptimizationInput {
   , igInput :: (MAvg.WindowSize, MAvg.WindowSize)
   , mcN :: Int
   , optInitialEquity :: Eqty.Equity
-  , forcastHorizon :: B.Bars
-  , stepFunc :: F.Fraction -> Steps
-  , fractions :: [F.Fraction]
+  , forcastHorizon :: DeltaTy t
+  , fractions :: [Fraction]
   }
   
 
@@ -101,7 +97,7 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
     let sf = stepFunc optInp
         eq = optInitialEquity optInp
 
-        eqtyBrm = Broom.yield2equity (sf (F.Fraction 1)) eq yieldBroom
+        eqtyBrm = Broom.yield2equity (sf (Fraction 1)) eq yieldBroom
     
         f fr (ts, rs) =
           let eb = Broom.yield2equity (sf fr) eq yieldBroom
@@ -118,11 +114,13 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
 data OptimizationResult = OptimizationResult {
   eqtyBroom :: Broom.Broom (Signal.Signal B.BarNo Eqty.Equity)
   , tradeList :: Trade.TradeList UTCTime P.Price
-  , twr :: [(F.Fraction, Dist.CDF TWR.TWR)]
-  , risk :: [(F.Fraction, Dist.CDF Risk.Risk)]
+  , twr :: [(Fraction, Dist.CDF TWR.TWR)]
+  , risk :: [(Fraction, Dist.CDF Risk.Risk)]
   , optWindowSize :: (MAvg.WindowSize, MAvg.WindowSize)
   }
 
+  
+{-
 instance TR.ToReport (TR.OptimizationData (OptimizationInput UTCTime P.Price) OptimizationResult) where
   toReport (TR.OptimizationData optInp (OptimizationResult brm trdList twrs rsks (winK, winJ))) = do
     let nOfSamp = 20
@@ -270,4 +268,5 @@ example = do
   BSL.putStrLn t
 
 
+-}
 -}

@@ -37,7 +37,7 @@ data TradeStatistics = TradeStatistics {
 
 tradeStatistics ::
   (Type2Double b) =>
-  (ohlc -> b) -> TradeList UTCTime ohlc -> [TradeStatistics]
+  (ohlc -> b) -> TradeList stgy UTCTime ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
   let m = sortTradesByPosition tl
 

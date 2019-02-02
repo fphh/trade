@@ -12,7 +12,12 @@ import Trade.Type.Signal (Signal(..))
 import Trade.Type.Position (Position(..))
 import Trade.Type.Yield (Yield(..))
 
-
+offsettedTradeYieldList2normSignal ::
+  DeltaTy BarNo -> OffsettedTradeYieldList -> Signal BarNo Yield
+offsettedTradeYieldList2normSignal (Bars bs) (OffsettedTradeYieldList (Bars offs) (TradeYieldList ntl)) =
+  error "offsettedTradeYieldList2normSignal not implemented"
+  
+{-
 
 offsettedTradeYieldList2normSignal ::
   DeltaTy BarNo -> OffsettedTradeYieldList -> Signal BarNo Yield
@@ -28,3 +33,4 @@ offsettedTradeYieldList2normSignal (Bars bs) (OffsettedTradeYieldList (Bars offs
       f _ = error "offsettedTradeYieldList2normSignal"
 
   in Signal (Vec.concat (List.unfoldr f (offs, ntl)))
+-}

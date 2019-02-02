@@ -2,6 +2,7 @@
 
 module Trade.Type.Conversion.Yield2Equity where
 
+
 {-
 import Control.Applicative (liftA2)
 

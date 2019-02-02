@@ -1,8 +1,9 @@
-
+{-# LANGUAGE KindSignatures #-}
 
 module Trade.Type.Strategy where
 
-data Strategy =
-  Short
-  | Long deriving (Eq, Show)
+
+data Long :: *
+data Short :: *
+
 

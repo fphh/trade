@@ -7,18 +7,18 @@ import qualified Data.Vector as Vec
 
 import Trade.Type.Position (Position)
 
-data Trade t ohlc = Trade {
+data Trade stgy t ohlc = Trade {
   tradePosition :: Position
   , ticker :: Vector (t, ohlc)
   } deriving (Show)
 
-instance Functor (Trade t) where
+instance Functor (Trade stgy t) where
   fmap f (Trade ts vs) = Trade ts (Vec.map (fmap f) vs)
 
-newtype TradeList t ohlc = TradeList {
-  unTradeList :: [Trade t ohlc]
+newtype TradeList stgy t ohlc = TradeList {
+  unTradeList :: [Trade stgy t ohlc]
   } deriving (Show)
 
-instance Functor (TradeList t) where
+instance Functor (TradeList stgy t) where
   fmap f (TradeList tl) = TradeList (map (fmap f) tl)
 

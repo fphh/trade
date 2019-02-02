@@ -16,7 +16,7 @@ import Trade.Type.TradeYield (TradeYield(..), TradeYieldList(..))
 
 -- import Trade.Type.Yield (Yield(..), forwardYield, ToYield)
 
-sortTradesByPosition :: TradeList t ohlc -> Map Position (TradeList t ohlc)
+sortTradesByPosition :: TradeList stgy t ohlc -> Map Position (TradeList stgy t ohlc)
 sortTradesByPosition (TradeList tl) =
   let f acc t@(Trade stat _) = Map.insertWith (++) stat [t] acc 
   in fmap TradeList (List.foldl' f Map.empty tl)

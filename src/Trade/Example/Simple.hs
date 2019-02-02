@@ -20,7 +20,7 @@ import qualified Trade.Analysis.ToReport as TR
 
 import qualified Trade.Test.Data as TD
 
-import Trade.Type.Step (Step(..))
+import Trade.Type.Step (StepTy(LongStep, ShortStep), longFraction, shortFraction, longCommission, shortCommission, shortInterests)
 import Trade.Type.Step.Commission (Commission(..), noCommission)
 import Trade.Type.Step.Fraction (Fraction(..), fullFraction)
 import Trade.Type.Step.Interests (Interests(..), interests)
@@ -30,10 +30,10 @@ import Trade.Type.Equity (Equity(..))
 import Trade.Type.Impulse (invert)
 import Trade.Type.Price (Price(..))
 import Trade.Type.Signal (Signal(..))
+import Trade.Type.Strategy (Long, Short)
 
 import qualified Trade.Type.ImpulseGenerator as IG
 import qualified Trade.Type.ImpulseSignal as IS
-import qualified Trade.Type.Strategy as Strat
 
 
 import qualified Trade.Report.Line as Line
@@ -83,34 +83,31 @@ instance BT.Backtest BacktestInput where
           let day = 24*60*60
           in realToFrac dt / day
 
-        stp0 = Step {
-          fraction = fullFraction
-          , commission = noCommission
-          , shortInterests = Nothing
+        stp0 = LongStep {
+          longFraction = Fraction 0.5
+          , longCommission = Commission (\c -> 0.05*c)
           }
 
-        stp1 :: Step UTCTime
-        stp1 = Step {
-          fraction = Fraction 0.5
-          , commission = Commission (\c -> 0.05*c)
-          , shortInterests = Just (Interests (interests rtf 0.02))
+        stp1 = ShortStep {
+          shortFraction = Fraction 0.5
+          , shortCommission = Commission (\c -> 0.05*c)
+          , shortInterests = Interests (interests rtf 0.02)
           }
 
-        stp = stp1
 
         impSig = optStrat ps
         invImpSig = IS.invert impSig
         
-        expmntLW = BT.Experiment Strat.Long stp initEqty impSig ps
+        expmntLW = BT.Experiment stp0 initEqty impSig ps
         esLW = BT.equitySignal expmntLW
 
-        expmntSW = BT.Experiment Strat.Short stp initEqty impSig ps
+        expmntSW = BT.Experiment stp1 initEqty impSig ps
         esSW = BT.equitySignal expmntSW
 
-        expmntLL = BT.Experiment Strat.Long stp initEqty invImpSig ps
+        expmntLL = BT.Experiment stp0 initEqty invImpSig ps
         esLL = BT.equitySignal expmntLL
 
-        expmntSL = BT.Experiment Strat.Short stp initEqty invImpSig ps
+        expmntSL = BT.Experiment stp1 initEqty invImpSig ps
         esSL = BT.equitySignal expmntSL
 
     in (BacktestResult impSig invImpSig esLW esSW esLL esSL)

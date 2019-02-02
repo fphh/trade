@@ -2,8 +2,6 @@
 
 module Trade.Type.ImpulseSignal where
 
--- import Control.Monad (join)
-
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
@@ -34,19 +32,6 @@ simplify (ImpulseSignal m) =
       g _ _ _ = error "ImpulseSignal.simplify"
   in ImpulseSignal (snd (Map.foldlWithKey' g (Nothing, Map.empty) m))
 
-{-
-curve ::
-  (Ord t, Num y) =>
-  Signal t ohlc -> ImpulseSignal t -> Vector (t, y)
-curve (Signal ps) (ImpulseSignal is) =
-  let f (t, p) = Vec.fromList $
-        (t, 0) : case Map.lookup t is of
-                   Just Buy -> [(t, -1), (t, 0)]
-                   Just Sell -> [(t, 1), (t, 0)]
-                   Nothing -> []
-  in join (Vec.map f ps)
--}
-
 curve ::
   (Ord t) =>
   Signal t ohlc -> ImpulseSignal t -> Vector (t, Maybe Impulse)
@@ -58,3 +43,5 @@ curve (Signal ps) (ImpulseSignal is) =
 
 invert :: ImpulseSignal t -> ImpulseSignal t
 invert (ImpulseSignal m) = ImpulseSignal (fmap Imp.invert m)
+
+

@@ -7,10 +7,11 @@
 
 module Trade.Analysis.Backtest where
 
+-- import qualified Test.QuickCheck as QC
 
 import Trade.Type.Bars (Add)
 
-import Trade.Type.Conversion.Impulse2TradeList (impulse2tradeList)
+import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList, impulse2tradeList)
 
 import Trade.Type.Delta (ToDelta)
 import Trade.Type.DeltaSignal (DeltaSignal)
@@ -22,8 +23,9 @@ import Trade.Type.ImpulseGenerator (NonEmptyList, OptimizedImpulseGenerator)
 import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.Position (Position(..))
 import Trade.Type.Signal (Signal(..))
-import Trade.Type.Step (Step)
-import Trade.Type.Strategy (Strategy(..))
+import Trade.Type.Step (StepTy)
+import Trade.Type.Step.Algorithm (StepFunction)
+import Trade.Type.Strategy (Long, Short) -- Strategy(..))
 import Trade.Type.Trade (Trade(..), TradeList(..))
 
 
@@ -34,29 +36,46 @@ import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
 
 
 
-data Experiment t ohlc = Experiment {
-  strategy :: Strategy
-  , step :: Step t
+data Experiment stgy t ohlc = Experiment {
+  step :: StepTy stgy t
   , equity :: Equity
   , impulseSignal :: ImpulseSignal t
   , signal :: Signal t ohlc
   }
 
-trade2deltaTrade :: (ToDelta ohlc, Add t) => TradeList t ohlc -> [DeltaSignal t ohlc]
-trade2deltaTrade (TradeList tl) =
-  let f (Trade NoPosition ts) = constDeltaSignal (toDeltaSignal (Signal ts))
-      f (Trade LongPosition ts) = toDeltaSignal (Signal ts)
-      f (Trade ShortPosition ts) = shortDeltaSignal (toDeltaSignal (Signal ts))
-  in map f tl
+
+class Delta2DeltaTrade stgy where
+  trade2deltaTrade :: (ToDelta ohlc, Add t) => TradeList stgy t ohlc -> [DeltaSignal t ohlc]
+
+instance Delta2DeltaTrade Long where
+  trade2deltaTrade (TradeList tl) =
+    let f (Trade NotInvested ts) = constDeltaSignal (toDeltaSignal (Signal ts))
+        f (Trade Invested ts) = toDeltaSignal (Signal ts)
+    in map f tl
+
+    
+instance Delta2DeltaTrade Short where
+  trade2deltaTrade (TradeList tl) =
+    let f (Trade NotInvested ts) = constDeltaSignal (toDeltaSignal (Signal ts))
+        f (Trade Invested ts) = shortDeltaSignal (toDeltaSignal (Signal ts))
+    in map f tl
+
 
 
 equitySignal ::
-  (ToDelta ohlc, Ord t, Add t) => -- , Real (DeltaTy t)) =>
-  Experiment t ohlc -> Signal t Equity
-equitySignal (Experiment stgy stp eqty impSig ps) =
-  let ts = impulse2tradeList stgy ps impSig
+  forall ohlc t stgy.
+  ( Show t, Show ohlc
+  , ToDelta ohlc, Ord t, Add t
+  , Delta2DeltaTrade stgy
+  , Impulse2TradeList stgy
+  , StepFunction (StepTy stgy) t) =>
+  Experiment stgy t ohlc -> Signal t Equity
+equitySignal (Experiment stp eqty impSig ps) =
+  let ts :: TradeList stgy t ohlc
+      ts = impulse2tradeList ps impSig
       dts = trade2deltaTrade ts
-  in concatDeltaSignals stp eqty dts
+      res = concatDeltaSignals stp eqty dts
+  in res
 
 
 class Backtest btInput where
