@@ -12,6 +12,9 @@ data Delta ty = Delta {
 negate :: Delta ty -> Delta ty
 negate (Delta dx) = Delta (Prelude.negate dx)
 
+id :: Delta ty -> Delta ty
+id x = x
+
 zero :: Delta ty
 zero = Delta 0.0
 

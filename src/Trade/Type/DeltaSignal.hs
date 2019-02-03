@@ -15,3 +15,4 @@ data DeltaSignal t ohlc =
   , position :: Position
   , delta :: Signal (DeltaTy t) (Delta ohlc)
   }
+
