@@ -9,6 +9,7 @@ import qualified Data.Map as Map
 import Trade.Type.Signal (Signal(..))
 
 import Trade.Type.ImpulseSignal (ImpulseSignal(..))
+import qualified Trade.Type.ImpulseSignal as IS
 
 import Trade.Type.Impulse (Impulse(..))
 import qualified Trade.Type.Impulse as Imp
@@ -53,6 +54,8 @@ mapIG f (ImpulseGenerator ig) =
 invert :: ImpulseGenerator optData ohlc -> ImpulseGenerator optData ohlc
 invert = mapIG Imp.invert
 
+invertOpt :: OptimizedImpulseGenerator ohlc -> OptimizedImpulseGenerator ohlc
+invertOpt (OptimizedImpulseGenerator ig) = OptimizedImpulseGenerator (fmap IS.invert ig)
 
 -- 
 -- TODO: Verify:

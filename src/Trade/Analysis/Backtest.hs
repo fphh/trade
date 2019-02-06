@@ -11,20 +11,18 @@ import Trade.Type.Bars (Add)
 import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList, impulse2tradeList)
 
 import Trade.Type.Delta (ToDelta)
-import Trade.Type.DeltaSignal (DeltaSignal)
-import Trade.Type.DeltaTradeList (DeltaTradeList)
+import Trade.Type.Trade (TradeList)
 import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList, tradeList2DeltaTradeList)
 
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 
 import Trade.Type.Equity (Equity(..))
 
-import Trade.Type.ImpulseGenerator (NonEmptyList, OptimizedImpulseGenerator)
-import Trade.Type.ImpulseSignal (ImpulseSignal)
+import Trade.Type.ImpulseGenerator (NonEmptyList, OptimizedImpulseGenerator(..))
+-- import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
-import Trade.Type.Trade (Trade(..), TradeList(..))
 
 
 import qualified Trade.Report.Report as Rep
@@ -33,16 +31,12 @@ import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
 
 
-
 data Experiment stgy t ohlc = Experiment {
   step :: StepTy stgy t
   , equity :: Equity
-  , impulseSignal :: ImpulseSignal t
+  , impulseGenerator :: OptimizedImpulseGenerator ohlc
   , signal :: Signal t ohlc
   }
-
-
-
 
 equitySignal ::
   forall ohlc t stgy.
@@ -52,11 +46,13 @@ equitySignal ::
   , Impulse2TradeList stgy
   , StepFunction (StepTy stgy) t) =>
   Experiment stgy t ohlc -> Signal t Equity
-equitySignal (Experiment stp eqty impSig ps) =
+equitySignal (Experiment stp eqty (OptimizedImpulseGenerator impGen) ps) =
   let ts :: TradeList stgy t ohlc
+      impSig = impGen ps
       ts = impulse2tradeList ps impSig
       dts = tradeList2DeltaTradeList ts
   in concatDeltaSignals stp eqty dts
+
 
 
 class Backtest btInput where

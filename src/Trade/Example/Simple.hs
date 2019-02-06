@@ -78,7 +78,9 @@ data BacktestInput = BacktestInput {
 instance BT.Backtest BacktestInput where
   type BacktestReportTy BacktestInput = BacktestResult
 
-  backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
+  -- backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
+  backtest (IG.NonEmptyList optStrat@(IG.OptimizedImpulseGenerator strat) _) (BacktestInput initEqty ps) =
+
     let rtf dt =
           let day = 24*60*60
           in realToFrac dt / day
@@ -94,23 +96,21 @@ instance BT.Backtest BacktestInput where
           , shortInterests = Interests (interests rtf 0.02)
           }
 
-
-        impSig = optStrat ps
-        invImpSig = IS.invert impSig
+        impSig = strat ps
         
-        expmntLW = BT.Experiment stp0 initEqty impSig ps
+        expmntLW = BT.Experiment stp0 initEqty optStrat ps
         esLW = BT.equitySignal expmntLW
 
-        expmntSW = BT.Experiment stp1 initEqty impSig ps
+        expmntSW = BT.Experiment stp1 initEqty optStrat ps
         esSW = BT.equitySignal expmntSW
 
-        expmntLL = BT.Experiment stp0 initEqty invImpSig ps
+        expmntLL = BT.Experiment stp0 initEqty (IG.invertOpt optStrat) ps
         esLL = BT.equitySignal expmntLL
 
-        expmntSL = BT.Experiment stp1 initEqty invImpSig ps
+        expmntSL = BT.Experiment stp1 initEqty (IG.invertOpt optStrat) ps
         esSL = BT.equitySignal expmntSL
 
-    in (BacktestResult impSig invImpSig esLW esSW esLL esSL)
+    in (BacktestResult impSig (IS.invert impSig) esLW esSW esLL esSL)
 
 data BacktestResult = BacktestResult {
   impulses :: IS.ImpulseSignal UTCTime

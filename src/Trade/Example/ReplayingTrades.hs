@@ -20,11 +20,20 @@ import Text.Printf (printf)
 import qualified Trade.Type.Equity as Eqty
 import qualified Trade.Type.Price as P
 
+
+import qualified Trade.Type.Distribution as Dist
+import qualified Trade.Analysis.TWR as TWR
+import qualified Trade.Analysis.Risk as Risk
+
+import qualified Trade.Analysis.Optimize as Opt
+
+
+
+{-
 import Trade.Type.Bars (DeltaTy(Bars))
 import Trade.Type.Step.Fraction (Fraction(..))
 
 import qualified Trade.Type.Broom as Broom
-import qualified Trade.Type.Distribution as Dist
 -- import qualified Trade.Type.Fraction as F
 -- import qualified Trade.Type.StepFunc as SF
 import qualified Trade.Type.Strategy as Strat
@@ -49,9 +58,7 @@ import qualified Trade.Algorithm.MovingAverage as MAvg
 import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.ToReport as TR
-import qualified Trade.Analysis.Optimize as Opt
-import qualified Trade.Analysis.TWR as TWR
-import qualified Trade.Analysis.Risk as Risk
+
 import qualified Trade.Analysis.OHLCData as OD
 
 import qualified Trade.TStatistics.SampleStatistics as SStat
@@ -68,6 +75,7 @@ import qualified Trade.Test.Time as T
 -- import qualified Trade.Test.Data as TD
 
 import qualified Trade.Report.Style as Style
+-}
 
 {-
 
@@ -89,6 +97,21 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
 
   optimize (IG.ImpulseGenerator strat) optInp = do
     let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat (igInput optInp)
+    
+        impSig = optStrat (optSample optInp)
+
+        stp = LongStep {
+          longFraction = Fraction 0.5
+          , longCommission = Commission (\c -> 0.05*c)
+          }
+
+        expmnt = BT.Experiment stp initEqty impSig (optSample optInp)
+        -- es = BT.equitySignal expmnt
+
+
+{-
+  optimize (IG.ImpulseGenerator strat) optInp = do
+    let optIG@(IG.OptimizedImpulseGenerator optStrat) = strat (igInput optInp)
 
         trds = I2TL.impulse2tradeList Strat.Long (optSample optInp) (optStrat (optSample optInp))
         ntrds = T2TY.trade2tradeYield trds
@@ -108,6 +131,7 @@ instance Opt.Optimize (OptimizationInput UTCTime P.Price) where
         (twrs, rsks) = List.foldr f ([], []) (fractions optInp)
 
     return (IG.RankedStrategies [optIG], OptimizationResult eqtyBrm trds twrs rsks (igInput optInp))
+-}
 
     
 
