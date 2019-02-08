@@ -11,6 +11,7 @@ import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 import Trade.Type.Bars (Add)
 import Trade.Type.Delta (ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
+import Trade.Type.DeltaTradeList (DeltaTradeList)
 import Trade.Type.Equity (Equity)
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
@@ -36,15 +37,16 @@ data Input stgy t ohlc = Input {
   , inputSignal :: Signal t ohlc
   }
 
-data Output t = Output {
+data Output t ohlc = Output {
   impulseSignal :: ImpulseSignal t
+  , deltaTradeList :: DeltaTradeList t ohlc
   , outputSignal :: Signal t Equity
   }
 
 
 data Result stgy t ohlc = Result {
   input :: Input stgy t ohlc
-  , output :: Output t
+  , output :: Output t ohlc
   }
 
 conduct ::
@@ -63,6 +65,7 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) ps) =
 
       out = Output {
         impulseSignal = impSig
+        , deltaTradeList = dts
         , outputSignal = concatDeltaSignals stp eqty dts
         }
       
