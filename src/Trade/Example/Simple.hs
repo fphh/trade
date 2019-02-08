@@ -142,7 +142,6 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
 instance OD.OHLCData OptimizationInput where
   type OHLCDataTy OptimizationInput = Price
 
-
 instance OD.OHLCData BacktestInput where
   type OHLCDataTy BacktestInput = Price
 
@@ -156,7 +155,7 @@ example = do
   
       analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
-        Ana.title = "An Example Report"
+        Ana.title = "Long/Short - Winning/Losing"
         , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell unPrice)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput equity ticker
