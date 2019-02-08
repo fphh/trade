@@ -87,9 +87,11 @@ library
                         Trade.Type.DeltaTradeList
                         Trade.Type.Distribution
                         Trade.Type.Equity
+                        Trade.Type.Experiment
                         Trade.Type.Impulse
                         Trade.Type.ImpulseGenerator
                         Trade.Type.ImpulseSignal
+                        Trade.Type.NonEmptyList
                         Trade.Type.OffsettedTradeYieldList
                         Trade.Type.OHLC
                         Trade.Type.Position

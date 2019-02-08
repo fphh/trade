@@ -28,12 +28,13 @@ import Trade.Type.Step.Interests (Interests(..), interests)
 import Trade.Type.Bars (DeltaTy(NDT))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Impulse (invert)
+import Trade.Type.NonEmptyList (NonEmptyList(..))
 import Trade.Type.Price (Price(..))
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Strategy (Long, Short)
 
+import qualified Trade.Type.Experiment as Experiment
 import qualified Trade.Type.ImpulseGenerator as IG
-import qualified Trade.Type.ImpulseSignal as IS
 
 
 import qualified Trade.Report.Line as Line
@@ -78,8 +79,7 @@ data BacktestInput = BacktestInput {
 instance BT.Backtest BacktestInput where
   type BacktestReportTy BacktestInput = BacktestResult
 
-  -- backtest (IG.NonEmptyList (IG.OptimizedImpulseGenerator optStrat) _) (BacktestInput initEqty ps) =
-  backtest (IG.NonEmptyList optStrat@(IG.OptimizedImpulseGenerator strat) _) (BacktestInput initEqty ps) =
+  backtest (NonEmptyList optStrat@(IG.OptimizedImpulseGenerator strat) _) (BacktestInput initEqty ps) =
 
     let rtf dt =
           let day = 24*60*60
@@ -96,85 +96,46 @@ instance BT.Backtest BacktestInput where
           , shortInterests = Interests (interests rtf 0.02)
           }
 
-        impSig = strat ps
-        
-        expmntLW = BT.Experiment stp0 initEqty optStrat ps
-        esLW = BT.equitySignal expmntLW
+        expmntLW = Experiment.Input stp0 initEqty optStrat ps
+        esLW = Experiment.conduct expmntLW
 
-        expmntSW = BT.Experiment stp1 initEqty optStrat ps
-        esSW = BT.equitySignal expmntSW
+        expmntSW = Experiment.Input stp1 initEqty optStrat ps
+        esSW = Experiment.conduct expmntSW
 
-        expmntLL = BT.Experiment stp0 initEqty (IG.invertOpt optStrat) ps
-        esLL = BT.equitySignal expmntLL
+        expmntLL = Experiment.Input stp0 initEqty (IG.invertOpt optStrat) ps
+        esLL = Experiment.conduct expmntLL
 
-        expmntSL = BT.Experiment stp1 initEqty (IG.invertOpt optStrat) ps
-        esSL = BT.equitySignal expmntSL
+        expmntSL = Experiment.Input stp1 initEqty (IG.invertOpt optStrat) ps
+        esSL = Experiment.conduct expmntSL
 
-    in (BacktestResult impSig (IS.invert impSig) esLW esSW esLL esSL)
+    in (BacktestResult esLW esSW esLL esSL)
 
 data BacktestResult = BacktestResult {
-  impulses :: IS.ImpulseSignal UTCTime
-  , invImpulses :: IS.ImpulseSignal UTCTime
-  , equitiesLW :: Signal UTCTime Equity
-  , equitiesSW :: Signal UTCTime Equity
-  , equitiesLL :: Signal UTCTime Equity
-  , equitiesSL :: Signal UTCTime Equity
+  resultLW :: Experiment.Result Long UTCTime Price
+  , resultSW :: Experiment.Result Short UTCTime Price
+  , resultLL :: Experiment.Result Long UTCTime Price
+  , resultSL :: Experiment.Result Short UTCTime Price
   }
 
 instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
-  toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult impSig invImpSig esLW esSW esLL esSL)) = do
-
-    let hd = show . Vec.head . unSignal
-        lst = show . Vec.last . unSignal
-
-    Rep.text (show impSig)
+  toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult resLW resSW resLL resSL)) = do
 
     Rep.subheader "Fees"
 
     Rep.text "Trading at fraction 0.5, commission per buy/sell 5%, short interests 2% per day."
 
     Rep.subheader "Backtest Result, Long, Winning"
-    
-    Rep.backtestChart
-      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Symbol at Close" ps, Line.line "Backtest" esLW])
-      (Rep.impulseSignalCharts [IS.curve ps impSig])
-
-    Rep.text ("Initial Equity: " ++ show inEq)
-    Rep.text ("Starting with equity " ++ hd esLW)
-    Rep.text ("Ending with equity " ++ lst esLW)
+    Experiment.render "Symbol at Close" "Backtest" resLW
 
     Rep.subheader "Backtest Result, Short, Winning"
-
-    Rep.backtestChart
-      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Symbol at Close" ps, Line.line "Backtest" esSW])
-      (Rep.impulseSignalCharts [IS.curve ps impSig])
-    
-    Rep.text ("Initial Equity: " ++ show inEq)
-    Rep.text ("Starting with equity " ++ hd esSW)
-    Rep.text ("Ending with equity " ++ lst esSW)
-
+    Experiment.render "Symbol at Close" "Backtest" resSW
 
     Rep.subheader "Backtest Result, Long, Losing"
-    
-    Rep.backtestChart
-      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Symbol at Close" ps, Line.line "Backtest" esLL])
-      (Rep.impulseSignalCharts [IS.curve ps invImpSig])
-    
-    Rep.text ("Initial Equity: " ++ show inEq)
-    Rep.text ("Starting with equity " ++ hd esLL)
-    Rep.text ("Ending with equity " ++ lst esLL)
-
-
+    Experiment.render "Symbol at Close" "Backtest" resLL
 
     Rep.subheader "Backtest Result, Short, Losing"
-    
-    Rep.backtestChart
-      (Rep.gridChart (Style.axTitle "Equity") [Line.line "Symbol at Close" ps, Line.line "Backtest" esSL])
-      (Rep.impulseSignalCharts [IS.curve ps invImpSig])
-    
-    Rep.text ("Initial Equity: " ++ show inEq)
-    Rep.text ("Starting with equity " ++ hd esSL)
-    Rep.text ("Ending with equity " ++ lst esSL)
+    Experiment.render "Symbol at Close" "Backtest" resSL
+
 
 --------------------------------------------------------
 

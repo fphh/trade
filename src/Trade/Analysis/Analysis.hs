@@ -8,7 +8,8 @@ module Trade.Analysis.Analysis where
 
 import Control.Monad.Trans (liftIO)
 
-import Trade.Type.ImpulseGenerator (ImpulseGenerator, RankedStrategies(..), NonEmptyList(..))
+import Trade.Type.ImpulseGenerator (ImpulseGenerator, RankedStrategies(..))
+import Trade.Type.NonEmptyList (NonEmptyList(..))
 
 import Trade.Analysis.OHLCData (OHLCDataTy)
 import Trade.Analysis.Optimize (Optimize, OptReportTy, OptInpTy, optimize)
