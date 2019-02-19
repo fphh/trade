@@ -28,6 +28,7 @@ import Trade.Help.SafeTail (slast, sinit, stail)
 
 import Debug.Trace
 
+{-
 
 -- | TODO: check wether correct
 yieldAccordingToPosition :: TradeYield -> TradeYield
@@ -35,6 +36,7 @@ yieldAccordingToPosition (TradeYield NotInvested vs) =
   TradeYield NotInvested (Vec.replicate (Vec.length vs) noYield)
 yieldAccordingToPosition (TradeYield state vs) =
   TradeYield state vs
+-}
 
 
 {-

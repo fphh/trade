@@ -75,7 +75,6 @@ library
                         Trade.Type.Broom
                         Trade.Type.Conversion.Equity2Yield
                         Trade.Type.Conversion.Impulse2TradeList
-                        Trade.Type.Conversion.TradeYield2YieldSignal
                         Trade.Type.Conversion.OffsettedTradeYieldList2NormSignal
                         Trade.Type.Conversion.Price2Yield
                         Trade.Type.Conversion.TradeList2DeltaTradeList
