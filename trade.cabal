@@ -31,7 +31,6 @@ library
                         Trade.Analysis.Yield
                         Trade.Example.Basic
                         Trade.Example.Empty
-                        Trade.Example.Optimize
                         Trade.Example.ReplayingTrades
                         Trade.Example.Simple
                         Trade.Help.SafeTail
