@@ -88,7 +88,6 @@ library
                         Trade.Type.ImpulseGenerator
                         Trade.Type.ImpulseSignal
                         Trade.Type.NonEmptyList
-                        Trade.Type.OffsettedTradeYieldList
                         Trade.Type.OHLC
                         Trade.Type.Position
                         Trade.Type.Price
