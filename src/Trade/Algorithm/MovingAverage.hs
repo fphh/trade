@@ -9,7 +9,7 @@ import Data.Vector (Vector)
 
 import Data.List (scanl')
 
-newtype WindowSize = WindowSize Int deriving (Show)
+newtype WindowSize = WindowSize Int deriving (Show, Eq, Ord)
 
 movingAvgL :: WindowSize -> [Double] -> [Double]
 movingAvgL (WindowSize k) lst =

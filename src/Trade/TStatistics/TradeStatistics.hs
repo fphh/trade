@@ -24,6 +24,8 @@ import Trade.Analysis.Yield (sortTradesByPosition)
 
 import qualified Trade.Report.Report as Rep
 
+import Trade.Report.HtmlIO (HtmlIO)
+
 
 data TradeStatistics = TradeStatistics {
   position :: Position
@@ -64,7 +66,7 @@ tradeStatistics extract tl =
   in Map.elems xs
 
 
-stats2para :: TradeStatistics -> Rep.HtmlIO
+stats2para :: TradeStatistics -> HtmlIO
 stats2para stats =
   Rep.vtable $
   [ "position", show $ position stats]

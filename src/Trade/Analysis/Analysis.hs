@@ -16,6 +16,7 @@ import Trade.Analysis.Optimize (Optimize, OptReportTy, OptInpTy, optimize)
 import Trade.Analysis.Backtest (Backtest, BacktestReportTy, backtest)
 
 import qualified Trade.Report.Report as Rep
+import Trade.Report.HtmlIO (HtmlIO)
 
 import Trade.Analysis.ToReport (ToReport, report, OptimizationData(..), BacktestData(..))
  
@@ -40,7 +41,7 @@ analyze ::
   , ToReport (OptimizationData optInp (OptReportTy optInp))
   , ToReport (BacktestData backInp (BacktestReportTy backInp))
   , OHLCDataTy optInp ~ OHLCDataTy backInp)
-  => Analysis optInp backInp -> Rep.HtmlT IO ()
+  => Analysis optInp backInp -> HtmlIO
 analyze (Analysis ttle impGen optInp backInp) = do
   (optImpGen, optOut) <- liftIO (optimize impGen optInp)
 

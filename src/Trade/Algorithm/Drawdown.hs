@@ -10,6 +10,7 @@ import qualified Statistics.Sample as Sample
 
 import qualified Trade.Report.Report as Rep
 
+import Trade.Report.HtmlIO (HtmlIO)
 
 dds :: [Double] -> [(Int, Double)]
 dds xs =
@@ -77,7 +78,7 @@ drawdownStats xs =
     , stdDevDrawdown = Sample.stdDev vlosses
     }
 
-reportDrawdownStats :: [Double] -> Rep.HtmlIO
+reportDrawdownStats :: [Double] -> HtmlIO
 reportDrawdownStats xs =
   let DrawdownStatistics{..} = drawdownStats xs
   in Rep.vtable $

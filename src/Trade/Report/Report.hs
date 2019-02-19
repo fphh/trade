@@ -39,60 +39,13 @@ import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
 -- import qualified Graphics.Rendering.Chart.Backend.Cairo as D
 
+import Trade.Report.HtmlIO (HtmlIO, HtmlT(..), liftHtml)
+
 import Trade.Report.Style (AxisConfig(..), colors, impulseAxisConf)
 import Trade.Report.Line (L(..))
-
+                        
 import Trade.Type.Impulse (Impulse)
 
-markupValue :: MarkupM a -> a
-markupValue m0 = case m0 of
-  Parent _ _ _ m1           -> markupValue m1
-  CustomParent _ m1         -> markupValue m1
-  Leaf _ _ _ x              -> x
-  CustomLeaf _ _ x          -> x
-  Content _ x               -> x
-  Comment _ x               -> x
-  Append _ m1               -> markupValue m1
-  AddAttribute _ _ _ m1     -> markupValue m1
-  AddCustomAttribute _ _ m1 -> markupValue m1
-  Empty x                   -> x
-
-newtype HtmlT m a = HtmlT { runHtmlT :: m (MarkupM a) }
-
-instance (Monad m) => Functor (HtmlT m) where
-  fmap = liftM
-
-instance (Monad m) => Applicative (HtmlT m) where
-  pure = return
-  (<*>) = ap
-
-instance Monad m => Monad (HtmlT m) where
-  return = HtmlT . return . Empty
-
-  -- (>>=) :: HtmlT m a -> (a -> HtmlT m b) -> HtmlT m b
-  x >>= f = HtmlT $ do
-    y <- runHtmlT x
-    z <- runHtmlT (f (markupValue y))
-    return (Append y z)
-    
-instance (Monoid (m (MarkupM a))) => Monoid (HtmlT m a) where
-  mempty = HtmlT mempty
-  mappend (HtmlT x) (HtmlT y) = HtmlT (mappend x y)
-  mconcat = HtmlT . mconcat . map runHtmlT
-
-instance (Monoid (m (MarkupM a))) => Semigroup (HtmlT m a) where
-  (<>) = mappend
-
-instance MonadTrans HtmlT where
-    lift = HtmlT . (liftM Empty)
-
-instance MonadIO m => MonadIO (HtmlT m) where
-    liftIO = lift . liftIO
-
-type HtmlIO = HtmlT IO ()
-
-liftHtml :: (MarkupM a -> MarkupM b) -> HtmlT IO a -> HtmlT IO b
-liftHtml f (HtmlT h) = HtmlT $ h >>= return . f
 
 clear :: H5.Attribute
 clear = H5A.style (H5.stringValue "") -- "clear:both;")
@@ -151,10 +104,11 @@ renderReport :: HtmlIO -> IO ByteString
 renderReport html = do
   html' <- runHtmlT html
   let sty = H5A.style (H5.stringValue "font-family:monospace;padding:20px;")
+      bodySty = H5A.style (H5.stringValue "width:20000px")
       doc = do
         H5.docType
         H5.html ! sty $ do
-          H5.body html'
+          (H5.body ! bodySty) html'
   return (HtmlBSL.renderHtml doc)
 
 chartSize :: (Double, Double)

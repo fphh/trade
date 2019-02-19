@@ -42,11 +42,13 @@ library
                         Trade.Render.Common.Color
                         Trade.Render.Common.Utils
                         Trade.Report.Curve
+                        Trade.Report.HtmlIO
                         Trade.Report.Line
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Report
                         Trade.Report.Style
+                        Trade.Report.Table
                         Trade.Test.Data
                         Trade.Test.Time
                         Trade.Timeseries.Algorithm.Intersection

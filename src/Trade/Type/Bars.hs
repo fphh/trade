@@ -6,7 +6,9 @@
 
 module Trade.Type.Bars where
 
-import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
+import Data.Time.Clock (UTCTime(..), NominalDiffTime, diffUTCTime, addUTCTime)
+
+import Data.Time.Calendar (fromGregorian)
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
@@ -14,6 +16,9 @@ class Add t where
   data DeltaTy t :: *
   add :: DeltaTy t -> t -> t
   diff :: t -> t -> DeltaTy t
+
+  --zeroT :: t
+  -- zeroDT :: DeltaTy t
   
 -- somehow fishy, because Num is not really implemented
 instance Add UTCTime where
@@ -23,6 +28,10 @@ instance Add UTCTime where
 
   add (NDT dt) t = addUTCTime dt t
   diff x y = NDT (diffUTCTime x y)
+
+  --zeroT =  UTCTime (fromGregorian 2030 1 1) 0
+  -- zeroDT = Bars 0
+
 
 instance Real (DeltaTy UTCTime) where
   toRational (NDT t) = toRational t
@@ -40,6 +49,9 @@ instance Add BarNo where
 
   add (Bars dt) (BarNo t) = BarNo (dt+t)
   diff (BarNo x) (BarNo y) = Bars (x-y)
+
+  --zeroT = BarNo 0
+  -- zeroDT = Bars 0
 
 
 -- deriving instance Show (DeltaTy UTCTime)

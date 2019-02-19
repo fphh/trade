@@ -9,11 +9,13 @@ import qualified Trade.Report.Report as Rep
 
 import Data.Monoid ((<>), mempty)
 
+import Trade.Report.HtmlIO (HtmlIO)
+
 -- We use IO here because charting needs IO.
 -- We rather like to serialize charts into memory,
 -- but the library only allows for serialization to disk.
 class ToReport a where
-  toReport :: a -> Rep.HtmlIO
+  toReport :: a -> HtmlIO
 
 instance ToReport () where
   toReport _ = mempty
@@ -39,7 +41,7 @@ data BacktestData backtestInput backtestOutput = BacktestData {
   }
 
 
-noBacktestDataReport :: Rep.HtmlIO
+noBacktestDataReport :: HtmlIO
 noBacktestDataReport = do
   Rep.subheader "Backtest Result"
   Rep.text "No optimized impulse generator found. No backtest done."
@@ -47,7 +49,7 @@ noBacktestDataReport = do
 report ::
   (ToReport (OptimizationData optInp optOut)
   , ToReport (BacktestData backInp backOut)) =>
-  String -> OptimizationData optInp optOut -> Maybe (BacktestData backInp backOut) -> Rep.HtmlIO
+  String -> OptimizationData optInp optOut -> Maybe (BacktestData backInp backOut) -> HtmlIO
 report ttle opt back =
   let title = Rep.header ttle
       optRep = toReport opt

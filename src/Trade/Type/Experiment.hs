@@ -8,11 +8,13 @@ module Trade.Type.Experiment where
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
+import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
+
 import Trade.Type.Bars (Add)
 import Trade.Type.Delta (ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 import Trade.Type.DeltaTradeList (DeltaTradeList)
-import Trade.Type.Equity (Equity)
+import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
 import Trade.Type.Signal (Signal(..))
@@ -29,6 +31,9 @@ import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
 
 import Trade.Help.SafeTail (shead, slast)
+
+import Trade.Report.HtmlIO (HtmlIO)
+
 
 data Input stgy t ohlc = Input {
   step :: StepTy stgy t
@@ -75,12 +80,21 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) ps) =
     }
 
 
+lastEquity :: Result stgy t ohlc -> Equity
+lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
+
 render ::
-  (Show t, Ord t, PlotValue t, Type2Double ohlc) =>
-  String -> String -> Result stgy t ohlc -> Rep.HtmlIO
+  (Show t, Ord t, PlotValue t, Type2Double ohlc, Show ohlc) =>
+  String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
-  let hd = show . shead "Experiment.render (hd)" . unSignal
-      lst = show . slast "Experiment.render (lst)" . unSignal
+  let hd = show . shead "Experiment.render (hd, 1)" . unSignal
+      lst = show . slast "Experiment.render (lst, 2)" . unSignal
+
+      Equity initial = initialEquity inp
+      (_, Equity final) = slast "Experiment.render (lst, 3)" (unSignal (outputSignal out))
+
+      (_, input1) = shead "Experiment.render (hd, 4)" (unSignal (inputSignal inp))
+      (_, inputN) = slast "Experiment.render (lst, 5)" (unSignal (inputSignal inp))
 
   Rep.backtestChart
     (Rep.gridChart (Style.axTitle "Equity")
@@ -91,3 +105,6 @@ render symTitle btTitle (Result inp out) = do
   Rep.text ("Initial Equity: " ++ show (initialEquity inp))
   Rep.text ("Starting with equity " ++ hd (outputSignal out))
   Rep.text ("Ending with equity " ++ lst (outputSignal out))
+  Rep.text ("Ratio final / initial equity " ++ show (final / initial))
+  Rep.text ("BuyAndHold final / initial equity " ++ show (type2double inputN / type2double input1))
+

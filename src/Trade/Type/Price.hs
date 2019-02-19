@@ -16,6 +16,7 @@ newtype Price = Price {
   unPrice :: Double
   } deriving (Show, Eq, Ord, E.PlotValue)
 
+
 instance ToDelta Price where
   toDelta (Price y0) (Price y) = Delta ((y - y0) / y0)
 

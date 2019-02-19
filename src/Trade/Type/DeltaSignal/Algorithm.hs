@@ -45,3 +45,9 @@ concatDeltaSignals _ _ (DeltaTradeList []) = mempty
 concatDeltaSignals step a (DeltaTradeList (d:ds)) =
   let f sig es = sig <> stepFunction step (snd (Signal.last sig)) es
   in List.foldl' f (stepFunction step a d) ds
+
+rebase :: t -> DeltaTradeList t ohlc -> DeltaTradeList t ohlc
+rebase _ (DeltaTradeList []) = DeltaTradeList []
+rebase t (DeltaTradeList es@(d:ds)) =
+  let f a b = b { start = t }
+  in DeltaTradeList ((d { start = t }) : zipWith f es ds)

@@ -17,6 +17,8 @@ import Data.Vector (Vector)
 
 import qualified Trade.Report.Report as Rep
 
+import Trade.Report.HtmlIO (HtmlIO)
+
 import Prelude hiding (maximum, minimum)
 
 
@@ -76,7 +78,7 @@ instance SampleStats (Signal t LogYield) where
   type SampleStatsTy (Signal t LogYield) = t
   sampleStatistics = sampleStatistics' . Vec.map (\(a, LogYield y) -> (a, y)) . unSignal
 
-stats2para :: (Show a) => SampleStatistics a -> Rep.HtmlIO
+stats2para :: (Show a) => SampleStatistics a -> HtmlIO
 stats2para stats =
   Rep.vtable $
   ["mean", show $ mean stats]
