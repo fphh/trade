@@ -101,7 +101,6 @@ library
                         Trade.Type.Step.Interests
                         Trade.Type.Strategy
                         Trade.Type.Trade
-                        Trade.Type.TradeYield
                         Trade.Type.Yield
   -- other-modules:
   -- other-extensions:
