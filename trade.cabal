@@ -73,7 +73,6 @@ library
                         Trade.TStatistics.TradeStatistics
                         Trade.Type.Bars
                         Trade.Type.Broom
-                        Trade.Type.Conversion.Equity2Yield
                         Trade.Type.Conversion.Impulse2TradeList
                         Trade.Type.Conversion.OffsettedTradeYieldList2NormSignal
                         Trade.Type.Conversion.Price2Yield
