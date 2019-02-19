@@ -78,7 +78,6 @@ library
                         Trade.Type.Conversion.Price2Yield
                         Trade.Type.Conversion.TradeList2DeltaTradeList
                         Trade.Type.Conversion.Type2Double
-                        Trade.Type.Conversion.Yield2Equity
                         Trade.Type.Delta
                         Trade.Type.DeltaSignal
                         Trade.Type.DeltaSignal.Algorithm
