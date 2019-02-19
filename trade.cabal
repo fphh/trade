@@ -78,7 +78,6 @@ library
                         Trade.Type.Conversion.TradeYield2YieldSignal
                         Trade.Type.Conversion.OffsettedTradeYieldList2NormSignal
                         Trade.Type.Conversion.Price2Yield
-                        Trade.Type.Conversion.Trade2TradeYield
                         Trade.Type.Conversion.TradeList2DeltaTradeList
                         Trade.Type.Conversion.Type2Double
                         Trade.Type.Conversion.Yield2Equity
