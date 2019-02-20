@@ -35,12 +35,12 @@ lineHelper :: (a -> b) -> String -> Signal t a -> L [(t, b)]
 lineHelper un str (Signal ps) = L str (Vec.toList (Vec.map (fmap un) ps))
 
 
-instance Line (Signal x Equity) where
-  type TyX (Signal x Equity) = x
-  type TyY (Signal x Equity) = Double
+instance Line (Signal t Equity) where
+  type TyX (Signal t Equity) = t
+  type TyY (Signal t Equity) = Double
   line = lineHelper unEquity
 
-instance Line (Signal x Price) where
-  type TyX (Signal x Price) = x
-  type TyY (Signal x Price) = Double
+instance Line (Signal t Price) where
+  type TyX (Signal t Price) = t
+  type TyY (Signal t Price) = Double
   line = lineHelper unPrice

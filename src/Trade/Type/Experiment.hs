@@ -83,8 +83,9 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  (Show t, Ord t, PlotValue t) =>
-  String -> String -> Result stgy t Price -> HtmlIO
+  ( Show t, Ord t, PlotValue t
+  , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
+  String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
   let hd = show . shead "Experiment.render (hd, 1)" . unSignal
       lst = show . slast "Experiment.render (lst, 2)" . unSignal
