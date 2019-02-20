@@ -8,7 +8,10 @@ module Trade.Report.Line where
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Type.Impulse (Impulse(..))
+import Trade.Type.Equity (Equity(..))
+import Trade.Type.Price (Price(..))
+import Trade.Type.Signal (Signal(..))
+
 
 data L a = L String a
 
@@ -26,3 +29,18 @@ instance Line [(x, y)] where
   type TyX [(x, y)] = x
   type TyY [(x, y)] = y
   line str vs = L str vs
+
+
+lineHelper :: (a -> b) -> String -> Signal t a -> L [(t, b)]
+lineHelper un str (Signal ps) = L str (Vec.toList (Vec.map (fmap un) ps))
+
+
+instance Line (Signal x Equity) where
+  type TyX (Signal x Equity) = x
+  type TyY (Signal x Equity) = Double
+  line = lineHelper unEquity
+
+instance Line (Signal x Price) where
+  type TyX (Signal x Price) = x
+  type TyY (Signal x Price) = Double
+  line = lineHelper unPrice

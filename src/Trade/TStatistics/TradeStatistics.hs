@@ -18,8 +18,6 @@ import Text.Printf (printf)
 import Trade.Type.Position (Position)
 import Trade.Type.Trade (TradeList(..), ticker)
 
-import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
-
 import Trade.Analysis.Yield (sortTradesByPosition)
 
 import qualified Trade.Report.Report as Rep
@@ -46,7 +44,7 @@ tradeStatistics extract tl =
       day = 60*60*24
 
       h v = case (Vec.head v, Vec.last v) of
-              ((tx, x), (ty, y)) -> (realToFrac (ty `diffUTCTime` tx), log (type2double y / type2double x))
+              ((tx, x), (ty, y)) -> (realToFrac (ty `diffUTCTime` tx), error "tradeStatistics") -- log (type2double y / type2double x))
 
       f = Vec.fromList . map (h . Vec.map (fmap extract) . ticker) . unTradeList
 

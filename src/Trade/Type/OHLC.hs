@@ -5,8 +5,6 @@
 
 module Trade.Type.OHLC where
 
-import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
-
 import Trade.Type.Equity (Equity(..))
 
 import Trade.Report.Pretty (Pretty, pretty)
@@ -23,9 +21,6 @@ newtype Open = Open {
 instance FromField Open where
   parseField =  return . Open . read . BS.unpack
 
-instance Type2Double Open where
-  type2double (Open x) = x
-
 instance Pretty Open where
   pretty = show
 
@@ -39,9 +34,6 @@ data CloseUnit
 instance FromField Close where
   parseField =  return . Close . read . BS.unpack
 
-instance Type2Double Close where
-  type2double (Close x) = x
-
 instance Pretty Close where
   pretty (Close x) = "Close=" ++ show x
 
@@ -53,9 +45,6 @@ newtype High = High {
 instance FromField High where
   parseField =  return . High . read . BS.unpack
 
-instance Type2Double High where
-  type2double (High x) = x
-
 instance Pretty High where
   pretty = show
 
@@ -66,9 +55,6 @@ newtype Low = Low {
 
 instance FromField Low where
   parseField =  return . Low . read . BS.unpack
-
-instance Type2Double Low where
-  type2double (Low x) = x
 
 instance Pretty Low where
   pretty = show

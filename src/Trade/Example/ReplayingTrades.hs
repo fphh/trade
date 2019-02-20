@@ -166,7 +166,7 @@ getSymbol sym = do
   let req = Bin.RequestParams {
         Bin.baseUrl = Bin.binanceBaseUrl
         , Bin.symbol = sym
-        , Bin.interval = Bin.Min1
+        , Bin.interval = Bin.Hour1
         , Bin.limit = Just 10000
         , Bin.from = Nothing
         , Bin.to = Nothing
@@ -221,7 +221,7 @@ example = do
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head sample)))
             , mcConfig = MCConfig {
-                mcBars = NDT (50*60*60) -- (2*365 * 24*60*60)
+                mcBars = NDT (200 * 24*60*60) -- (2*365 * 24*60*60)
                 , mcCount = MCCount 1000
                 , mcBegin = UTCTime (fromGregorian 2020 1 1) 0
                 }

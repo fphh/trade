@@ -1,9 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
--- {-# LANGUAGE DeriveFoldable #-}
--- {-# LANGUAGE DeriveTraversable #-}
-
 
 module Trade.Type.Signal where
 
@@ -16,11 +13,8 @@ import qualified Data.List as List
 
 import qualified Data.Foldable as Fold
 
-import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
-
 import Trade.Report.NumberedList (ToNumberedList, toNumberedList)
 import Trade.Report.Pretty (Pretty)
-import Trade.Report.Line (Line(..), L(..))
 
 import Trade.Help.SafeTail (stail, shead, slast)
 
@@ -31,13 +25,6 @@ newtype Signal t y = Signal {
 
 instance Functor (Signal t) where
   fmap f (Signal ps) = Signal (Vec.map (fmap f) ps)
-
-
-instance (Type2Double y) => Line (Signal x y) where
-  type TyX (Signal x y) = x
-  type TyY (Signal x y) = Double
-  line str (Signal ps) = L str (Vec.toList (Vec.map (fmap type2double) ps))
-  
 
 instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where
   toNumberedList (Signal pps) = toNumberedList pps

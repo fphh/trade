@@ -8,7 +8,6 @@ module Trade.Type.Experiment where
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
-import Trade.Type.Conversion.Type2Double (Type2Double, type2double)
 
 import Trade.Type.Bars (Add)
 import Trade.Type.Delta (ToDelta)
@@ -84,7 +83,7 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  (Show t, Ord t, PlotValue t, Type2Double ohlc, Show ohlc) =>
+  (Show t, Ord t, PlotValue t) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
   let hd = show . shead "Experiment.render (hd, 1)" . unSignal
@@ -98,13 +97,13 @@ render symTitle btTitle (Result inp out) = do
 
   Rep.backtestChart
     (Rep.gridChart (Style.axTitle "Equity")
-      [ Line.line symTitle (inputSignal inp)
-      , Line.line btTitle (outputSignal out)])
+      [ --Line.line symTitle (inputSignal inp)
+       Line.line btTitle (outputSignal out)])
     (Rep.impulseSignalCharts [curve (inputSignal inp) (impulseSignal out)])
 
   Rep.text ("Initial Equity: " ++ show (initialEquity inp))
   Rep.text ("Starting with equity " ++ hd (outputSignal out))
   Rep.text ("Ending with equity " ++ lst (outputSignal out))
   Rep.text ("Ratio final / initial equity " ++ show (final / initial))
-  Rep.text ("BuyAndHold final / initial equity " ++ show (type2double inputN / type2double input1))
+  -- Rep.text ("BuyAndHold final / initial equity " ++ show (type2double inputN / type2double input1))
 

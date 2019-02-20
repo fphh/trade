@@ -6,8 +6,6 @@ module Trade.Report.NumberedList where
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Trade.Report.Report
-
 import Trade.Report.Pretty
 
 
@@ -29,13 +27,3 @@ instance (ToNumberedLine a) => ToNumberedList [a] where
   toNumberedList = zipWith toNumberedLine [0..]
     
 
-{-
-
-numberedList :: ToNumberedList a => a -> ReportItem
-numberedList = vtable . toNumberedList
-
-numberedListN :: ToNumberedList a => Int -> a -> ReportItem
-numberedListN n = vtable . toNumberedListN n
-
-
--}
