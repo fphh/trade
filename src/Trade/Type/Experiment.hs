@@ -16,6 +16,7 @@ import Trade.Type.DeltaTradeList (DeltaTradeList)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
+import Trade.Type.Price (Price)
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
@@ -23,7 +24,6 @@ import Trade.Type.Trade (TradeList)
 
 import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList, impulse2tradeList)
 import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList, tradeList2DeltaTradeList)
-import Trade.Type.Conversion.Type2Double (Type2Double)
 
 import qualified Trade.Report.Line as Line
 import qualified Trade.Report.Report as Rep
@@ -84,7 +84,7 @@ lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (output
 
 render ::
   (Show t, Ord t, PlotValue t) =>
-  String -> String -> Result stgy t ohlc -> HtmlIO
+  String -> String -> Result stgy t Price -> HtmlIO
 render symTitle btTitle (Result inp out) = do
   let hd = show . shead "Experiment.render (hd, 1)" . unSignal
       lst = show . slast "Experiment.render (lst, 2)" . unSignal
@@ -97,8 +97,8 @@ render symTitle btTitle (Result inp out) = do
 
   Rep.backtestChart
     (Rep.gridChart (Style.axTitle "Equity")
-      [ --Line.line symTitle (inputSignal inp)
-       Line.line btTitle (outputSignal out)])
+      [ Line.line symTitle (inputSignal inp)
+      , Line.line btTitle (outputSignal out)])
     (Rep.impulseSignalCharts [curve (inputSignal inp) (impulseSignal out)])
 
   Rep.text ("Initial Equity: " ++ show (initialEquity inp))
