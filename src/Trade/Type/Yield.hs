@@ -40,13 +40,6 @@ instance Semigroup LogYield where
 instance Monoid LogYield where
   mempty = LogYield 0
 
-class (Monoid yield) => NoYield yield where
-  noYield :: yield
-  noYield = mempty
-
-instance NoYield Yield
-instance NoYield LogYield
-
 class ToYield yield where
   toYield :: Double -> Double -> yield
 

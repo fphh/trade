@@ -221,7 +221,7 @@ example = do
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head sample)))
             , mcConfig = MCConfig {
-                mcBars = NDT (200 * 24*60*60) -- (2*365 * 24*60*60)
+                mcBars = NDT (60000*60) -- (2*365 * 24*60*60)
                 , mcCount = MCCount 1000
                 , mcBegin = UTCTime (fromGregorian 2020 1 1) 0
                 }
