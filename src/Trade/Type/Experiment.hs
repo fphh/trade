@@ -8,6 +8,8 @@ module Trade.Type.Experiment where
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
+import Text.Printf (printf)
+
 
 import Trade.Type.Bars (Add)
 import Trade.Type.Delta (ToDelta)
@@ -28,6 +30,7 @@ import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList,
 import qualified Trade.Report.Line as Line
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
+import qualified Trade.Report.Table as Table
 
 import Trade.Help.SafeTail (shead, slast)
 
@@ -87,8 +90,10 @@ render ::
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
-  let hd = show . shead "Experiment.render (hd, 1)" . unSignal
-      lst = show . slast "Experiment.render (lst, 2)" . unSignal
+  let format = printf "%.2f"
+      f (x, y) = [show x, format (unEquity y)]
+      hd = f . shead "Experiment.render (hd, 1)" . unSignal
+      lst = f . slast "Experiment.render (lst, 2)" . unSignal
 
       Equity initial = initialEquity inp
       (_, Equity final) = slast "Experiment.render (lst, 3)" (unSignal (outputSignal out))
@@ -102,9 +107,11 @@ render symTitle btTitle (Result inp out) = do
       , Line.line btTitle (outputSignal out)])
     (Rep.impulseSignalCharts [curve (inputSignal inp) (impulseSignal out)])
 
-  Rep.text ("Initial Equity: " ++ show (initialEquity inp))
-  Rep.text ("Starting with equity " ++ hd (outputSignal out))
-  Rep.text ("Ending with equity " ++ lst (outputSignal out))
-  Rep.text ("Ratio final / initial equity " ++ show (final / initial))
-  -- Rep.text ("BuyAndHold final / initial equity " ++ show (type2double inputN / type2double input1))
-
+  Table.textTable [
+    [ "Initial equity", "", format (unEquity (initialEquity inp)) ]
+    , []
+    , "Starting with equity" : hd (outputSignal out)
+    , "Ending with equity" : lst (outputSignal out)
+    , []
+    , [ "Ratio final / initial equity", "", show (final / initial) ]
+    ]

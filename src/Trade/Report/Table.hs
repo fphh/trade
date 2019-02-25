@@ -64,7 +64,12 @@ table bias m = do
                 True -> "color:#aa0044;font-weight:bold;background:rgb(0," ++ show (round (stepHi*(v-bias))) ++ ", 0);"
                 False -> "color:#4400aa;font-weight:bold;background:rgb(" ++ show (round (stepLo*(bias-v))) ++ ", 0, 0);"
             bgMa = "color:#000000;font-weight:bold;background:#bbffbb"
-            sty = H5A.style (H5.stringValue (if v == ma then bgMa else bg))
+            bgMi = "color:#000000;font-weight:bold;background:#ffbbbb"
+            sty = H5A.style $ H5.stringValue $
+              case (v == ma, v == mi) of
+                (True, _) -> bgMa
+                (_, True) -> bgMi
+                _ -> bg
         in (H5.div ! sty) (H5.toHtml (format v))
 
       na =
@@ -85,3 +90,40 @@ table bias m = do
       pad = H5A.style (H5.stringValue "padding-bottom:24px")
       
   HtmlT (return ((H5.div ! pad) (mapM_ f rows)))
+
+
+
+textTableRows :: [[String]] -> [String]
+textTableRows rs =
+  let rowLens = map length rs
+      maxRowLen = maximum rowLens
+      f len r = r ++ replicate (maxRowLen - length r) ""
+      filledRows = zipWith f rowLens rs
+
+      g col =
+        let m = maximum (map length col)
+            h c = replicate (m - length c) ' ' ++ c
+        in map h col
+      filledCols = map g (List.transpose filledRows)
+
+      filledCells = List.transpose filledCols
+
+      grid c xs = c : concatMap (\x -> [x, c]) xs
+
+      isEmpty = all (== ' ')
+      i row
+        | all isEmpty row = grid "+" (map (map (const '-')) row)
+        | otherwise = grid "|" row
+      es = map i filledCells
+      
+  in map concat es
+
+
+textTable :: [[String]] -> HtmlIO
+textTable rs =
+  let rows = textTableRows ([""] : rs ++[[""]])
+      cbSty = H5A.style (H5.stringValue "clear:both;")
+      g ' ' = "&nbsp;"
+      g c = [c]
+      f = (H5.div ! cbSty) . H5.preEscapedToHtml . concatMap g
+  in HtmlT (return (H5.div (mapM_ f rows)))
