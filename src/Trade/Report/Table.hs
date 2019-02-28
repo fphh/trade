@@ -29,8 +29,8 @@ data Cell y x =
   | YIndex y
   | Value (y, x)
 
-table :: (Ord x, Ord y, Show y, Show x) => Double -> Map (y, x) Double -> HtmlIO
-table bias m = do
+heatmap :: (Ord x, Ord y, Show y, Show x) => Double -> Map (y, x) Double -> HtmlIO
+heatmap bias m = do
   let (ys, xs) = unzip (Map.keys m)
       ys' = Set.toList (Set.fromList ys)
       xs' = Set.toList (Set.fromList xs)
@@ -93,8 +93,8 @@ table bias m = do
 
 
 
-textTableRows :: [[String]] -> [String]
-textTableRows rs =
+tableRows :: [[String]] -> [String]
+tableRows rs =
   let rowLens = map length rs
       maxRowLen = maximum rowLens
       f len r = r ++ replicate (maxRowLen - length r) ""
@@ -119,9 +119,9 @@ textTableRows rs =
   in map concat es
 
 
-textTable :: [[String]] -> HtmlIO
-textTable rs =
-  let rows = textTableRows ([""] : rs ++[[""]])
+table :: [[String]] -> HtmlIO
+table rs =
+  let rows = tableRows ([""] : rs ++[[""]])
       cbSty = H5A.style (H5.stringValue "clear:both;")
       g ' ' = "&nbsp;"
       g c = [c]

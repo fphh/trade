@@ -35,6 +35,7 @@ data TradeStatistics = TradeStatistics {
   } deriving (Show)
 
 
+{-
 tradeStatistics ::
   (ohlc -> b) -> TradeList stgy UTCTime ohlc -> [TradeStatistics]
 tradeStatistics extract tl =
@@ -73,3 +74,5 @@ stats2para stats =
   : ["duration mean", printf "%.2f days" $ tmean stats]
   : ["duration stdDev", printf "%.2f days" $ tstdDev stats]
   : []
+
+-}

@@ -6,6 +6,8 @@
 
 module Trade.Type.Bars where
 
+import Text.Printf (printf)
+
 import Data.Time.Clock (UTCTime(..), NominalDiffTime, diffUTCTime, addUTCTime)
 
 import Data.Time.Calendar (fromGregorian)
@@ -16,10 +18,8 @@ class Add t where
   data DeltaTy t :: *
   add :: DeltaTy t -> t -> t
   diff :: t -> t -> DeltaTy t
+  formatDelta :: DeltaTy t -> String
 
-  --zeroT :: t
-  -- zeroDT :: DeltaTy t
-  
 -- somehow fishy, because Num is not really implemented
 instance Add UTCTime where
   data DeltaTy UTCTime = NDT {
@@ -28,10 +28,7 @@ instance Add UTCTime where
 
   add (NDT dt) t = addUTCTime dt t
   diff x y = NDT (diffUTCTime x y)
-
-  --zeroT =  UTCTime (fromGregorian 2030 1 1) 0
-  -- zeroDT = Bars 0
-
+  formatDelta (NDT dt) = printf "%.2fd" ((fromRational (toRational dt) :: Double) / (24*60*60))
 
 instance Real (DeltaTy UTCTime) where
   toRational (NDT t) = toRational t
@@ -50,9 +47,4 @@ instance Add BarNo where
   add (Bars dt) (BarNo t) = BarNo (dt+t)
   diff (BarNo x) (BarNo y) = Bars (x-y)
 
-  --zeroT = BarNo 0
-  -- zeroDT = Bars 0
-
-
--- deriving instance Show (DeltaTy UTCTime)
--- deriving instance Show (DeltaTy BarNo)
+  formatDelta (Bars dt) = show dt

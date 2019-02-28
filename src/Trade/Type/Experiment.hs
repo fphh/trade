@@ -6,12 +6,14 @@
 
 module Trade.Type.Experiment where
 
+
+
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
 import Text.Printf (printf)
 
 
-import Trade.Type.Bars (Add)
+import Trade.Type.Bars (DeltaTy, Add, diff, formatDelta)
 import Trade.Type.Delta (ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 import Trade.Type.DeltaTradeList (DeltaTradeList)
@@ -86,7 +88,7 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  ( Show t, Ord t, PlotValue t
+  ( Show t, Ord t, PlotValue t, Add t, Show (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
@@ -98,20 +100,26 @@ render symTitle btTitle (Result inp out) = do
       Equity initial = initialEquity inp
       (_, Equity final) = slast "Experiment.render (lst, 3)" (unSignal (outputSignal out))
 
-      (_, input1) = shead "Experiment.render (hd, 4)" (unSignal (inputSignal inp))
-      (_, inputN) = slast "Experiment.render (lst, 5)" (unSignal (inputSignal inp))
+      (t0, input1) = shead "Experiment.render (hd, 4)" (unSignal (inputSignal inp))
+      (tn, inputN) = slast "Experiment.render (lst, 5)" (unSignal (inputSignal inp))
 
+  Rep.subheader "Experiment"
+  
   Rep.backtestChart
     (Rep.gridChart (Style.axTitle "Equity")
       [ Line.line symTitle (inputSignal inp)
       , Line.line btTitle (outputSignal out)])
     (Rep.impulseSignalCharts [curve (inputSignal inp) (impulseSignal out)])
 
-  Table.textTable [
+  Rep.subsubheader "Summary"
+
+  Table.table [
     [ "Initial equity", "", format (unEquity (initialEquity inp)) ]
     , []
     , "Starting with equity" : hd (outputSignal out)
     , "Ending with equity" : lst (outputSignal out)
+    , []
+    , [ "Time elapsed", formatDelta (tn `diff` t0) ]
     , []
     , [ "Ratio final / initial equity", "", show (final / initial) ]
     ]

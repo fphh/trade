@@ -9,6 +9,8 @@ import Trade.Type.Delta (Delta(..), ToDelta, toDelta)
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
+import Debug.Trace
+
 
 newtype Price = Price {
   unPrice :: Double

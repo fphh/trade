@@ -7,7 +7,7 @@ import Trade.Report.Pretty
 
 
 -- | The trader's position.
--- If this means short or long is given by the strategy.
+-- If this means short or long is defined by the strategy.
 data Position =
   Invested
   | NotInvested

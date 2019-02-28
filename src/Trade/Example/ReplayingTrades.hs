@@ -122,7 +122,7 @@ instance TR.ToReport (TR.OptimizationData (OptimizationInput stgy UTCTime Price)
 
     Rep.subsubheader "Table of last equities"
 
-    Tab.table
+    Tab.heatmap
       (unEquity (optEquity optInp))
       (Map.mapKeys (\(WindowSize y, WindowSize x) -> (y, x)) (fmap unEquity lastEqty))
 
