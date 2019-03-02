@@ -13,7 +13,7 @@ import Data.Vector (Vector)
 import qualified Data.List as List
 
 import Trade.Type.DeltaSignal (DeltaSignal(..))
-import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals, rebase)
+import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 
 import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.Equity (Equity(..))

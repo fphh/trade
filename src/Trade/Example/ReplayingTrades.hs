@@ -193,7 +193,7 @@ example = do
   sample <- getSymbol Bin.BTCUSDT
   
   let f (j, k) = (WindowSize j, WindowSize k)
-      -- wins = map f (filter (uncurry (/=)) (liftA2 (,) [0 .. 100] [0 .. 100]))
+      -- wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
       wins = map f (filter (uncurry (/=)) (liftA2 (,) [5 .. 10] [0 .. 10]))
 
       rtf :: DeltaTy UTCTime -> Double
@@ -202,7 +202,7 @@ example = do
         in realToFrac dt / day
 
       longStep = LongStep {
-        longFraction = Fraction 0.5
+        longFraction = Fraction 1
         , longCommission = Commission (const 0) -- (\c -> 0.05*c)
         }
 

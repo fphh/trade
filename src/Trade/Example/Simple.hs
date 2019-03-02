@@ -45,8 +45,8 @@ import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 
 ticker :: Signal UTCTime Price
-ticker = Signal (Vec.map (fmap Price) TD.testSimple)
--- ticker = Signal (Vec.map (fmap Price) TD.test2)
+-- ticker = Signal (Vec.map (fmap Price) TD.testSimple)
+ticker = Signal (Vec.map (fmap Price) TD.test2)
 
 --------------------------------------------------------
 
@@ -94,18 +94,10 @@ instance BT.Backtest BacktestInput where
           , longCommission = Commission (\c -> 0.05*c)
           }
 
-{-
         stp1 = ShortStep {
           shortFraction = Fraction 0.5
           , shortCommission = Commission (\c -> 0.05*c)
           , shortInterests = Interests (interests rtf 0.02)
-          }
--}
-
-        stp1 = ShortStep {
-          shortFraction = Fraction 1
-          , shortCommission = Commission (const 0)
-          , shortInterests = Interests (interests rtf 0)
           }
 
         expmntLW = Experiment.Input stp0 initEqty optStrat ps
@@ -136,7 +128,6 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
 
     Rep.text "Trading at fraction 0.5, commission per buy/sell 5%, short interests 2% per day."
 
-{-
     Rep.subheader "Backtest Result, Long, Winning"
     Experiment.render "Symbol at Close" "Backtest" resLW
 
@@ -145,9 +136,6 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
 
     Rep.subheader "Backtest Result, Long, Losing"
     Experiment.render "Symbol at Close" "Backtest" resLL
--}
-
-    Rep.text (show (map delta $ unDeltaTradeList (Experiment.deltaTradeList (Experiment.output resSL))))
 
     Rep.subheader "Backtest Result, Short, Losing"
     Experiment.render "Symbol at Close" "Backtest" resSL
@@ -167,7 +155,7 @@ example :: IO ()
 example = do
   
 
-  let equity = Equity 100
+  let equity = Equity 10
   
       analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {

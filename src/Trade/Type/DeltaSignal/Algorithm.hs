@@ -25,12 +25,9 @@ deltaSignal ::
   (ToDelta ohlc, Add t) =>
   (ohlc -> ohlc -> Delta ohlc) -> Signal t ohlc -> DeltaSignal t ohlc
 deltaSignal g (Signal as) =
-  let (t0, y0) = shead "toDeltaSignal: empty signal" as
+  let (t0, y0) = shead "deltaSignal: empty signal" as
       f (t, y) = (t `diff` t0, g y0 y)
   in DeltaSignal t0 Invested (Signal (Vec.map f as))
-
-constDeltaSignal :: (ToDelta ohlc, Add t) => Signal t ohlc -> DeltaSignal t ohlc
-constDeltaSignal sig = (deltaSignal (\_ _ -> Delta.zero) sig) { position = NotInvested }
 
 longDeltaSignal :: (ToDelta ohlc, Add t) => Signal t ohlc -> DeltaSignal t ohlc
 longDeltaSignal = deltaSignal toDelta
@@ -45,9 +42,3 @@ concatDeltaSignals _ _ (DeltaTradeList []) = mempty
 concatDeltaSignals step a (DeltaTradeList (d:ds)) =
   let f sig es = sig <> stepFunction step (snd (Signal.last sig)) es
   in List.foldl' f (stepFunction step a d) ds
-
-rebase :: t -> DeltaTradeList t ohlc -> DeltaTradeList t ohlc
-rebase _ (DeltaTradeList []) = DeltaTradeList []
-rebase t (DeltaTradeList es@(d:ds)) =
-  let f a b = b { start = t }
-  in DeltaTradeList ((d { start = t }) : zipWith f es ds)

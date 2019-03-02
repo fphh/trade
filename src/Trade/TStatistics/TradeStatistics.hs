@@ -72,7 +72,7 @@ deltaStatistics ::
   [DeltaSignal t ohlc] -> DeltaStatistics t
 deltaStatistics xs =
   let nots = length xs
-      f (DeltaSignal _ _ as) = fmap unDelta (Signal.last as)
+      f (DeltaSignal _ _ as) = fmap ((1+) . unDelta) (Signal.last as)
       (ts, ys) = unzip (map f xs)
       
       profits = filter (>=1) ys
@@ -81,9 +81,7 @@ deltaStatistics xs =
       mbe _ [] = Nothing
       mbe f xs = Just (f xs)
 
-
-      
-      g (DeltaSignal _ _ as) = Vec.minimum (Vec.map (unDelta . snd) (Signal.unSignal as))
+      g (DeltaSignal _ _ as) = Vec.minimum (Vec.map ((1+) . unDelta . snd) (Signal.unSignal as))
       maxDD = mbe (minimum . map g) xs
  
 
@@ -95,12 +93,10 @@ deltaStatistics xs =
     , profitCount = length profits
     , maxProfit = mbe maximum profits
     , meanProfit = exp (Sample.mean (Vec.fromList (map log profits)))
-    -- , meanProfit = Sample.mean (Vec.fromList (map log profits))
 
     , lossCount = length losses
     , maxLoss = mbe minimum losses
     , meanLoss = exp (Sample.mean (Vec.fromList (map log losses)))
-    -- , meanLoss = Sample.mean (Vec.fromList (map (log . abs) losses))
 
     , maxDrawdown = maxDD
     }
@@ -118,7 +114,7 @@ toRows ::
   (Show (DeltaTy t), FormatDelta t) =>
   Map Position (DeltaStatistics t) -> [[String]]
 toRows m =
-  let percFmt = (++ "%") . printf "%.8f" -- . (100*)
+  let percFmt = printf "%.6f"
       mbePercFmt = maybe "n/a" percFmt
       
       (hs, es) = unzip (Map.toList m)

@@ -64,5 +64,5 @@ test4 =
 
 testSimple :: Vector (UTCTime, Double)
 testSimple =
-  let ys = [20,40,60,80,100,80,60,40,20]
+  let ys = [30, 20,40,60,80,100,80,60,40,20]
   in Vec.zip jan2017 (Vec.fromList ys)

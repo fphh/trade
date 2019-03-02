@@ -90,22 +90,22 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  ( Show t, Ord t, PlotValue t, FormatDelta t, Show (DeltaTy t)
+  ( Show t, Ord t, PlotValue t, FormatDelta t, Show (DeltaTy t), Show ohlc
   , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
   let format = printf "%.2f"
       f (x, y) = [show x, format (unEquity y)]
-      hd = f . shead "Experiment.render (hd, 1)" . unSignal
-      lst = f . slast "Experiment.render (lst, 2)" . unSignal
+      hd = shead "Experiment.render (hd, 1)" . unSignal
+      lst = slast "Experiment.render (lst, 2)" . unSignal
 
-      Equity initial = initialEquity inp
-      (_, Equity final) = slast "Experiment.render (lst, 3)" (unSignal (outputSignal out))
+      (t0, inpInit) = shead "Experiment.render (hd, 4)" (unSignal (inputSignal inp))
+      (tn, inpFinal) = slast "Experiment.render (lst, 5)" (unSignal (inputSignal inp))
 
-      (t0, input1) = shead "Experiment.render (hd, 4)" (unSignal (inputSignal inp))
-      (tn, inputN) = slast "Experiment.render (lst, 5)" (unSignal (inputSignal inp))
-
+      btHd@(btt0, btInitial) = hd (outputSignal out)
+      btLst@(bttn, btFinal) = lst (outputSignal out)
+  
   Rep.subheader "Experiment"
   
   Rep.backtestChart
@@ -118,13 +118,17 @@ render symTitle btTitle (Result inp out) = do
 
   Table.table [
     [ "Initial equity", "", format (unEquity (initialEquity inp)) ]
-    , []
-    , "Starting with equity" : hd (outputSignal out)
-    , "Ending with equity" : lst (outputSignal out)
-    , []
-    , [ "Time elapsed", formatDelta (tn `diff` t0) ]
-    , []
-    , [ "Ratio final / initial equity", "", show (final / initial) ]
+    , [], ["Sample"], []
+    , "Starting" : [show t0, show inpInit]
+    , "Ending" : [show tn, show inpFinal]
+    , [ "Time span", formatDelta (tn `diff` t0) ]
+    , "Yield" : ["", "TODO"]
+    
+    , [], ["Backtest"], []
+    , "Starting" : f btHd
+    , "Ending" : f btLst
+    , [ "Time span", formatDelta (bttn `diff` btt0) ]
+    , [ "Yield", "", show (unEquity btFinal / unEquity btInitial) ]
     ]
     
   Rep.subsubheader "Trade Statistics"
