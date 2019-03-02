@@ -6,7 +6,7 @@ import Prelude hiding (negate)
 
 data Delta ty = Delta {
   unDelta :: Double
-  } deriving (Show)
+  } deriving (Show, Eq, Ord)
 
 
 negate :: Delta ty -> Delta ty

@@ -66,3 +66,27 @@ instance (Add t) => StepFunction (StepTy Short) t where
     let f (dt, _) = (dt `add` t, eqty)
     in Signal.map f as
 
+{-
+instance (Add t) => StepFunction (StepTy Short) t where
+
+  stepFunction step (Equity eqty) (DeltaSignal t Invested (Signal as)) =
+    let Commission com = shortCommission step
+        Fraction frac = shortFraction step
+      
+        e0 = abs (frac * eqty)
+        e1 = eqty - com e0
+
+        (dtn, _) = slast "stepFunction: slast" as
+        f (dt, Delta dy) = (dt `add` t, Equity ((dy * e0) + e0 + e1))
+
+        si = unInterests (shortInterests step) (Equity e0) dtn
+        
+        g (Equity e) = Equity (e - e0 - (com (abs (e-e1))) - si)
+    in Signal.mapLast g (Signal (Vec.map f as))
+
+
+  stepFunction _ eqty (DeltaSignal t NotInvested as) =
+    let f (dt, _) = (dt `add` t, eqty)
+    in Signal.map f as
+
+-}

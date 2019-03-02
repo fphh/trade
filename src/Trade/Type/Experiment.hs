@@ -13,8 +13,8 @@ import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 import Text.Printf (printf)
 
 
-import Trade.Type.Bars (DeltaTy, Add, diff, formatDelta)
-import Trade.Type.Delta (ToDelta)
+import Trade.Type.Bars (DeltaTy, FormatDelta, Add, diff, formatDelta)
+import Trade.Type.Delta (Delta(..), ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 import Trade.Type.DeltaTradeList (DeltaTradeList)
 import Trade.Type.Equity (Equity(..))
@@ -33,6 +33,8 @@ import qualified Trade.Report.Line as Line
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Table
+
+import qualified Trade.TStatistics.TradeStatistics as TS
 
 import Trade.Help.SafeTail (shead, slast)
 
@@ -88,7 +90,8 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  ( Show t, Ord t, PlotValue t, Add t, Show (DeltaTy t)
+  ( Show t, Ord t, PlotValue t, FormatDelta t, Show (DeltaTy t)
+  , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
@@ -123,3 +126,7 @@ render symTitle btTitle (Result inp out) = do
     , []
     , [ "Ratio final / initial equity", "", show (final / initial) ]
     ]
+    
+  Rep.subsubheader "Trade Statistics"
+
+  TS.render (deltaTradeList out)

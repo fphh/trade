@@ -62,3 +62,7 @@ test4 =
   in Vec.zip (Vec.concat [jan2017, feb2017, mar2017, apr2017, may2017]) (Vec.fromList (ys++zs++ys++zs++ys++zs++ys++zs++ys++zs))
 
 
+testSimple :: Vector (UTCTime, Double)
+testSimple =
+  let ys = [20,40,60,80,100,80,60,40,20]
+  in Vec.zip jan2017 (Vec.fromList ys)
