@@ -7,7 +7,7 @@ module Trade.Example.ReplayingTrades where
 
 import Control.Applicative (liftA2)
 
-import Data.Time.Clock (UTCTime(..))
+import Data.Time.Clock (UTCTime(..), getCurrentTime, addUTCTime)
 import Data.Time.Calendar (fromGregorian)
 
 import qualified Data.List as List
@@ -107,7 +107,7 @@ instance (TradeList2DeltaTradeList stgy, Impulse2TradeList stgy, StepFunction (S
  
         expmnt = Experiment.Input (step optInp) (optEquity optInp) optStrat (optSample optInp)
         res = Experiment.conduct expmnt
-
+    
     brm <- mc res (mcConfig optInp)
 
     return (RankedStrategies sortedStarts, OptimizationResult res brm (fmap Experiment.lastEquity strats))
@@ -162,6 +162,8 @@ instance OD.OHLCData (BacktestInput t ohlc) where
 
 getSymbol :: Bin.Symbol -> IO (Signal UTCTime Price)
 getSymbol sym = do
+
+  now <- getCurrentTime
   
   let req = Bin.RequestParams {
         Bin.baseUrl = Bin.binanceBaseUrl
@@ -169,7 +171,7 @@ getSymbol sym = do
         , Bin.interval = Bin.Hour1
         , Bin.limit = Just 10000
         , Bin.from = Nothing
-        , Bin.to = Nothing
+        , Bin.to = Just ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
         }
 
       toSignal row = (Bin.toDate row, Price (unClose (Bin.close row)))
@@ -193,23 +195,23 @@ example = do
   sample <- getSymbol Bin.BTCUSDT
   
   let f (j, k) = (WindowSize j, WindowSize k)
-      -- wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
-      wins = map f (filter (uncurry (/=)) (liftA2 (,) [5 .. 10] [0 .. 10]))
+      wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
+      -- wins = map f (filter (uncurry (/=)) (liftA2 (,) [5 .. 10] [0 .. 10]))
 
-      rtf :: DeltaTy UTCTime -> Double
+      -- rtf :: DeltaTy UTCTime -> Double
       rtf dt =
         let day = 24*60*60
         in realToFrac dt / day
 
       longStep = LongStep {
         longFraction = Fraction 1
-        , longCommission = Commission (const 0) -- (\c -> 0.05*c)
+        , longCommission = Commission (const 0) -- (\c -> 0.001*c)
         }
 
       shortStep = ShortStep {
         shortFraction = Fraction 1
         , shortCommission = Commission (const 0)
-        , shortInterests = Interests (interests rtf 0.0)
+        , shortInterests = Interests (interests (error "undefined rtf") 0.0)
         }
 
   let -- analysis :: Ana.Analysis (OptimizationInput Short UTCTime Price) (BacktestInput UTCTime Price)
@@ -221,7 +223,7 @@ example = do
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head sample)))
             , mcConfig = MCConfig {
-                mcBars = NDT (60000*60) -- (2*365 * 24*60*60)
+                mcBars = NDT (60*16*60*60) -- NDT (60000*60) -- (2*365 * 24*60*60)
                 , mcCount = MCCount 1000
                 , mcBegin = UTCTime (fromGregorian 2020 1 1) 0
                 }

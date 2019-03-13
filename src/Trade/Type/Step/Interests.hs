@@ -13,6 +13,6 @@ newtype Interests t = Interests {
   }
 
 interests :: (DeltaTy t -> Double) -> Double -> Equity -> DeltaTy t -> Double
-interests interestPeriod interests (Equity eqty) dt =
-  let i' = 1+interests
+interests interestPeriod is (Equity eqty) dt =
+  let i' = 1+is
   in eqty*(i' ** (interestPeriod dt)) - eqty

@@ -14,7 +14,7 @@ import Data.Map (Map)
 
 import qualified Statistics.Sample as Sample
 
-import Trade.Type.Bars (DeltaTy, FormatDelta, formatDelta)
+import Trade.Type.Bars (DeltaTy) -- , FormatDelta, formatDelta)
 import Trade.Type.Delta (Delta(..))
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import Trade.Type.DeltaTradeList (DeltaTradeList(..))
@@ -52,7 +52,7 @@ data DeltaStatistics t = DeltaStatistics {
 -}
   
   , totalTime :: DeltaTy t
-  , meanDuration :: !Double
+  , meanDuration :: DeltaTy t
 
   {-
   , stdDevTime :: DeltaTy t
@@ -68,7 +68,7 @@ sortTradesByPosition (DeltaTradeList dtl) =
 
 
 deltaStatistics ::
-  (Num (DeltaTy t), Ord (Delta ohlc), Real (DeltaTy t)) =>
+  (Num (DeltaTy t), Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)) =>
   [DeltaSignal t ohlc] -> DeltaStatistics t
 deltaStatistics xs =
   let nots = length xs
@@ -79,7 +79,7 @@ deltaStatistics xs =
       losses = filter (<1) ys
 
       mbe _ [] = Nothing
-      mbe f xs = Just (f xs)
+      mbe k as = Just (k as)
 
       g (DeltaSignal _ _ as) = Vec.minimum (Vec.map ((1+) . unDelta . snd) (Signal.unSignal as))
       maxDD = mbe (minimum . map g) xs
@@ -88,8 +88,8 @@ deltaStatistics xs =
   in DeltaStatistics {
     numberOfTrades = nots
     , totalTime = sum ts
-    , meanDuration = Sample.mean (Vec.fromList (map (fromRational . toRational) ts))
-    
+    , meanDuration = realToFrac (Sample.mean (Vec.fromList (map realToFrac ts)))
+
     , profitCount = length profits
     , maxProfit = mbe maximum profits
     , meanProfit = exp (Sample.mean (Vec.fromList (map log profits)))
@@ -103,7 +103,7 @@ deltaStatistics xs =
 
   
 tradeStatistics ::
-  (Num (DeltaTy t), Ord (Delta ohlc), Real (DeltaTy t)) =>
+  (Num (DeltaTy t), Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)) =>
   DeltaTradeList t ohlc -> Map Position (DeltaStatistics t)
 tradeStatistics dtl =
   let ts = sortTradesByPosition dtl
@@ -111,7 +111,7 @@ tradeStatistics dtl =
 
 
 toRows ::
-  (Show (DeltaTy t), FormatDelta t) =>
+  (Show (DeltaTy t)) => -- , FormatDelta t) =>
   Map Position (DeltaStatistics t) -> [[String]]
 toRows m =
   let percFmt = printf "%.6f"
@@ -119,8 +119,11 @@ toRows m =
       
       (hs, es) = unzip (Map.toList m)
       hds = "" : map show hs
-      tts = "Total time" : map (formatDelta . totalTime) es
-      mts = "Mean duration" : map (printf "%.2fd" . (/ (24*60*60)) . meanDuration) es
+      -- tts = "Total time" : map (formatDelta . totalTime) es
+      tts = "Total time" : map (show . totalTime) es
+      -- mts = "Mean duration" : map (printf "%.2fd" . (/ (24*60*60)) . meanDuration) es
+      mts = "Mean duration" : map (show . meanDuration) es
+
       nots = "Number of trades" : map (show . numberOfTrades) es
       
       profCnt = "Number of winning trades" : map (show . profitCount) es
@@ -150,7 +153,7 @@ toRows m =
      , mdds]
 
 render ::
-  (Num (DeltaTy t), Show (DeltaTy t), FormatDelta t, Ord (Delta ohlc), Real (DeltaTy t)) =>
+  (Num (DeltaTy t), Show (DeltaTy t), {- FormatDelta t, -} Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)) =>
   DeltaTradeList t ohlc -> HtmlIO
 render dtl =
   let ts = tradeStatistics dtl

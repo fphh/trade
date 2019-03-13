@@ -5,9 +5,48 @@ module Trade.Type.Yield where
 
 import Debug.Trace
 
+import Trade.Type.Equity (Equity(..))
+import Trade.Type.Price (Price(..))
+
 import Trade.Report.Pretty
 
 
+
+data Yield t a = Yield {
+  total :: t
+  , yield :: Double
+  } deriving (Show)
+
+data LogYield t a = LogYield {
+  logDuration :: t
+  , logYield :: Double
+  } deriving (Show)
+
+logYield2yield :: LogYield t a -> Yield t a
+logYield2yield (LogYield dt y) = Yield dt (exp y)
+
+yield2logYield :: Yield t a -> LogYield t a
+yield2logYield (Yield dt y) = LogYield dt (log y)
+
+
+class ToYield a where
+  toYield :: t -> a -> a -> LogYield t a
+
+instance ToYield Price where
+  toYield dt (Price a) (Price b) = LogYield dt (log (a/b))
+
+instance ToYield Equity where
+  toYield dt (Equity a) (Equity b) = LogYield dt (log (a/b))
+
+instance (Num t) => Semigroup (Yield t a) where
+  (Yield dt a) <> (Yield ds b) = Yield (dt+ds) (a*b)
+
+instance (Num t) => Semigroup (LogYield t a) where
+  (LogYield dt a) <> (LogYield ds b) = LogYield (dt+ds) (a+b)
+
+
+
+{-
 
 -- | Yield: `end / start` equity
 newtype Yield = Yield {
@@ -56,3 +95,4 @@ instance ToYield LogYield where
   yield = LogYield . log
 
 
+-}

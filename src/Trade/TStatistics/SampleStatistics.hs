@@ -21,6 +21,7 @@ import Trade.Report.HtmlIO (HtmlIO)
 
 import Prelude hiding (maximum, minimum)
 
+{-
 
 data SampleStatistics t = SampleStatistics {
   mean :: !Double
@@ -97,3 +98,5 @@ stats2para stats =
   : ["minimum", printf "%.2f" $ minimum stats]
   : ["maximum", printf "%.2f" $ maximum stats]
   : []
+
+-}

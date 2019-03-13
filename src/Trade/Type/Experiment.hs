@@ -13,7 +13,7 @@ import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 import Text.Printf (printf)
 
 
-import Trade.Type.Bars (DeltaTy, FormatDelta, Add, diff, formatDelta)
+import Trade.Type.Bars (DeltaTy, {- FormatDelta, -} Add, diff {- , formatDelta -} )
 import Trade.Type.Delta (Delta(..), ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 import Trade.Type.DeltaTradeList (DeltaTradeList)
@@ -90,8 +90,8 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  ( Show t, Ord t, PlotValue t, FormatDelta t, Show (DeltaTy t), Show ohlc
-  , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t)
+  ( Show t, Ord t, PlotValue t, {- FormatDelta t, -} Show (DeltaTy t), Show ohlc
+  , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
@@ -117,17 +117,17 @@ render symTitle btTitle (Result inp out) = do
   Rep.subsubheader "Summary"
 
   Table.table [
-    [ "Initial equity", "", format (unEquity (initialEquity inp)) ]
+    [ "Initial equity", "", show (unEquity (initialEquity inp)) {- format (unEquity (initialEquity inp)) -} ]
     , [], ["Sample"], []
     , "Starting" : [show t0, show inpInit]
     , "Ending" : [show tn, show inpFinal]
-    , [ "Time span", formatDelta (tn `diff` t0) ]
+    , [ "Time span", show (tn `diff` t0) {- formatDelta (tn `diff` t0) -} ]
     , "Yield" : ["", "TODO"]
     
     , [], ["Backtest"], []
     , "Starting" : f btHd
     , "Ending" : f btLst
-    , [ "Time span", formatDelta (bttn `diff` btt0) ]
+    , [ "Time span", show (bttn `diff` btt0) {- formatDelta (bttn `diff` btt0) -} ]
     , [ "Yield", "", show (unEquity btFinal / unEquity btInitial) ]
     ]
     
