@@ -42,9 +42,11 @@ heatmap bias m = do
       ma = List.maximum vs
       stepHi = 256 / (ma-bias)
       stepLo = 256 / (bias - mi)
-
+      
+      commonCellSty = "float:left;border:1px solid #000000;width:60px;"
+            
       cbSty = H5A.style (H5.stringValue "clear:both;")
-      leftSty = H5A.style (H5.stringValue ("float:left;border:1px solid #000000;width:60px;"))
+      leftSty = H5A.style (H5.stringValue commonCellSty)
       
       format :: Double -> String
       format x =
@@ -65,26 +67,22 @@ heatmap bias m = do
                 False -> "color:#4400aa;font-weight:bold;background:rgb(" ++ show (round (stepLo*(bias-v))) ++ ", 0, 0);"
             bgMa = "color:#000000;font-weight:bold;background:#bbffbb"
             bgMi = "color:#000000;font-weight:bold;background:#ffbbbb"
-            sty = H5A.style $ H5.stringValue $
+            sty =
               case (v == ma, v == mi) of
                 (True, _) -> bgMa
                 (_, True) -> bgMi
                 _ -> bg
-        in (H5.div ! sty) (H5.toHtml (format v))
-
-      na =
-        let bg = H5A.style (H5.stringValue "background:rgb(200,200,120);")
-        in (H5.div ! bg) (H5.preEscapedToHtml "&nbsp;")
+        in (H5.div ! H5A.style (H5.stringValue (commonCellSty ++ sty))) (H5.toHtml (format v))
 
       emp =
-        let bg = H5A.style (H5.stringValue "background:rgb(255,255,255);float:left;width:60px;border:1px solid #ffffff;width:60px;")
+        let bg = H5A.style (H5.stringValue (commonCellSty ++ "background:rgb(200,200,120);width:60px;"))
         in (H5.div ! bg) (H5.preEscapedToHtml "&nbsp;")
-    
-  
+
       g Empty = emp
       g (XIndex x) = (H5.div ! leftSty) (H5.toHtml (show x))
       g (YIndex y) = (H5.div ! leftSty) (H5.toHtml (show y))
-      g (Value as) = (H5.div ! leftSty) (maybe na content (Map.lookup as m))
+      g (Value as) = maybe emp content (Map.lookup as m)
+
       f rs = (H5.div ! cbSty) (mapM_ g rs)
 
       pad = H5A.style (H5.stringValue "padding-bottom:24px")
