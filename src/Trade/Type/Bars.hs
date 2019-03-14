@@ -14,6 +14,9 @@ import Data.Time.Calendar (fromGregorian)
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
+
+
+
 class Add t where
   data DeltaTy t :: *
   add :: DeltaTy t -> t -> t
@@ -43,6 +46,8 @@ instance Fractional (DeltaTy UTCTime) where
 
 instance Real (DeltaTy UTCTime) where
   toRational (NDT x) = toRational x
+
+
 
 newtype BarNo = BarNo {
   unBarNo :: Int
