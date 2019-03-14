@@ -25,7 +25,6 @@ import Trade.Type.Step.Commission (Commission(..), noCommission)
 import Trade.Type.Step.Fraction (Fraction(..), fullFraction)
 import Trade.Type.Step.Interests (Interests(..), interests)
 
-import Trade.Type.Bars (DeltaTy(NDT))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Impulse (invert)
 import Trade.Type.NonEmptyList (NonEmptyList(..))

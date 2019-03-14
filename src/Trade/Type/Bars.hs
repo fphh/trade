@@ -1,21 +1,46 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
+
 
 module Trade.Type.Bars where
 
-import Text.Printf (printf)
-
 import Data.Time.Clock (UTCTime(..), NominalDiffTime, diffUTCTime, addUTCTime)
 
-import Data.Time.Calendar (fromGregorian)
 
-import qualified Graphics.Rendering.Chart.Easy as E
-
+-- import qualified Graphics.Rendering.Chart.Easy as E
 
 
+type family DeltaTy t :: *
+
+type instance DeltaTy UTCTime = NominalDiffTime
+
+class Add t where
+  add :: DeltaTy t -> t -> t
+  diff :: t -> t -> DeltaTy t
+
+
+instance Add UTCTime where
+  add dt t = addUTCTime dt t
+  diff x y = diffUTCTime x y
+
+
+
+newtype BarNo = BarNo {
+  unBarNo :: Int
+  } deriving (Show, Eq, Ord) -- , E.PlotValue)
+
+newtype Bars = Bars {
+  unBars :: Int
+  } deriving (Show, Eq, Ord)
+
+type instance DeltaTy BarNo = Bars
+
+
+instance Add BarNo where
+  add (Bars dt) (BarNo t) = BarNo (dt+t)
+  diff (BarNo x) (BarNo y) = Bars (x-y)
+
+{-
 
 class Add t where
   data DeltaTy t :: *
@@ -47,15 +72,8 @@ instance Fractional (DeltaTy UTCTime) where
 instance Real (DeltaTy UTCTime) where
   toRational (NDT x) = toRational x
 
+-}
 
-
-newtype BarNo = BarNo {
-  unBarNo :: Int
-  } deriving (Show, Eq, Ord, E.PlotValue)
-
-newtype Bars = Bars {
-  unBars :: Int
-  } deriving (Show, Eq, Ord)
 
 {-
 -- | Point in time.

@@ -5,7 +5,7 @@ module Trade.Type.Step where
 
 import Trade.Type.Step.Commission (Commission(..))
 import Trade.Type.Step.Fraction (Fraction(..))
-import Trade.Type.Step.Interests (Interests) -- (..), interests)
+import Trade.Type.Step.Interests (Interests)
 
 
 import Trade.Type.Strategy (Short, Long)

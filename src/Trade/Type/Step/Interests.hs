@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 
 
 module Trade.Type.Step.Interests where
@@ -12,7 +11,7 @@ newtype Interests t = Interests {
   unInterests :: Equity -> DeltaTy t -> Double
   }
 
-interests :: (DeltaTy t -> Double) -> Double -> Equity -> DeltaTy t -> Double
+interests :: (dt -> Double) -> Double -> Equity -> dt -> Double
 interests interestPeriod is (Equity eqty) dt =
   let i' = 1+is
   in eqty*(i' ** (interestPeriod dt)) - eqty

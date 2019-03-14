@@ -4,7 +4,7 @@ module Trade.Type.Delta where
 import qualified Prelude as Prelude
 import Prelude hiding (negate)
 
-data Delta ty = Delta {
+newtype Delta ty = Delta {
   unDelta :: Double
   } deriving (Show, Eq, Ord)
 

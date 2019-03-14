@@ -6,8 +6,8 @@ module Trade.Type.Step.Algorithm where
 
 import qualified Data.Vector as Vec
 
-import Trade.Type.Bars (Add, add)
 
+import Trade.Type.Bars (Add, add)
 import Trade.Type.Delta (Delta(..))
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import Trade.Type.Equity (Equity(..))
@@ -26,10 +26,10 @@ import Trade.Type.Step.Interests (Interests(..))
 import Trade.Help.SafeTail (slast)
 
 
-class (Add t) => StepFunction step t where
-  stepFunction :: step t -> Equity -> DeltaSignal t ohlc -> Signal t Equity
+class StepFunction step t where
+  stepFunction :: (Add t) => step t -> Equity -> DeltaSignal t ohlc -> Signal t Equity
 
-instance (Add t) => StepFunction (StepTy Long) t where
+instance StepFunction (StepTy Long) t where
   stepFunction step (Equity eqty) (DeltaSignal t Invested (Signal as)) =
     let Commission com = longCommission step
         Fraction frac = longFraction step
@@ -44,7 +44,8 @@ instance (Add t) => StepFunction (StepTy Long) t where
     in Signal.map f as
 
 
-instance (Add t) => StepFunction (StepTy Short) t where
+
+instance StepFunction (StepTy Short) t where
 
   stepFunction step (Equity eqty) (DeltaSignal t Invested (Signal as)) =
     let Commission com = shortCommission step
@@ -65,3 +66,5 @@ instance (Add t) => StepFunction (StepTy Short) t where
   stepFunction _ eqty (DeltaSignal t NotInvested as) =
     let f (dt, _) = (dt `add` t, eqty)
     in Signal.map f as
+
+
