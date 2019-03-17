@@ -39,6 +39,7 @@ import qualified Trade.TStatistics.TradeStatistics as TS
 import Trade.Help.SafeTail (shead, slast)
 
 import Trade.Report.HtmlIO (HtmlIO)
+import Trade.Report.Pretty (pretty, Pretty)
 
 
 data Input stgy t ohlc = Input {
@@ -90,7 +91,7 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  ( Show t, Ord t, PlotValue t, {- FormatDelta t, -} Show (DeltaTy t), Show ohlc
+  ( Show t, Ord t, PlotValue t, Pretty (DeltaTy t), Show ohlc
   , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
@@ -121,13 +122,13 @@ render symTitle btTitle (Result inp out) = do
     , [], ["Sample"], []
     , "Starting" : [show t0, show inpInit]
     , "Ending" : [show tn, show inpFinal]
-    , [ "Time span", show (tn `diff` t0) {- formatDelta (tn `diff` t0) -} ]
+    , [ "Time span", pretty (tn `diff` t0) {- formatDelta (tn `diff` t0) -} ]
     , "Yield" : ["", "TODO"]
     
     , [], ["Backtest"], []
     , "Starting" : f btHd
     , "Ending" : f btLst
-    , [ "Time span", show (bttn `diff` btt0) {- formatDelta (bttn `diff` btt0) -} ]
+    , [ "Time span", pretty (bttn `diff` btt0) {- formatDelta (bttn `diff` btt0) -} ]
     , [ "Yield", "", show (unEquity btFinal / unEquity btInitial) ]
     ]
     

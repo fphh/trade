@@ -6,15 +6,18 @@ module Trade.Type.DeltaSignal.Algorithm where
 import qualified Data.List as List
 import qualified Data.Vector as Vec
 
-import Trade.Type.Bars (Add, diff)
-import Trade.Type.Delta (ToDelta, toDelta, Delta)
+import Trade.Type.Bars (DeltaTy, Add, diff)
+import Trade.Type.Delta (ToDelta, toDelta, Delta(..))
 import qualified Trade.Type.Delta as Delta
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.Equity (Equity)
 import Trade.Type.Position (Position(..))
+
 import Trade.Type.Signal (Signal(..))
 import qualified Trade.Type.Signal as Signal
+
+import Trade.Type.Yield (LogYield(..))
 
 import Trade.Type.Step.Algorithm (stepFunction, StepFunction)
 
@@ -42,3 +45,9 @@ concatDeltaSignals _ _ (DeltaTradeList []) = mempty
 concatDeltaSignals step a (DeltaTradeList (d:ds)) =
   let f sig es = sig <> stepFunction step (snd (Signal.last sig)) es
   in List.foldl' f (stepFunction step a d) ds
+
+
+toYield :: DeltaSignal t ohlc -> LogYield (DeltaTy t) ohlc
+toYield (DeltaSignal _ _ ds) =
+  let (tn, Delta yn) = Signal.last ds
+  in LogYield tn (log (1+yn)) 
