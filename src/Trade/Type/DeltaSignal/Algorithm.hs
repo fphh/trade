@@ -47,7 +47,17 @@ concatDeltaSignals step a (DeltaTradeList (d:ds)) =
   in List.foldl' f (stepFunction step a d) ds
 
 
-toYield :: DeltaSignal t ohlc -> LogYield (DeltaTy t) ohlc
-toYield (DeltaSignal _ _ ds) =
+yield :: DeltaSignal t ohlc -> LogYield (DeltaTy t) ohlc
+yield (DeltaSignal _ _ ds) =
   let (tn, Delta yn) = Signal.last ds
   in LogYield tn (log (1+yn)) 
+
+maximum :: (Eq (DeltaTy t)) => DeltaSignal t ohlc -> LogYield (DeltaTy t) ohlc
+maximum (DeltaSignal _ _ ds) =
+  let (t, Delta y) = Signal.maximum ds
+  in LogYield t (log (1+y))
+
+minimum :: (Eq (DeltaTy t)) => DeltaSignal t ohlc -> LogYield (DeltaTy t) ohlc
+minimum (DeltaSignal _ _ ds) =
+  let (t, Delta y) = Signal.minimum ds
+  in LogYield t (log (1+y))

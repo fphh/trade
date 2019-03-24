@@ -13,6 +13,8 @@ import qualified Data.List as List
 
 import qualified Data.Foldable as Fold
 
+import Data.Function (on)
+
 import Trade.Report.NumberedList (ToNumberedList, toNumberedList)
 import Trade.Report.Pretty (Pretty)
 
@@ -111,3 +113,13 @@ emptySample = Sample mempty mempty
 
 singleton :: (t, x) -> Signal t x
 singleton = Signal . Vec.singleton
+
+
+ifoldr' :: (Int -> (t, y) -> a -> a) -> a -> Signal t y -> a
+ifoldr' f x (Signal xs) = Vec.ifoldr' f x xs
+
+minimum :: (Ord x, Eq t) => Signal t x -> (t, x)
+minimum (Signal xs) = Vec.minimumBy (compare `on` snd) xs
+
+maximum :: (Ord x, Eq t) => Signal t x -> (t, x)
+maximum (Signal xs) = Vec.maximumBy (compare `on` snd) xs

@@ -191,11 +191,12 @@ blackScholes = do
 example :: IO ()
 example = do
 
-  sample <- getSymbol Bin.BTCUSDT
-  
+--  sample <- getSymbol Bin.BTCUSDT
+  sample <- blackScholes
+
   let f (j, k) = (WindowSize j, WindowSize k)
-      wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
-      -- wins = map f (filter (uncurry (/=)) (liftA2 (,) [5 .. 10] [0 .. 10]))
+      --wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
+      wins = map f (filter (uncurry (/=)) (liftA2 (,) [5 .. 10] [0 .. 10]))
 
       longStep = LongStep {
         longFraction = Fraction 1

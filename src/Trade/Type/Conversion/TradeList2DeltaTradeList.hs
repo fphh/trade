@@ -8,7 +8,6 @@ import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.DeltaSignal.Algorithm (shortDeltaSignal, longDeltaSignal)
 
 import Trade.Type.Strategy (Long, Short)
-import Trade.Type.Position (Position(..))
 import Trade.Type.Trade (Trade(..), TradeList(..))
 import Trade.Type.Delta (ToDelta)
 import Trade.Type.Signal (Signal(..))

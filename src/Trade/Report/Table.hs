@@ -91,6 +91,16 @@ heatmap bias m = do
 
 
 
+seperator :: Char -> Int -> Int -> [String]
+seperator c width n = replicate n (replicate width c)
+
+boldSep :: Int -> Int -> [String]
+boldSep = seperator '='
+
+
+sep :: Int -> Int -> [String]
+sep = seperator '-'
+
 tableRows :: [[String]] -> [String]
 tableRows rs =
   let rowLens = map length rs
@@ -105,14 +115,20 @@ tableRows rs =
       filledCols = map g (List.transpose filledRows)
 
       filledCells = List.transpose filledCols
+      filledCellsLen = length filledCells - 1
 
       grid c xs = c : concatMap (\x -> [x, c]) xs
 
       isEmpty = all (== ' ')
-      i row
-        | all isEmpty row = grid "+" (map (map (const '-')) row)
+
+      bold True = '='
+      bold False = '-'
+      
+      i rn row
+        | all isEmpty row = grid "+" (map (map (const (bold (rn == 0 || rn == filledCellsLen)))) row)
         | otherwise = grid "|" row
-      es = map i filledCells
+      
+      es = zipWith i [0..] filledCells
       
   in map concat es
 
@@ -120,8 +136,12 @@ tableRows rs =
 table :: [[String]] -> HtmlIO
 table rs =
   let rows = tableRows ([""] : rs ++[[""]])
-      cbSty = H5A.style (H5.stringValue "clear:both;")
+      cbSty = H5A.style (H5.stringValue "clear:both")
+      tbSty = H5A.style (H5.stringValue "margin-bottom:12px")
       g ' ' = "&nbsp;"
       g c = [c]
       f = (H5.div ! cbSty) . H5.preEscapedToHtml . concatMap g
-  in HtmlT (return (H5.div (mapM_ f rows)))
+  in HtmlT (return ((H5.div ! tbSty) (mapM_ f rows)))
+
+tableList :: [[[String]]] -> HtmlIO
+tableList = sequence_ . map table

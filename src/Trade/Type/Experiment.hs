@@ -16,6 +16,9 @@ import Text.Printf (printf)
 import Trade.Type.Bars (DeltaTy, {- FormatDelta, -} Add, diff {- , formatDelta -} )
 import Trade.Type.Delta (Delta(..), ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
+
+import Trade.Type.DeltaSignal (DeltaSignal)
+
 import Trade.Type.DeltaTradeList (DeltaTradeList)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
@@ -91,7 +94,7 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  ( Show t, Ord t, PlotValue t, Pretty (DeltaTy t), Show ohlc
+  (Show (DeltaTy t), Show t, Ord t, PlotValue t, Pretty (DeltaTy t), Show ohlc
   , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
@@ -132,6 +135,10 @@ render symTitle btTitle (Result inp out) = do
     , [ "Yield", "", show (unEquity btFinal / unEquity btInitial) ]
     ]
     
-  Rep.subsubheader "Trade Statistics"
+  Rep.subsubheader "Yield statistics"
 
-  TS.render (deltaTradeList out)
+  TS.renderYieldStatistics (deltaTradeList out)
+
+  Rep.subsubheader "Trade statistics"
+
+--   TS.renderTradeStatistics (deltaTradeList out)

@@ -1,9 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 
 module Trade.TStatistics.TradeStatistics where
-
 
 import qualified Data.Vector as Vec
 
@@ -16,12 +16,12 @@ import Data.Ord (comparing)
 
 import qualified Statistics.Sample as Sample
 
-import Text.Printf (printf)
+import Text.Printf (printf, PrintfArg)
 
 import Trade.Type.Bars (DeltaTy)
 import Trade.Type.Delta (Delta(..))
 import Trade.Type.DeltaSignal (DeltaSignal(..))
-import Trade.Type.DeltaSignal.Algorithm (toYield)
+import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.Position (Position(..))
 import Trade.Type.Yield (Yield(..), LogYield(..), logYield2yield, yield)
@@ -34,10 +34,67 @@ import Trade.Report.Pretty (pretty, Pretty)
 
 import Debug.Trace
 
-data YStatistics t y = YStatistics {
+data WL =
+  Winning
+  | Losing
+  deriving (Show, Eq, Ord)
+
+
+data Statistics t y = Statistics {
   statDuration :: t
   , statYield :: y
   }
+
+formatStat :: (Pretty t, PrintfArg y) => Statistics t y -> [String]
+formatStat (Statistics dt y) = [ printf "%.10f" y, pretty dt ]
+
+formatYield :: (Pretty t) =>  Yield t ohlc -> [String]
+formatYield (Yield dt y) = [ printf "%.10f" y, pretty dt ]
+
+data TradeStatistics t ohlc = TradeStatistics {
+  maxPeak :: LogYield (DeltaTy t) ohlc
+  , meanPeak :: Statistics (DeltaTy t) Double
+  , stdDevPeak :: Statistics (DeltaTy t) Double
+  , maxDrawdown :: LogYield (DeltaTy t) ohlc
+  , meanDrawdown :: Statistics (DeltaTy t) Double
+  , stdDevDrawdown :: Statistics (DeltaTy t) Double
+  -- , maxRelDrawdown :: y 
+  }
+
+tradeStatistics ::
+  (Eq (DeltaTy t), Fractional (DeltaTy t), Real (DeltaTy t)) =>
+  [DeltaSignal t ohlc] -> TradeStatistics t ohlc
+tradeStatistics dts =
+  let maxs = map DSA.maximum dts
+      mins = map DSA.minimum dts
+      (maxDts, maxZs) = unzip (map (\(LogYield dt y) -> (dt, y)) maxs)
+      maxDtsVec = Vec.map realToFrac (Vec.fromList maxDts)
+      maxZsVec = Vec.fromList maxZs
+      (minDts, minZs) = unzip (map (\(LogYield dt y) -> (dt, y)) mins)
+      minDtsVec = Vec.map realToFrac (Vec.fromList minDts)
+      minZsVec = Vec.fromList minZs
+           
+  in TradeStatistics {
+    maxPeak = List.maximumBy (comparing logYield) maxs
+    , meanPeak = Statistics (realToFrac (Sample.mean maxDtsVec)) (exp (Sample.mean maxZsVec))
+    , stdDevPeak = Statistics (realToFrac (Sample.stdDev maxDtsVec)) (exp (Sample.stdDev maxZsVec))
+    , maxDrawdown = List.minimumBy (comparing logYield) mins
+    , meanDrawdown =  Statistics (realToFrac (Sample.mean minDtsVec)) (exp (Sample.mean minZsVec))
+    , stdDevDrawdown = Statistics (realToFrac (Sample.stdDev minDtsVec)) (exp (Sample.stdDev minZsVec))
+    }
+
+tradeStatistics2table :: (Pretty (DeltaTy t)) => TradeStatistics t ohlc -> [[String]]
+tradeStatistics2table ts =
+  [ ["Trade Statistics", "Yield", "Dur. from trade start"]
+  , []
+  , "Max. peak" : formatYield (logYield2yield (maxPeak ts))
+  , "Mean peak" : formatStat (meanPeak ts)
+  , "StdDev peak" : formatStat (stdDevPeak ts)
+  , []
+  , "Max. drawdown" : formatYield (logYield2yield (maxDrawdown ts))
+  , "Mean drawdown" : formatStat (meanDrawdown ts)
+  , "StdDev drawdown" : formatStat (stdDevDrawdown ts)
+  ]
 
 data YieldStatistics t ohlc = YieldStatistics {
   count :: !Int
@@ -45,17 +102,17 @@ data YieldStatistics t ohlc = YieldStatistics {
   , minimumYield :: LogYield (DeltaTy t) ohlc
   , maximumDuration :: LogYield (DeltaTy t) ohlc
   , minimumDuration :: LogYield (DeltaTy t) ohlc
-  , meanYield :: YStatistics (DeltaTy t) Double
-  , stdDevYield :: YStatistics (DeltaTy t) Double
-  , skewnessYield :: YStatistics Double Double
-  , kurtosisYield :: YStatistics Double Double
+  , meanYield :: Statistics (DeltaTy t) Double
+  , stdDevYield :: Statistics (DeltaTy t) Double
+  , skewnessYield :: Statistics Double Double
+  , kurtosisYield :: Statistics Double Double
   }
 
-yieldStatistics ::
+yieldList2statistics ::
   (Fractional (DeltaTy t), Real (DeltaTy t)) =>
   [LogYield (DeltaTy t) ohlc] -> Maybe (YieldStatistics t ohlc)
-yieldStatistics [] = Nothing
-yieldStatistics ys = Just $
+yieldList2statistics [] = Nothing
+yieldList2statistics ys = Just $
   let (dts, zs) = unzip (map (\(LogYield dt y) -> (dt, y)) ys)
       dtsVec = Vec.map realToFrac (Vec.fromList dts)
       zsVec = Vec.fromList zs
@@ -65,72 +122,98 @@ yieldStatistics ys = Just $
     , minimumYield = List.minimumBy (comparing logYield) ys
     , maximumDuration = List.maximumBy (comparing logDuration) ys
     , minimumDuration = List.minimumBy (comparing logDuration) ys
-    , meanYield = YStatistics (realToFrac (Sample.mean dtsVec)) (exp (Sample.mean zsVec))
-    , stdDevYield = YStatistics (realToFrac (Sample.stdDev dtsVec)) (exp (Sample.stdDev zsVec))
-    , skewnessYield = YStatistics (Sample.skewness dtsVec) (Sample.skewness zsVec)
-    , kurtosisYield = YStatistics (Sample.kurtosis dtsVec) (Sample.kurtosis zsVec)
+    , meanYield = Statistics (realToFrac (Sample.mean dtsVec)) (exp (Sample.mean zsVec))
+    , stdDevYield = Statistics (realToFrac (Sample.stdDev dtsVec)) (exp (Sample.stdDev zsVec))
+    , skewnessYield = Statistics (Sample.skewness dtsVec) (Sample.skewness zsVec)
+    , kurtosisYield = Statistics (Sample.kurtosis dtsVec) (Sample.kurtosis zsVec)
     }
 
 yieldStatistics2table ::
-  forall t ohlc.
-  Pretty (DeltaTy t) =>
-  Position -> (Maybe (YieldStatistics t ohlc), Maybe (YieldStatistics t ohlc)) -> [[String]]
-yieldStatistics2table pos (losers, winners) =
-  let f (Yield dt y) = [ printf "%.10f" y, pretty dt ]
-      yStat (YStatistics dt y) = [ printf "%.10f" y, pretty dt ]
-      width = 24
-      seperator = replicate 3 (replicate width '=')
-      mbe _ Nothing = ["n/a", "n/a"]
-      mbe f (Just x) = f x
-      h str ys =
-        [ [ str, show pos, "" ]
-        , seperator
-        , "No. of trades" : mbe ((:[""]) . show . count) ys
-        , []
-        , [ printf "%s" "", printf "%s" "Yield", printf "%s"  "Duration" ]
-        , []
-        , "Maximum yield trade" : mbe (f . logYield2yield . maximumYield) ys
-        , "Minimum yield trade" : mbe (f . logYield2yield . minimumYield) ys
-        , []
-        , "Maximum duration trade" : mbe (f . logYield2yield . maximumDuration) ys
-        , "Minimum duration trade" : mbe (f . logYield2yield . minimumDuration) ys
-        , []
-        , "Mean" : mbe (yStat . meanYield) ys
-        , "Standard dev." : mbe (yStat . stdDevYield) ys
-        , "Skewness of log yield" : mbe (yStat . skewnessYield) ys
-        , "Kurtosis of log yield" : mbe (yStat . kurtosisYield) ys
-        ]
-  in h "Winning" winners
-     ++ [seperator]
-     ++ h "Losing" losers
+  Pretty (DeltaTy t) => Maybe (YieldStatistics t ohlc) -> [[String]]
+yieldStatistics2table Nothing = [["", "", "n/a"]]
+yieldStatistics2table (Just ys) =
+  [ "No. of trades" : [show (count ys)]
+  , []
+  , [ "", "Yield", "Duration" ]
+  , []
+  , "Maximum yield trade" : formatYield (logYield2yield (maximumYield ys))
+  , "Minimum yield trade" : formatYield (logYield2yield (minimumYield ys))
+  , []
+  , "Maximum duration trade" : formatYield (logYield2yield (maximumDuration ys))
+  , "Minimum duration trade" : formatYield (logYield2yield (minimumDuration ys))
+  , []
+  , "Mean" : formatStat (meanYield ys)
+  , "Standard dev." : formatStat (stdDevYield ys)
+  , "Skewness (log yield)" : formatStat (skewnessYield ys)
+  , "Kurtosis (log yield)" : formatStat (kurtosisYield ys)
+  ]
 
 
-    
-yieldStatistics2table pos xs = [[show pos, "n/a"]]
-     
-sortTradesByPosition :: DeltaTradeList t ohlc -> Map Position [DeltaSignal t ohlc]
-sortTradesByPosition (DeltaTradeList dtl) =
-  let f acc t@(DeltaSignal _ pos _) = Map.insertWith (++) pos [t] acc 
-  in List.foldl' f Map.empty dtl
-
-
-tradeStatistics ::
+sortTrades ::
   (Ord (Delta ohlc), Num (DeltaTy t), Real (DeltaTy t), Fractional (DeltaTy t)) =>
-  DeltaTradeList t ohlc -> Map Position (Maybe (YieldStatistics t ohlc), Maybe (YieldStatistics t ohlc))
-tradeStatistics dtl =
-  let ts = fmap (map toYield) (sortTradesByPosition dtl)
-      winnerOrLoser [] = ([], [])
-      winnerOrLoser xs = List.partition ((<= 0) . logYield) xs
-      us = fmap winnerOrLoser ts
-  in fmap (\(a, b) -> (yieldStatistics a, yieldStatistics b)) us
+  DeltaTradeList t ohlc -> Map Position (Map WL [DeltaSignal t ohlc])
+sortTrades (DeltaTradeList dtl) =
+  let sortByPosition =
+        let f ds = Map.insertWith (++) (position ds) [ds] 
+        in List.foldr f Map.empty
+
+      sortByWinnerOrLoser =
+        let f wl = Map.insertWith (++) (if logYield (DSA.yield wl) <= 0 then Losing else Winning) [wl]
+        in List.foldr f Map.empty
+
+  in fmap sortByWinnerOrLoser (sortByPosition dtl)
 
 
-render ::
+renderYieldStatistics ::
+  forall t ohlc.
   (Pretty (DeltaTy t), Ord (Delta ohlc)
   , Num (DeltaTy t), Real (DeltaTy t), Fractional (DeltaTy t)) =>
   DeltaTradeList t ohlc -> HtmlIO
-render dtl =
-  let ts = tradeStatistics dtl
-      rs = Map.mapWithKey yieldStatistics2table ts
-      [xs, ys] = Map.elems rs
-  in Table.table (zipWith (++) xs ys)
+renderYieldStatistics dtl =
+  let ts = sortTrades dtl
+
+      f pos wol xs =
+        let ylds :: Maybe (YieldStatistics t ohlc)
+            ylds = yieldList2statistics (map DSA.yield xs)
+            ys = yieldStatistics2table ylds
+            ts = tradeStatistics2table (tradeStatistics xs)
+        in [[[ show pos ++ " / " ++ show wol ]
+            , Table.boldSep 24 3 ]
+            ++ ys
+            ++ [Table.boldSep 24 3]
+            ++ ts]
+      
+      ss = Map.foldMapWithKey (Map.foldMapWithKey . f) ts
+      
+  in Table.tableList ss
+
+------------------------------------------------
+
+
+{-
+
+renderTradeStatistics :: forall t ohlc. (Show (DeltaTy t), Fractional (DeltaTy t), Real (DeltaTy t), Pretty (DeltaTy t)) => DeltaTradeList t ohlc -> HtmlIO
+renderTradeStatistics dtl =
+  let tradesByPos = sortTradesByPosition dtl
+
+  
+      g cmp k x@(_, y) acc@(_, z) = if cmp z y then acc else x
+      f cmp (DeltaSignal _ _ ds) = Signal.ifoldr' (g cmp) (0, Delta 0) ds
+      h cmp dtl = unzip (map ((\(t, Delta d) -> (t, d)) . f cmp) dtl)
+
+      maxs = fmap (h (>)) tradesByPos
+      mins = fmap (h (<)) tradesByPos
+
+      toTable pos (is, ms) =
+        show pos
+        : show (1+Sample.mean (Vec.fromList ms))
+        : pretty (realToFrac (Sample.mean (Vec.fromList (map realToFrac is))) :: DeltaTy t)
+        : []
+      
+  in Table.table $
+     [ [ "mean maximum peak", "", "at mean bar" ] , [] ]
+     ++ Map.elems (Map.mapWithKey toTable maxs)
+     ++
+     [ [], ["mean minimum valley" ], [] ]
+     ++ Map.elems (Map.mapWithKey toTable mins)
+-}
