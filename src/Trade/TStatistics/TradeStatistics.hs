@@ -24,6 +24,7 @@ import Trade.Type.DeltaSignal (DeltaSignal(..))
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.Position (Position(..))
+import qualified Trade.Type.NestedMap as NMap 
 import Trade.Type.Yield (Yield(..), LogYield(..), logYield2yield, yield)
 
 import qualified Trade.Type.Signal as Signal
@@ -33,11 +34,6 @@ import Trade.Report.HtmlIO (HtmlIO)
 import Trade.Report.Pretty (pretty, Pretty)
 
 import Debug.Trace
-
-data WL =
-  Winning
-  | Losing
-  deriving (Show, Eq, Ord)
 
 
 data Statistics t y = Statistics {
@@ -148,28 +144,13 @@ yieldStatistics2table (Just ys) =
   ]
 
 
-sortTrades ::
-  (Ord (Delta ohlc), Num (DeltaTy t), Real (DeltaTy t), Fractional (DeltaTy t)) =>
-  DeltaTradeList t ohlc -> Map Position (Map WL [DeltaSignal t ohlc])
-sortTrades (DeltaTradeList dtl) =
-  let sortByPosition =
-        let f ds = Map.insertWith (++) (position ds) [ds] 
-        in List.foldr f Map.empty
-
-      sortByWinnerOrLoser =
-        let f wl = Map.insertWith (++) (if logYield (DSA.yield wl) <= 0 then Losing else Winning) [wl]
-        in List.foldr f Map.empty
-
-  in fmap sortByWinnerOrLoser (sortByPosition dtl)
-
-
 renderYieldStatistics ::
   forall t ohlc.
   (Pretty (DeltaTy t), Ord (Delta ohlc)
   , Num (DeltaTy t), Real (DeltaTy t), Fractional (DeltaTy t)) =>
   DeltaTradeList t ohlc -> HtmlIO
 renderYieldStatistics dtl =
-  let ts = sortTrades dtl
+  let ts = DSA.sortDeltaSignals dtl
 
       f pos wol xs =
         let ylds :: Maybe (YieldStatistics t ohlc)
@@ -182,6 +163,6 @@ renderYieldStatistics dtl =
             ++ [Table.boldSep 24 3]
             ++ ts]
       
-      ss = Map.foldMapWithKey (Map.foldMapWithKey . f) ts
+      ss = NMap.fold f ts
       
   in Table.tableList ss

@@ -84,6 +84,7 @@ library
                         Trade.Type.Impulse
                         Trade.Type.ImpulseGenerator
                         Trade.Type.ImpulseSignal
+                        Trade.Type.NestedMap
                         Trade.Type.NonEmptyList
                         Trade.Type.OHLC
                         Trade.Type.Position
@@ -98,6 +99,7 @@ library
                         Trade.Type.Step.Interests
                         Trade.Type.Strategy
                         Trade.Type.Trade
+                        Trade.Type.WinningLosing
                         Trade.Type.Yield
   -- other-modules:
   -- other-extensions:

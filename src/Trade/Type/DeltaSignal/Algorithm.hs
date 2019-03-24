@@ -4,6 +4,7 @@
 module Trade.Type.DeltaSignal.Algorithm where
 
 import qualified Data.List as List
+import qualified Data.Map as Map
 import qualified Data.Vector as Vec
 
 import Trade.Type.Bars (DeltaTy, Add, diff)
@@ -12,7 +13,9 @@ import qualified Trade.Type.Delta as Delta
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.Equity (Equity)
+import Trade.Type.NestedMap (NestedMap(..))
 import Trade.Type.Position (Position(..))
+import Trade.Type.WinningLosing (WinningLosing(..))
 
 import Trade.Type.Signal (Signal(..))
 import qualified Trade.Type.Signal as Signal
@@ -61,3 +64,20 @@ minimum :: (Eq (DeltaTy t)) => DeltaSignal t ohlc -> LogYield (DeltaTy t) ohlc
 minimum (DeltaSignal _ _ ds) =
   let (t, Delta y) = Signal.minimum ds
   in LogYield t (log (1+y))
+
+
+
+
+sortDeltaSignals ::
+  DeltaTradeList t ohlc -> NestedMap Position WinningLosing [DeltaSignal t ohlc]
+sortDeltaSignals (DeltaTradeList dtl) =
+  let sortByPosition =
+        let f ds = Map.insertWith (++) (position ds) [ds] 
+        in List.foldr f Map.empty
+
+      sortByWinnerOrLoser =
+        let f wl = Map.insertWith (++) (if logYield (yield wl) <= 0 then Losing else Winning) [wl]
+        in List.foldr f Map.empty
+
+  in NestedMap (fmap sortByWinnerOrLoser (sortByPosition dtl))
+
