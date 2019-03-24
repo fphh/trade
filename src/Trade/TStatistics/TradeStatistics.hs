@@ -58,7 +58,6 @@ data TradeStatistics t ohlc = TradeStatistics {
   , maxDrawdown :: LogYield (DeltaTy t) ohlc
   , meanDrawdown :: Statistics (DeltaTy t) Double
   , stdDevDrawdown :: Statistics (DeltaTy t) Double
-  -- , maxRelDrawdown :: y 
   }
 
 tradeStatistics ::
@@ -186,34 +185,3 @@ renderYieldStatistics dtl =
       ss = Map.foldMapWithKey (Map.foldMapWithKey . f) ts
       
   in Table.tableList ss
-
-------------------------------------------------
-
-
-{-
-
-renderTradeStatistics :: forall t ohlc. (Show (DeltaTy t), Fractional (DeltaTy t), Real (DeltaTy t), Pretty (DeltaTy t)) => DeltaTradeList t ohlc -> HtmlIO
-renderTradeStatistics dtl =
-  let tradesByPos = sortTradesByPosition dtl
-
-  
-      g cmp k x@(_, y) acc@(_, z) = if cmp z y then acc else x
-      f cmp (DeltaSignal _ _ ds) = Signal.ifoldr' (g cmp) (0, Delta 0) ds
-      h cmp dtl = unzip (map ((\(t, Delta d) -> (t, d)) . f cmp) dtl)
-
-      maxs = fmap (h (>)) tradesByPos
-      mins = fmap (h (<)) tradesByPos
-
-      toTable pos (is, ms) =
-        show pos
-        : show (1+Sample.mean (Vec.fromList ms))
-        : pretty (realToFrac (Sample.mean (Vec.fromList (map realToFrac is))) :: DeltaTy t)
-        : []
-      
-  in Table.table $
-     [ [ "mean maximum peak", "", "at mean bar" ] , [] ]
-     ++ Map.elems (Map.mapWithKey toTable maxs)
-     ++
-     [ [], ["mean minimum valley" ], [] ]
-     ++ Map.elems (Map.mapWithKey toTable mins)
--}
