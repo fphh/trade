@@ -49,7 +49,6 @@ concatDeltaSignals step a (DeltaTradeList (d:ds)) =
   let f sig es = sig <> stepFunction step (snd (Signal.last sig)) es
   in List.foldl' f (stepFunction step a d) ds
 
-
 yield :: DeltaSignal t ohlc -> LogYield (DeltaTy t) ohlc
 yield (DeltaSignal _ _ ds) =
   let (tn, Delta yn) = Signal.last ds
@@ -64,9 +63,6 @@ minimum :: (Eq (DeltaTy t)) => DeltaSignal t ohlc -> LogYield (DeltaTy t) ohlc
 minimum (DeltaSignal _ _ ds) =
   let (t, Delta y) = Signal.minimum ds
   in LogYield t (log (1+y))
-
-
-
 
 sortDeltaSignals ::
   DeltaTradeList t ohlc -> NestedMap Position WinningLosing [DeltaSignal t ohlc]
