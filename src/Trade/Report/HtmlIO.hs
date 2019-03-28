@@ -64,3 +64,7 @@ liftHtml :: (MarkupM a -> MarkupM b) -> HtmlT IO a -> HtmlT IO b
 liftHtml f (HtmlT h) = HtmlT $ h >>= return . f
 
 type HtmlIO = HtmlT IO ()
+
+
+class ToHtmlIO a where
+  toHtmlIO :: a -> HtmlIO

@@ -58,7 +58,6 @@ import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Tab
 
-
 import Trade.MonteCarlo.ResampleTrades.Broom (MCConfig(..), mc, MCCount(..))
 import Trade.MonteCarlo.Simulation.BlackScholes (Mu(..), Sigma(..), blackScholesDet)
 
@@ -111,7 +110,9 @@ instance (TradeList2DeltaTradeList stgy, Impulse2TradeList stgy, StepFunction (S
 
     return (RankedStrategies sortedStarts, OptimizationResult res brm (fmap Experiment.lastEquity strats))
 
-instance TR.ToReport (TR.OptimizationData (OptimizationInput stgy UTCTime Price) (OptimizationResult stgy)) where
+
+instance TR.ToReport (TR.OptimizationData (OptimizationInput Long UTCTime Price) (OptimizationResult Long)) where
+-- instance TR.ToReport (TR.OptimizationData (OptimizationInput stgy UTCTime Price) (OptimizationResult stgy)) where
   toReport (TR.OptimizationData optInp (OptimizationResult res brm lastEqty)) = do
     let nOfSamp = 20
     
@@ -167,7 +168,7 @@ getSymbol sym = do
   let req = Bin.RequestParams {
         Bin.baseUrl = Bin.binanceBaseUrl
         , Bin.symbol = sym
-        , Bin.interval = Bin.Hour1
+        , Bin.interval = Bin.Min30
         , Bin.limit = Just 10000
         , Bin.from = Nothing
         , Bin.to = Just ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
@@ -191,12 +192,12 @@ blackScholes = do
 example :: IO ()
 example = do
 
---  sample <- getSymbol Bin.BTCUSDT
-  sample <- blackScholes
+  sample <- getSymbol Bin.BTCUSDT
+  -- sample <- blackScholes
 
   let f (j, k) = (WindowSize j, WindowSize k)
-      --wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
-      wins = map f (filter (uncurry (/=)) (liftA2 (,) [5 .. 10] [0 .. 10]))
+      wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
+      -- wins = map f (filter (uncurry (/=)) (liftA2 (,) [5 .. 10] [0 .. 10]))
 
       longStep = LongStep {
         longFraction = Fraction 1
@@ -226,7 +227,7 @@ example = do
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head sample)))
             , mcConfig = MCConfig {
-                mcBars = 60*16*60*60
+                mcBars = 60*16*60*60 / 60
                 , mcCount = MCCount 1000
                 , mcBegin = UTCTime (fromGregorian 2020 1 1) 0
                 }

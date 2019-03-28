@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -24,13 +25,17 @@ import Trade.Type.DeltaSignal (DeltaSignal(..))
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.Position (Position(..))
-import qualified Trade.Type.NestedMap as NMap 
+import Trade.Type.WinningLosing (WinningLosing)
+
+import qualified Trade.Type.NestedMap as NMap
+import Trade.Type.NestedMap (NestedMap)
+
 import Trade.Type.Yield (Yield(..), LogYield(..), logYield2yield, yield)
 
 import qualified Trade.Type.Signal as Signal
 
 import qualified Trade.Report.Table as Table
-import Trade.Report.HtmlIO (HtmlIO)
+import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO, HtmlIO)
 import Trade.Report.Pretty (pretty, Pretty)
 
 import Debug.Trace
@@ -143,26 +148,10 @@ yieldStatistics2table (Just ys) =
   , "Kurtosis (log yield)" : formatStat (kurtosisYield ys)
   ]
 
+instance (Pretty (DeltaTy t)) => ToHtmlIO (Maybe (YieldStatistics t ohlc)) where
+  toHtmlIO = Table.table . yieldStatistics2table
 
-renderYieldStatistics ::
-  forall t ohlc.
-  (Pretty (DeltaTy t), Ord (Delta ohlc)
-  , Num (DeltaTy t), Real (DeltaTy t), Fractional (DeltaTy t)) =>
-  DeltaTradeList t ohlc -> HtmlIO
-renderYieldStatistics dtl =
-  let ts = DSA.sortDeltaSignals dtl
-
-      f pos wol xs =
-        let ylds :: Maybe (YieldStatistics t ohlc)
-            ylds = yieldList2statistics (map DSA.yield xs)
-            ys = yieldStatistics2table ylds
-            ts = tradeStatistics2table (tradeStatistics xs)
-        in [[[ show pos ++ " / " ++ show wol ]
-            , Table.boldSep 24 3 ]
-            ++ ys
-            ++ [Table.boldSep 24 3]
-            ++ ts]
-      
-      ss = NMap.fold f ts
-      
-  in Table.tableList ss
+toYieldStatistics ::
+  (Functor f, Fractional (DeltaTy t), Real (DeltaTy t)) =>
+  f [DeltaSignal t ohlc] -> f (Maybe (YieldStatistics t ohlc))
+toYieldStatistics = fmap (yieldList2statistics . map DSA.yield)

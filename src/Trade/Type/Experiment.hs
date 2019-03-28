@@ -8,6 +8,10 @@ module Trade.Type.Experiment where
 
 
 
+import qualified Text.Blaze.Html5 as H5
+import Text.Blaze.Html5 ((!))
+import qualified Text.Blaze.Html5.Attributes as H5A
+
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
 import Text.Printf (printf)
@@ -18,11 +22,16 @@ import Trade.Type.Delta (Delta(..), ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 
 import Trade.Type.DeltaSignal (DeltaSignal)
+import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 
 import Trade.Type.DeltaTradeList (DeltaTradeList)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
+
+import qualified Trade.Type.NestedMap as NestedMap
+import Trade.Type.NestedMap (NestedMap)
+
 import Trade.Type.Price (Price)
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Step (StepTy)
@@ -34,6 +43,7 @@ import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList,
 
 import qualified Trade.Report.Line as Line
 import qualified Trade.Report.Report as Rep
+import qualified Trade.Report.SparkLine as Spark
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Table
 
@@ -41,7 +51,7 @@ import qualified Trade.TStatistics.TradeStatistics as TS
 
 import Trade.Help.SafeTail (shead, slast)
 
-import Trade.Report.HtmlIO (HtmlIO)
+import Trade.Report.HtmlIO (liftHtml, toHtmlIO, HtmlIO)
 import Trade.Report.Pretty (pretty, Pretty)
 
 
@@ -90,11 +100,34 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) ps) =
     }
 
 
+tradeStatistics ::
+  (StepFunction (StepTy stgy) t, Eq t, Add t,
+   Fractional (DeltaTy t), Real (DeltaTy t), Pretty (DeltaTy t)) =>
+  StepTy stgy t -> DeltaTradeList t ohlc -> HtmlIO
+tradeStatistics step dtl =
+    
+  let ts = DSA.sortDeltaSignals dtl
+      sparks = Spark.toSparkLine step ts
+      stats = TS.toYieldStatistics ts
+
+      f _ _ st sp = toHtmlIO st <> toHtmlIO sp
+      zs = NestedMap.zipWith f stats sparks
+
+      g pos wl htmlio =
+        let sty = H5A.style (H5.stringValue "clear:both;margin:18px;padding-top:24px;color:#006600")
+            header = (H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl)))
+        in liftHtml (header <>) htmlio
+        
+      
+  in NestedMap.fold g zs
+  
+
 lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
   (Show (DeltaTy t), Show t, Ord t, PlotValue t, Pretty (DeltaTy t), Show ohlc
+  , StepFunction (StepTy stgy) t
   , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
@@ -109,7 +142,8 @@ render symTitle btTitle (Result inp out) = do
 
       btHd@(btt0, btInitial) = hd (outputSignal out)
       btLst@(bttn, btFinal) = lst (outputSignal out)
-  
+
+
   Rep.subheader "Experiment"
   
   Rep.backtestChart
@@ -135,10 +169,6 @@ render symTitle btTitle (Result inp out) = do
     , [ "Yield", "", show (unEquity btFinal / unEquity btInitial) ]
     ]
     
-  Rep.subsubheader "Yield statistics"
-
-  TS.renderYieldStatistics (deltaTradeList out)
-
   Rep.subsubheader "Trade statistics"
 
---   TS.renderTradeStatistics (deltaTradeList out)
+  tradeStatistics (step inp) (deltaTradeList out)

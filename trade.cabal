@@ -46,6 +46,7 @@ library
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Report
+                        Trade.Report.SparkLine
                         Trade.Report.Style
                         Trade.Report.Table
                         Trade.Test.Data
@@ -130,6 +131,7 @@ library
                      , http-conduit
                      , blaze-html
                      , blaze-markup
+                     , blaze-svg
                      -- , diagrams
                      , diagrams-lib
                      , diagrams-svg

@@ -48,7 +48,7 @@ import Trade.Type.Impulse (Impulse)
 
 
 clear :: H5.Attribute
-clear = H5A.style (H5.stringValue "") -- "clear:both;")
+clear = H5A.style (H5.stringValue "clear:both;") -- "clear:both;")
 
 header :: String -> HtmlIO
 header = HtmlT . return . (H5.h1 ! clear) . H5.toHtml
