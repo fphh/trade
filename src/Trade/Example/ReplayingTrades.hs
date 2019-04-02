@@ -22,6 +22,7 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
+import Trade.Type.Bars (BarLength(..))
 import Trade.Type.Broom (Broom, broom2chart)
 -- import qualified Trade.Type.Distribution as Dist
 import Trade.Type.Step.Commission (Commission(..), noCommission)
@@ -160,6 +161,9 @@ instance OD.OHLCData (BacktestInput t ohlc) where
 
 --------------------------------------------------------
 
+barLength :: BarLength
+barLength = Min 15
+
 getSymbol :: Bin.Symbol -> IO (Signal UTCTime Price)
 getSymbol sym = do
 
@@ -168,7 +172,7 @@ getSymbol sym = do
   let req = Bin.RequestParams {
         Bin.baseUrl = Bin.binanceBaseUrl
         , Bin.symbol = sym
-        , Bin.interval = Bin.Min30
+        , Bin.interval = Bin.Interval barLength
         , Bin.limit = Just 10000
         , Bin.from = Nothing
         , Bin.to = Just ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
@@ -183,7 +187,7 @@ blackScholes = do
   
   let mu = Mu 0.5
       sigma = Sigma 0.5
-      start = Equity 1000
+      start = Price 1000
       seed = 49
 
   blackScholesDet seed (T.yearsN 4) start mu sigma

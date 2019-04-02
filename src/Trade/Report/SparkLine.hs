@@ -4,7 +4,10 @@
 
 module Trade.Report.SparkLine where
 
+
 import qualified Statistics.Sample as Sample
+
+import qualified Data.Text as Text
 
 import qualified Data.Vector as Vec
 
@@ -77,7 +80,7 @@ svg conf inner =
   ! A.height (S.toValue (height conf+1))
   $ inner
 
-spark :: (Eq t, Add t, Real (DeltaTy t)) => Config -> (Double, Double, Domain) -> Signal t Equity -> S.Svg
+spark :: (Eq t, Add t, Real (DeltaTy t), Show t) => Config -> (Double, Double, Domain) -> Signal t Equity -> S.Svg
 spark conf (mean, stdDev, dom) sig@(Signal xs) =
   let t0 = fst (Signal.head sig)
       ran = toRange conf sig
@@ -107,13 +110,26 @@ spark conf (mean, stdDev, dom) sig@(Signal xs) =
           ! A.y1 (S.toValue (ran 1))
           ! A.x2 (S.toValue (width conf))
           ! A.y2 (S.toValue (ran 1))
+          
         S.line
           ! H5A.style (H5.stringValue "stroke:#000000;shape-rendering:crispedges;")
           ! A.x1 (S.toValue (0 :: Double))
           ! A.y1 (S.toValue (0 :: Double))
           ! A.x2 (S.toValue (0 :: Double))
           ! A.y2 (S.toValue (height conf))
+          
+{-
+        S.circle
+          ! H5A.style (H5.stringValue "fill:#000000;")
+          ! A.cx (S.toValue (dom (32914.28571428572)))
+          ! A.cy (S.toValue (ran 1))
+          ! A.r (S.toValue (5 :: Double))
 
+        (S.text_ (H5.preEscapedToHtml (show lst)))
+          ! H5A.style (H5.stringValue "fill:#000000;")
+          ! A.x (S.toValue (dom 0))
+          ! A.y (S.toValue (ran 1))
+          -}
           
   in svg conf $ do
     coord
@@ -135,7 +151,7 @@ instance ToHtmlIO [S.Svg] where
 
 
 toSparkLine ::
-  (Functor f, Eq t, StepFunction step t, Add t, Real (DeltaTy t)) =>
+  (Functor f, Eq t, StepFunction step t, Add t, Real (DeltaTy t), Show t) =>
   step t -> f [DeltaSignal t ohlc] -> f [S.Svg]
 toSparkLine step mp =
   let eqty = Equity 1

@@ -3,12 +3,15 @@
 
 module Trade.Type.Yield where
 
-import Debug.Trace
+import Text.Printf (printf)
 
+import Data.Time.Clock (NominalDiffTime)
+
+import Trade.Type.Bars (BarLength, barLength2diffTime)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Price (Price(..))
 
-import Trade.Report.Pretty
+import Trade.Report.Pretty (Pretty, pretty)
 
 
 
@@ -45,54 +48,14 @@ instance (Num t) => Semigroup (LogYield t a) where
   (LogYield dt a) <> (LogYield ds b) = LogYield (dt+ds) (a+b)
 
 
-
-{-
-
--- | Yield: `end / start` equity
-newtype Yield = Yield {
-  unYield :: Double
-  } deriving (Show, Eq, Ord, Num)
-
-instance Pretty Yield where
-  pretty = show . unYield
-
-
-instance Semigroup Yield where
-  (Yield x) <> (Yield y) = Yield (x*y)
+instance (Pretty t, Pretty a) => Pretty (LogYield t a) where
+  pretty (LogYield dt a) = printf "log y = %.8f / %s" a (pretty dt)
   
-instance Monoid Yield where
-  mempty = Yield 1
+instance (Pretty t, Pretty a) => Pretty (Yield t a) where
+  pretty (Yield dt a) = printf "y = %.8f / %s" a (pretty dt)
 
 
--- | LogYield: `log (end / start)` equity
-newtype LogYield = LogYield {
-  unLogYield :: Double
-  } deriving (Show, Eq, Ord, Num, Fractional)
-
-instance Pretty LogYield where
-  pretty = show . unLogYield
-
-
-instance Semigroup LogYield where
-  (LogYield x) <> (LogYield y) = LogYield (x+y)
-
-instance Monoid LogYield where
-  mempty = LogYield 0
-
-class ToYield yield where
-  toYield :: Double -> Double -> yield
-
-  yield :: Double -> yield
-
-instance ToYield Yield where
-  toYield new old = Yield (new / old)
-
-  yield = Yield
-
-instance ToYield LogYield where
-  toYield new old = LogYield (log (new / old))
-
-  yield = LogYield . log
-
-
--}
+yieldPerBar :: BarLength -> LogYield NominalDiffTime a -> LogYield NominalDiffTime a
+yieldPerBar bl (LogYield dt y) =
+  let i = dt / barLength2diffTime bl
+  in LogYield i (y / realToFrac i)

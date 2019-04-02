@@ -37,6 +37,7 @@ import Trade.Type.Signal (Signal(..))
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
 import Trade.Type.Trade (TradeList)
+import Trade.Type.Yield (LogYield, ToYield, toYield, logYield2yield)
 
 import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList, impulse2tradeList)
 import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList, tradeList2DeltaTradeList)
@@ -102,7 +103,7 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) ps) =
 
 tradeStatistics ::
   (StepFunction (StepTy stgy) t, Eq t, Add t,
-   Fractional (DeltaTy t), Real (DeltaTy t), Pretty (DeltaTy t)) =>
+   Fractional (DeltaTy t), Real (DeltaTy t), Pretty (DeltaTy t), Show t) =>
   StepTy stgy t -> DeltaTradeList t ohlc -> HtmlIO
 tradeStatistics step dtl =
     
@@ -128,12 +129,13 @@ lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (output
 render ::
   (Show (DeltaTy t), Show t, Ord t, PlotValue t, Pretty (DeltaTy t), Show ohlc
   , StepFunction (StepTy stgy) t
+  , Pretty t, Pretty ohlc
+  , ToYield ohlc
   , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
-  let format = printf "%.2f"
-      f (x, y) = [show x, format (unEquity y)]
+  let f (x, y) = [show x, pretty y ]
       hd = shead "Experiment.render (hd, 1)" . unSignal
       lst = slast "Experiment.render (lst, 2)" . unSignal
 
@@ -155,18 +157,18 @@ render symTitle btTitle (Result inp out) = do
   Rep.subsubheader "Summary"
 
   Table.table [
-    [ "Initial equity", "", show (unEquity (initialEquity inp)) {- format (unEquity (initialEquity inp)) -} ]
+    [ "Initial equity", "", pretty (initialEquity inp) ]
     , [], ["Sample"], []
-    , "Starting" : [show t0, show inpInit]
-    , "Ending" : [show tn, show inpFinal]
-    , [ "Time span", pretty (tn `diff` t0) {- formatDelta (tn `diff` t0) -} ]
-    , "Yield" : ["", "TODO"]
+    , "Starting" : [pretty t0, pretty inpInit]
+    , "Ending" : [pretty tn, pretty inpFinal]
+    , [ "Time span", pretty (tn `diff` t0) ]
+    , "Yield" : ["", pretty (logYield2yield $ toYield (tn `diff` t0) inpFinal inpInit) ]
     
     , [], ["Backtest"], []
     , "Starting" : f btHd
     , "Ending" : f btLst
-    , [ "Time span", pretty (bttn `diff` btt0) {- formatDelta (bttn `diff` btt0) -} ]
-    , [ "Yield", "", show (unEquity btFinal / unEquity btInitial) ]
+    , [ "Time span", pretty (bttn `diff` btt0) ]
+    , [ "Yield", "", pretty (logYield2yield $ toYield (bttn `diff` btt0) btFinal btInitial) ]
     ]
     
   Rep.subsubheader "Trade statistics"
