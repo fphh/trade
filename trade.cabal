@@ -70,7 +70,9 @@ library
                         Trade.Timeseries.Timeseries
                         Trade.Timeseries.Url
                         Trade.TStatistics.SampleStatistics
+                        Trade.TStatistics.Statistics
                         Trade.TStatistics.TradeStatistics
+                        Trade.TStatistics.YieldStatistics
                         Trade.Type.Bars
                         Trade.Type.Broom
                         Trade.Type.Conversion.Impulse2TradeList

@@ -31,7 +31,6 @@ logYield2yield (LogYield dt y) = Yield dt (exp y)
 yield2logYield :: Yield t a -> LogYield t a
 yield2logYield (Yield dt y) = LogYield dt (log y)
 
-
 class ToYield a where
   toYield :: t -> a -> a -> LogYield t a
 

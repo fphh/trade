@@ -1,118 +1,49 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Trade.TStatistics.SampleStatistics where
 
-
-import Text.Printf (printf)
-
-import Trade.Type.Signal (Signal(..))
-import Trade.Type.Yield (LogYield(..))
-
-import qualified Statistics.Sample as Sample
-
-import qualified Data.Vector as Vec
-import Data.Vector (Vector)
-
-import qualified Trade.Report.Report as Rep
-
-import Trade.Report.HtmlIO (HtmlIO)
-
-import Prelude hiding (maximum, minimum)
-
-{-
-data SampleStatisitcs = SampleStatistics {
-  initialEquity :: 
-                                         }
+import Trade.Type.Bars (DeltaTy, Add, diff)
+import Trade.Type.Signal (Signal)
+import qualified Trade.Type.Signal as Signal
+import Trade.Type.Yield (LogYield, ToYield, toYield, logYield2yield)
 
 
-  Table.table [
-    [ "Initial equity", "", pretty (initialEquity inp) ]
-    , [], ["Sample"], []
-    , "Starting" : [pretty t0, pretty inpInit]
-    , "Ending" : [pretty tn, pretty inpFinal]
-    , [ "Time span", pretty (tn `diff` t0) ]
-    , "Yield" : ["", pretty (logYield2yield $ toYield (tn `diff` t0) inpFinal inpInit) ]
-    
--}
+import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO, HtmlIO)
+import Trade.Report.Pretty (Pretty, pretty)
+import qualified Trade.Report.Table as Table
 
-{-
 
-data SampleStatistics t = SampleStatistics {
-  mean :: !Double
-  , stdDev :: !Double
-  , variance :: !Double
-  , stdErrMean :: !Double
-  , skewness :: !Double
-  , kurtosis :: !Double
-  -- , autocorrelation :: !Double
-  , minimum :: !Double
-  , maximum :: !Double
-  , range :: !Double
-  , count :: !Int
-  , from :: t
-  , startValue :: !Double
-  , to :: t
-  , endValue :: !Double
-  } deriving (Show)
+data SampleStatisitcs t ohlc = SampleStatistics {
+  initialEquity :: (t, ohlc)
+  , finalEquity :: (t, ohlc)
+  , timeSpan :: DeltaTy t
+  , yield :: LogYield (DeltaTy t) ohlc
+  }
 
-sampleStatistics' :: Vector (t, Double) -> SampleStatistics t
-sampleStatistics' as =
-  let ts = Vec.map snd as
+
+sampleStatistics :: (Add t, ToYield ohlc) => Signal t ohlc -> SampleStatisitcs t ohlc
+sampleStatistics xs =
+  let ie@(t0, y0) = Signal.head xs
+      fe@(tn, yn) = Signal.last xs
+      ts = tn `diff` t0
+      yld = toYield ts yn y0
   in SampleStatistics {
-    mean = Sample.mean ts
-    , stdDev = Sample.stdDev ts
-    , variance = Sample.variance ts
-    , stdErrMean = Sample.stdErrMean ts
-    , skewness = Sample.skewness ts
-    , kurtosis = Sample.kurtosis ts
-    -- , autocorrelation = Sample.kurtosis ts -- ???
-    , minimum = Vec.minimum ts
-    , maximum = Vec.maximum ts
-    , range = Sample.range ts
-    , count = Vec.length ts
-    , from = fst (Vec.head as)
-    , startValue = snd (Vec.head as)
-    , to = fst (Vec.last as)
-    , endValue = snd (Vec.last as)
+    initialEquity = ie
+    , finalEquity = fe
+    , timeSpan = ts
+    , yield = yld
     }
 
+sampleStatistics2table ::
+  (Pretty t, Pretty (DeltaTy t), Pretty ohlc) =>
+  SampleStatisitcs t ohlc -> [[String]]
+sampleStatistics2table ss =
+  let format (x, y) = [pretty x, pretty y]
+  in [ "Initial" : format (initialEquity ss)
+     , "Final" : format (finalEquity ss)
+     , [ "Time span", pretty (timeSpan ss) ]
+     , [ "Yield", "", pretty (logYield2yield (yield ss)) ] ]
 
-class SampleStats a where
-  type SampleStatsTy a :: *
-  sampleStatistics :: a -> SampleStatistics (SampleStatsTy a)
+instance (Pretty t, Pretty (DeltaTy t), Pretty ohlc) => ToHtmlIO (SampleStatisitcs t ohlc) where
+  toHtmlIO = Table.table . sampleStatistics2table
 
-instance SampleStats (Vector (t, Double)) where
-  type SampleStatsTy (Vector (t, Double)) = t
-  sampleStatistics = sampleStatistics'
-
-instance SampleStats (Signal t Double) where
-  type SampleStatsTy (Signal t Double) = t
-  sampleStatistics = sampleStatistics' . unSignal
-
-instance SampleStats (Signal t LogYield) where
-  type SampleStatsTy (Signal t LogYield) = t
-  sampleStatistics = sampleStatistics' . Vec.map (\(a, LogYield y) -> (a, y)) . unSignal
-
-stats2para :: (Show a) => SampleStatistics a -> HtmlIO
-stats2para stats =
-  Rep.vtable $
-  ["mean", show $ mean stats]
-  : ["stdDev", show $ stdDev stats]
-  : ["variance", show $ variance stats]
-  : ["stdErrMean", show $ stdErrMean stats]
-  : ["skewness", show $ skewness stats]
-  : ["kurtosis", show $ kurtosis stats]
-  -- : ["max profit", show (maximum stats / minimum stats)]
-  : ["range", show $ range stats]
-  : ["count", show $ count stats]
-  : ["from", show $ from stats]
-  : ["startValue", printf "%.2f"  $ startValue stats]
-  : ["to", show $ to stats]
-  : ["endValue", printf "%.2f"  $ endValue stats]
-  : ["minimum", printf "%.2f" $ minimum stats]
-  : ["maximum", printf "%.2f" $ maximum stats]
-  : []
-
--}

@@ -51,7 +51,11 @@ import qualified Trade.Report.SparkLine as Spark
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Table
 
+import qualified Trade.TStatistics.SampleStatistics as SS
+import qualified Trade.TStatistics.Statistics as Stats
 import qualified Trade.TStatistics.TradeStatistics as TS
+import qualified Trade.TStatistics.YieldStatistics as YS
+
 
 import Trade.Help.SafeTail (shead, slast)
 
@@ -106,13 +110,13 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) ps) =
 tradeStatistics ::
   (StepFunction (StepTy stgy) t, Eq t, Add t
   , Real (DeltaTy t)
-  , Pretty (DeltaTy t), Pretty (TS.DeltaTyStats t)) =>
+  , Pretty (DeltaTy t), Pretty (Stats.DeltaTyStats t)) =>
   StepTy stgy t -> DeltaTradeList t ohlc -> HtmlIO
 tradeStatistics step dtl =
-    
+
   let ts = DSA.sortDeltaSignals dtl
       sparks = Spark.toSparkLine step ts
-      stats = TS.toYieldStatistics ts
+      stats = YS.yieldStatistics ts -- (TS.yieldStatistics ts, TS.tradeStatistics ts)
 
       f _ _ st sp = toHtmlIO st <> toHtmlIO sp
       zs = NestedMap.zipWith f stats sparks
@@ -122,7 +126,6 @@ tradeStatistics step dtl =
             header = (H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl)))
         in liftHtml (header <>) htmlio
         
-      
   in NestedMap.fold g zs
   
 
@@ -132,7 +135,7 @@ lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (output
 render ::
   (Ord t, PlotValue t
   , StepFunction (StepTy stgy) t
-  , Pretty t, Pretty (DeltaTy t), Pretty (TS.DeltaTyStats t), Pretty ohlc
+  , Pretty t, Pretty (DeltaTy t), Pretty (Stats.DeltaTyStats t), Pretty ohlc
   , ToYield ohlc
   , Add t, Ord (Delta ohlc)
   , Num (DeltaTy t)
@@ -140,12 +143,7 @@ render ::
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
-  let (t0, inpInit) = Signal.head (inputSignal inp)
-      (tn, inpFinal) = Signal.last (inputSignal inp)
-
-      (btt0, btInitial) = Signal.head (outputSignal out)
-      (bttn, btFinal) = Signal.last (outputSignal out)
-
+  
   Rep.subheader "Experiment"
   
   Rep.backtestChart
@@ -156,21 +154,9 @@ render symTitle btTitle (Result inp out) = do
 
   Rep.subsubheader "Summary"
 
-  Table.table [
-    [ "Initial equity", "", pretty (initialEquity inp) ]
-    , [], ["Sample"], []
-    , "Starting" : [pretty t0, pretty inpInit]
-    , "Ending" : [pretty tn, pretty inpFinal]
-    , [ "Time span", pretty (tn `diff` t0) ]
-    , "Yield" : ["", pretty (logYield2yield $ toYield (tn `diff` t0) inpFinal inpInit) ]
-    
-    , [], ["Backtest"], []
-    , "Starting" : [pretty btt0, pretty btInitial]
-    , "Ending" : [pretty bttn, pretty btFinal]
-    , [ "Time span", pretty (bttn `diff` btt0) ]
-    , [ "Yield", "", pretty (logYield2yield $ toYield (bttn `diff` btt0) btFinal btInitial) ]
-    ]
-    
+  toHtmlIO (SS.sampleStatistics (inputSignal inp))
+  toHtmlIO (SS.sampleStatistics (outputSignal out))
+
   Rep.subsubheader "Trade statistics"
 
   tradeStatistics (step inp) (deltaTradeList out)

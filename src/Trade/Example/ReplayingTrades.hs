@@ -45,7 +45,7 @@ import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList)
 
 import Trade.Algorithm.MovingAverage (WindowSize(..))
 
-import Trade.TStatistics.TradeStatistics (DeltaTyStats)
+import Trade.TStatistics.Statistics (DeltaTyStats)
 
 import qualified Trade.Analysis.TWR as TWR
 import qualified Trade.Analysis.Risk as Risk
