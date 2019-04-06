@@ -22,6 +22,22 @@ import Trade.Report.HtmlIO (HtmlIO)
 import Prelude hiding (maximum, minimum)
 
 {-
+data SampleStatisitcs = SampleStatistics {
+  initialEquity :: 
+                                         }
+
+
+  Table.table [
+    [ "Initial equity", "", pretty (initialEquity inp) ]
+    , [], ["Sample"], []
+    , "Starting" : [pretty t0, pretty inpInit]
+    , "Ending" : [pretty tn, pretty inpFinal]
+    , [ "Time span", pretty (tn `diff` t0) ]
+    , "Yield" : ["", pretty (logYield2yield $ toYield (tn `diff` t0) inpFinal inpInit) ]
+    
+-}
+
+{-
 
 data SampleStatistics t = SampleStatistics {
   mean :: !Double

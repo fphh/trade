@@ -18,7 +18,7 @@ import Trade.Report.Pretty
 --    y = m*x + b
 
 
-intersect :: (Show b, Fractional b) => b -> b -> b -> b -> (b, b)
+intersect :: (Fractional b) => b -> b -> b -> b -> (b, b)
 intersect b0 b1 y0 y1 =
   let m = b1-b0
       n = y1-y0

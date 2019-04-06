@@ -33,14 +33,15 @@ newtype Sigma = Sigma {
   unSigma :: Double
   } deriving (Show)
 
+{-
 newtype Start = Start {
   unStart :: Double
   } deriving (Show)
-
+-}
 
 
 blackScholes ::
-  MWC.Gen (PrimState IO) -> Vector a -> Price -> Mu -> Sigma -> IO (Vector (a, Price))
+  MWC.Gen (PrimState IO) -> Vector t -> Price -> Mu -> Sigma -> IO (Vector (t, Price))
 blackScholes gen interval prc (Mu mu) (Sigma sigma) = do
   let dt = 1 / fromIntegral (Vec.length interval)
       g _ = fmap (\z -> mu * dt + sigma * sqrt dt * z) (Dist.normal 0 1 gen)
@@ -50,7 +51,7 @@ blackScholes gen interval prc (Mu mu) (Sigma sigma) = do
   return (Vec.zip interval ss)
 
 
-blackScholesDet :: Word32 -> Vector UTCTime -> Price -> Mu -> Sigma -> IO (Signal UTCTime Price)
+blackScholesDet :: Word32 -> Vector t -> Price -> Mu -> Sigma -> IO (Signal t Price)
 blackScholesDet seed interval prc mu sigma =
   MWC.initialize (Vec.singleton seed)
   >>= \gen -> fmap Signal (blackScholes gen interval prc mu sigma)

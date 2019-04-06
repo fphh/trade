@@ -33,7 +33,10 @@ import qualified Trade.Type.NestedMap as NestedMap
 import Trade.Type.NestedMap (NestedMap)
 
 import Trade.Type.Price (Price)
+
 import Trade.Type.Signal (Signal(..))
+import qualified Trade.Type.Signal as Signal
+
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
 import Trade.Type.Trade (TradeList)
@@ -77,8 +80,7 @@ data Result stgy t ohlc = Result {
 
 conduct ::
   forall ohlc t stgy.
-  ( Show t, Show ohlc
-  , ToDelta ohlc, Ord t, Add t
+  (ToDelta ohlc, Ord t, Add t
   , TradeList2DeltaTradeList stgy
   , Impulse2TradeList stgy
   , StepFunction (StepTy stgy) t) =>
@@ -102,8 +104,9 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) ps) =
 
 
 tradeStatistics ::
-  (StepFunction (StepTy stgy) t, Eq t, Add t,
-   Fractional (DeltaTy t), Real (DeltaTy t), Pretty (DeltaTy t), Show t) =>
+  (StepFunction (StepTy stgy) t, Eq t, Add t
+  , Real (DeltaTy t)
+  , Pretty (DeltaTy t), Pretty (TS.DeltaTyStats t)) =>
   StepTy stgy t -> DeltaTradeList t ohlc -> HtmlIO
 tradeStatistics step dtl =
     
@@ -127,24 +130,21 @@ lastEquity :: Result stgy t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
 render ::
-  (Show (DeltaTy t), Show t, Ord t, PlotValue t, Pretty (DeltaTy t), Show ohlc
+  (Ord t, PlotValue t
   , StepFunction (StepTy stgy) t
-  , Pretty t, Pretty ohlc
+  , Pretty t, Pretty (DeltaTy t), Pretty (TS.DeltaTyStats t), Pretty ohlc
   , ToYield ohlc
-  , Num (DeltaTy t), Add t, Ord (Delta ohlc), Real (DeltaTy t), Fractional (DeltaTy t)
+  , Add t, Ord (Delta ohlc)
+  , Num (DeltaTy t)
+  , Real (DeltaTy t)
   , Line.TyX (Signal t ohlc) ~ t, Line.TyY (Signal t ohlc) ~ Double, Line.Line (Signal t ohlc)) =>
   String -> String -> Result stgy t ohlc -> HtmlIO
 render symTitle btTitle (Result inp out) = do
-  let f (x, y) = [show x, pretty y ]
-      hd = shead "Experiment.render (hd, 1)" . unSignal
-      lst = slast "Experiment.render (lst, 2)" . unSignal
+  let (t0, inpInit) = Signal.head (inputSignal inp)
+      (tn, inpFinal) = Signal.last (inputSignal inp)
 
-      (t0, inpInit) = shead "Experiment.render (hd, 4)" (unSignal (inputSignal inp))
-      (tn, inpFinal) = slast "Experiment.render (lst, 5)" (unSignal (inputSignal inp))
-
-      btHd@(btt0, btInitial) = hd (outputSignal out)
-      btLst@(bttn, btFinal) = lst (outputSignal out)
-
+      (btt0, btInitial) = Signal.head (outputSignal out)
+      (bttn, btFinal) = Signal.last (outputSignal out)
 
   Rep.subheader "Experiment"
   
@@ -165,8 +165,8 @@ render symTitle btTitle (Result inp out) = do
     , "Yield" : ["", pretty (logYield2yield $ toYield (tn `diff` t0) inpFinal inpInit) ]
     
     , [], ["Backtest"], []
-    , "Starting" : f btHd
-    , "Ending" : f btLst
+    , "Starting" : [pretty btt0, pretty btInitial]
+    , "Ending" : [pretty bttn, pretty btFinal]
     , [ "Time span", pretty (bttn `diff` btt0) ]
     , [ "Yield", "", pretty (logYield2yield $ toYield (bttn `diff` btt0) btFinal btInitial) ]
     ]

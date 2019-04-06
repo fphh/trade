@@ -24,7 +24,7 @@ import Debug.Trace
 
 
 class Impulse2TradeList stgy where
-  impulse2tradeList :: (Ord t, Show t, Show ohlc) => Signal t ohlc -> ImpulseSignal t -> TradeList stgy t ohlc
+  impulse2tradeList :: (Ord t) => Signal t ohlc -> ImpulseSignal t -> TradeList stgy t ohlc
 
 
 longTag :: Impulse -> Position

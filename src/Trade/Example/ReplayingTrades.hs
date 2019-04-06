@@ -22,7 +22,7 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
-import Trade.Type.Bars (BarLength(..))
+import Trade.Type.Bars (DeltaTy, Add, BarLength(..), BarNo(..))
 import Trade.Type.Broom (Broom, broom2chart)
 -- import qualified Trade.Type.Distribution as Dist
 import Trade.Type.Step.Commission (Commission(..), noCommission)
@@ -45,6 +45,7 @@ import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList)
 
 import Trade.Algorithm.MovingAverage (WindowSize(..))
 
+import Trade.TStatistics.TradeStatistics (DeltaTyStats)
 
 import qualified Trade.Analysis.TWR as TWR
 import qualified Trade.Analysis.Risk as Risk
@@ -58,6 +59,7 @@ import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Tab
+import Trade.Report.Pretty (Pretty)
 
 import Trade.MonteCarlo.ResampleTrades.Broom (MCConfig(..), mc, MCCount(..))
 import Trade.MonteCarlo.Simulation.BlackScholes (Mu(..), Sigma(..), blackScholesDet)
@@ -80,17 +82,17 @@ data OptimizationInput stgy t ohlc = OptimizationInput {
   }
 
   
-data OptimizationResult stgy = OptimizationResult {
-  result :: Experiment.Result stgy UTCTime Price
-  , broom :: Broom (Signal UTCTime Equity)
+data OptimizationResult t stgy = OptimizationResult {
+  result :: Experiment.Result stgy t Price
+  , broom :: Broom (Signal t Equity)
   , lastEquities :: Map (WindowSize, WindowSize) Equity
   }
   
-instance (TradeList2DeltaTradeList stgy, Impulse2TradeList stgy, StepFunction (StepTy stgy) UTCTime) =>
-  Opt.Optimize (OptimizationInput stgy UTCTime Price) where
+instance (Ord t, Add t, TradeList2DeltaTradeList stgy, Impulse2TradeList stgy, StepFunction (StepTy stgy) t) =>
+  Opt.Optimize (OptimizationInput stgy t Price) where
 
-  type OptReportTy (OptimizationInput stgy UTCTime Price) = OptimizationResult stgy
-  type OptInpTy (OptimizationInput stgy UTCTime Price) = (WindowSize, WindowSize)
+  type OptReportTy (OptimizationInput stgy t Price) = OptimizationResult t stgy
+  type OptInpTy (OptimizationInput stgy t Price) = (WindowSize, WindowSize)
 
   optimize (ImpulseGenerator strat) optInp = do
     let findBestWinSize winSize acc =
@@ -112,7 +114,8 @@ instance (TradeList2DeltaTradeList stgy, Impulse2TradeList stgy, StepFunction (S
     return (RankedStrategies sortedStarts, OptimizationResult res brm (fmap Experiment.lastEquity strats))
 
 
-instance TR.ToReport (TR.OptimizationData (OptimizationInput Long UTCTime Price) (OptimizationResult Long)) where
+instance (E.PlotValue t, Add t, Num (DeltaTy t), Real (DeltaTy t), Pretty t, Pretty (DeltaTy t), Pretty (DeltaTyStats t)) =>
+  TR.ToReport (TR.OptimizationData (OptimizationInput Long t Price) (OptimizationResult t Long)) where
 -- instance TR.ToReport (TR.OptimizationData (OptimizationInput stgy UTCTime Price) (OptimizationResult stgy)) where
   toReport (TR.OptimizationData optInp (OptimizationResult res brm lastEqty)) = do
     let nOfSamp = 20
@@ -164,7 +167,7 @@ instance OD.OHLCData (BacktestInput t ohlc) where
 barLength :: BarLength
 barLength = Min 15
 
-getSymbol :: Bin.Symbol -> IO (Signal UTCTime Price)
+getSymbol :: Bin.Symbol -> IO (UTCTime, Signal UTCTime Price)
 getSymbol sym = do
 
   now <- getCurrentTime
@@ -179,25 +182,32 @@ getSymbol sym = do
         }
 
       toSignal row = (Bin.toDate row, Price (unClose (Bin.close row)))
-  
-  fmap (Signal . Vec.map toSignal) (Bin.getUnsafe req)
 
-blackScholes :: IO (Signal UTCTime Price)
+      mcBegin = UTCTime (fromGregorian 2020 1 1) 0
+  
+  fmap ((\x -> (mcBegin, x)) . Signal . Vec.map toSignal) (Bin.getUnsafe req)
+
+blackScholes :: IO (BarNo, Signal BarNo Price)
 blackScholes = do
   
   let mu = Mu 0.5
       sigma = Sigma 0.5
       start = Price 1000
       seed = 49
+      vs = Vec.fromList (map BarNo [0 .. 1000])
 
-  blackScholesDet seed (T.yearsN 4) start mu sigma
+      mcBegin = BarNo 0
+      
+--  blackScholesDet seed (T.yearsN 4) start mu sigma
+  fmap (\x -> (mcBegin, x)) (blackScholesDet seed vs start mu sigma)
 
+  
 
 example :: IO ()
 example = do
 
-  sample <- getSymbol Bin.BTCUSDT
-  -- sample <- blackScholes
+  -- (mcBegin, sample) <- getSymbol Bin.BTCUSDT
+  (mcBegin, sample) <- blackScholes
 
   let f (j, k) = (WindowSize j, WindowSize k)
       wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
@@ -231,9 +241,9 @@ example = do
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head sample)))
             , mcConfig = MCConfig {
-                mcBars = 60*16*60*60 / 60
+                mcBars = 1000 -- *16*60
                 , mcCount = MCCount 1000
-                , mcBegin = UTCTime (fromGregorian 2020 1 1) 0
+                , mcBegin = mcBegin -- UTCTime (fromGregorian 2020 1 1) 0
                 }
             , step = longStep
             -- , step = shortStep

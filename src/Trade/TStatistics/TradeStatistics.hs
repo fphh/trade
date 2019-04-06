@@ -2,9 +2,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 
 module Trade.TStatistics.TradeStatistics where
+
+import Data.Time.Clock (UTCTime, NominalDiffTime)
 
 import qualified Data.Vector as Vec
 
@@ -19,7 +22,7 @@ import qualified Statistics.Sample as Sample
 
 import Text.Printf (printf, PrintfArg)
 
-import Trade.Type.Bars (DeltaTy)
+import Trade.Type.Bars (DeltaTy, BarNo)
 import Trade.Type.Delta (Delta(..))
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
@@ -41,28 +44,47 @@ import Trade.Report.Pretty (pretty, Pretty)
 import Debug.Trace
 
 
+newtype DeltaTyStats t = DeltaTyStats {
+  unDeltaTyStats :: Double
+  }
+
+instance Pretty (DeltaTyStats BarNo) where
+  pretty = printf "b%.8f" . unDeltaTyStats
+
+instance Pretty (DeltaTyStats UTCTime) where
+  pretty (DeltaTyStats t) = pretty (realToFrac t :: NominalDiffTime)
+
+
 data Statistics t y = Statistics {
   statDuration :: t
   , statYield :: y
   }
 
-formatStat :: (Pretty t, PrintfArg y) => Statistics t y -> [String]
-formatStat (Statistics dt y) = [ printf "%.10f" y, pretty dt ]
+class FormatStat t where
+  formatStat :: (PrintfArg y) => Statistics t y -> [String]
+
+instance FormatStat Double where
+  formatStat (Statistics x y) = [ printf "%.8f" y, printf "%.8f" x ]
+
+instance (Pretty (DeltaTyStats t)) => FormatStat (DeltaTyStats t) where
+  formatStat (Statistics dt y) = [ printf "%.8f" y, pretty dt ]
+
 
 formatYield :: (Pretty t) =>  Yield t ohlc -> [String]
-formatYield (Yield dt y) = [ printf "%.10f" y, pretty dt ]
+formatYield (Yield dt y) = [ printf "%.8f" y, pretty dt ]
+
 
 data TradeStatistics t ohlc = TradeStatistics {
   maxPeak :: LogYield (DeltaTy t) ohlc
-  , meanPeak :: Statistics (DeltaTy t) Double
-  , stdDevPeak :: Statistics (DeltaTy t) Double
+  , meanPeak :: Statistics (DeltaTyStats t) Double
+  , stdDevPeak :: Statistics (DeltaTyStats t) Double
   , maxDrawdown :: LogYield (DeltaTy t) ohlc
-  , meanDrawdown :: Statistics (DeltaTy t) Double
-  , stdDevDrawdown :: Statistics (DeltaTy t) Double
+  , meanDrawdown :: Statistics (DeltaTyStats t) Double
+  , stdDevDrawdown :: Statistics (DeltaTyStats t) Double
   }
 
 tradeStatistics ::
-  (Eq (DeltaTy t), Fractional (DeltaTy t), Real (DeltaTy t)) =>
+  (Eq (DeltaTy t), Real (DeltaTy t)) =>
   [DeltaSignal t ohlc] -> TradeStatistics t ohlc
 tradeStatistics dts =
   let maxs = map DSA.maximum dts
@@ -76,14 +98,14 @@ tradeStatistics dts =
            
   in TradeStatistics {
     maxPeak = List.maximumBy (comparing logYield) maxs
-    , meanPeak = Statistics (realToFrac (Sample.mean maxDtsVec)) (exp (Sample.mean maxZsVec))
-    , stdDevPeak = Statistics (realToFrac (Sample.stdDev maxDtsVec)) (exp (Sample.stdDev maxZsVec))
+    , meanPeak = Statistics (DeltaTyStats (Sample.mean maxDtsVec)) (exp (Sample.mean maxZsVec))
+    , stdDevPeak = Statistics (DeltaTyStats (Sample.stdDev maxDtsVec)) (exp (Sample.stdDev maxZsVec))
     , maxDrawdown = List.minimumBy (comparing logYield) mins
-    , meanDrawdown =  Statistics (realToFrac (Sample.mean minDtsVec)) (exp (Sample.mean minZsVec))
-    , stdDevDrawdown = Statistics (realToFrac (Sample.stdDev minDtsVec)) (exp (Sample.stdDev minZsVec))
+    , meanDrawdown =  Statistics (DeltaTyStats (Sample.mean minDtsVec)) (exp (Sample.mean minZsVec))
+    , stdDevDrawdown = Statistics (DeltaTyStats (Sample.stdDev minDtsVec)) (exp (Sample.stdDev minZsVec))
     }
 
-tradeStatistics2table :: (Pretty (DeltaTy t)) => TradeStatistics t ohlc -> [[String]]
+tradeStatistics2table :: (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => TradeStatistics t ohlc -> [[String]]
 tradeStatistics2table ts =
   [ ["Trade Statistics", "Yield", "Dur. from trade start"]
   , []
@@ -102,14 +124,14 @@ data YieldStatistics t ohlc = YieldStatistics {
   , minimumYield :: LogYield (DeltaTy t) ohlc
   , maximumDuration :: LogYield (DeltaTy t) ohlc
   , minimumDuration :: LogYield (DeltaTy t) ohlc
-  , meanYield :: Statistics (DeltaTy t) Double
-  , stdDevYield :: Statistics (DeltaTy t) Double
+  , meanYield :: Statistics (DeltaTyStats t) Double
+  , stdDevYield :: Statistics (DeltaTyStats t) Double
   , skewnessYield :: Statistics Double Double
   , kurtosisYield :: Statistics Double Double
   }
 
 yieldList2statistics ::
-  (Fractional (DeltaTy t), Real (DeltaTy t)) =>
+  (Real (DeltaTy t)) =>
   [LogYield (DeltaTy t) ohlc] -> Maybe (YieldStatistics t ohlc)
 yieldList2statistics [] = Nothing
 yieldList2statistics ys = Just $
@@ -122,14 +144,14 @@ yieldList2statistics ys = Just $
     , minimumYield = List.minimumBy (comparing logYield) ys
     , maximumDuration = List.maximumBy (comparing logDuration) ys
     , minimumDuration = List.minimumBy (comparing logDuration) ys
-    , meanYield = Statistics (realToFrac (Sample.mean dtsVec)) (exp (Sample.mean zsVec))
-    , stdDevYield = Statistics (realToFrac (Sample.stdDev dtsVec)) (exp (Sample.stdDev zsVec))
+    , meanYield = Statistics (DeltaTyStats (Sample.mean dtsVec)) (exp (Sample.mean zsVec))
+    , stdDevYield = Statistics (DeltaTyStats (Sample.stdDev dtsVec)) (exp (Sample.stdDev zsVec))
     , skewnessYield = Statistics (Sample.skewness dtsVec) (Sample.skewness zsVec)
     , kurtosisYield = Statistics (Sample.kurtosis dtsVec) (Sample.kurtosis zsVec)
     }
 
 yieldStatistics2table ::
-  Pretty (DeltaTy t) => Maybe (YieldStatistics t ohlc) -> [[String]]
+  (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => Maybe (YieldStatistics t ohlc) -> [[String]]
 yieldStatistics2table Nothing = [["", "", "n/a"]]
 yieldStatistics2table (Just ys) =
   [ "No. of trades" : [show (count ys)]
@@ -148,10 +170,10 @@ yieldStatistics2table (Just ys) =
   , "Kurtosis (log yield)" : formatStat (kurtosisYield ys)
   ]
 
-instance (Pretty (DeltaTy t)) => ToHtmlIO (Maybe (YieldStatistics t ohlc)) where
+instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToHtmlIO (Maybe (YieldStatistics t ohlc)) where
   toHtmlIO = Table.table . yieldStatistics2table
 
 toYieldStatistics ::
-  (Functor f, Fractional (DeltaTy t), Real (DeltaTy t)) =>
+  (Functor f, Real (DeltaTy t)) =>
   f [DeltaSignal t ohlc] -> f (Maybe (YieldStatistics t ohlc))
 toYieldStatistics = fmap (yieldList2statistics . map DSA.yield)

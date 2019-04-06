@@ -62,7 +62,9 @@ toRange conf sig =
 
 type Domain = Double -> Double
 
-toDomain :: (Add t, Real (DeltaTy t)) => Config -> [Signal t Equity] -> (Double, Double, Domain)
+toDomain ::
+  (Add t, Real (DeltaTy t)) =>
+  Config -> [Signal t Equity] -> (Double, Double, Domain)
 toDomain conf sigs =
   let ts = map (\s -> realToFrac (fst (Signal.last s) `diff` fst (Signal.head s))) sigs
       tmax = maximum ts
@@ -72,6 +74,7 @@ toDomain conf sigs =
       w = fromIntegral (width conf)
   in (mean, stdDev, \x -> x * w / tmax)
 
+
 svg :: Config -> S.Svg -> S.Svg
 svg conf inner =
   S.docTypeSvg
@@ -80,7 +83,10 @@ svg conf inner =
   ! A.height (S.toValue (height conf+1))
   $ inner
 
-spark :: (Eq t, Add t, Real (DeltaTy t), Show t) => Config -> (Double, Double, Domain) -> Signal t Equity -> S.Svg
+
+spark ::
+  (Eq t, Add t, Real (DeltaTy t)) =>
+  Config -> (Double, Double, Domain) -> Signal t Equity -> S.Svg
 spark conf (mean, stdDev, dom) sig@(Signal xs) =
   let t0 = fst (Signal.head sig)
       ran = toRange conf sig
@@ -151,7 +157,7 @@ instance ToHtmlIO [S.Svg] where
 
 
 toSparkLine ::
-  (Functor f, Eq t, StepFunction step t, Add t, Real (DeltaTy t), Show t) =>
+  (Functor f, Eq t, StepFunction step t, Add t, Real (DeltaTy t)) =>
   step t -> f [DeltaSignal t ohlc] -> f [S.Svg]
 toSparkLine step mp =
   let eqty = Equity 1
