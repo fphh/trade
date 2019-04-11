@@ -14,7 +14,8 @@ import qualified Trade.Report.Table as Table
 
 
 data SampleStatisitcs t ohlc = SampleStatistics {
-  initialEquity :: (t, ohlc)
+  sampleLength :: !Int
+  , initialEquity :: (t, ohlc)
   , finalEquity :: (t, ohlc)
   , timeSpan :: DeltaTy t
   , yield :: LogYield (DeltaTy t) ohlc
@@ -28,7 +29,8 @@ sampleStatistics xs =
       ts = tn `diff` t0
       yld = toYield ts yn y0
   in SampleStatistics {
-    initialEquity = ie
+    sampleLength = Signal.length xs
+    , initialEquity = ie
     , finalEquity = fe
     , timeSpan = ts
     , yield = yld
@@ -42,7 +44,8 @@ sampleStatistics2table ss =
   in [ "Initial" : format (initialEquity ss)
      , "Final" : format (finalEquity ss)
      , [ "Time span", pretty (timeSpan ss) ]
-     , [ "Yield", "", pretty (logYield2yield (yield ss)) ] ]
+     , [ "Yield", "", pretty (logYield2yield (yield ss)) ]
+     , [ "Sample length", pretty (sampleLength ss) ] ]
 
 instance (Pretty t, Pretty (DeltaTy t), Pretty ohlc) => ToHtmlIO (SampleStatisitcs t ohlc) where
   toHtmlIO = Table.table . sampleStatistics2table

@@ -56,8 +56,9 @@ toRange conf sig =
   let (_, Equity mi) = Signal.minimum sig
       (_, Equity ma) = Signal.maximum sig
       h = fromIntegral (height conf)
-      stepH = h / (ma - mi)
-  in \y -> (ma-y) * stepH
+      (lower, upper) = if ma == mi then (0.8, 1.2) else (mi, ma)
+      stepH = h / (upper - lower)
+  in \y -> (upper-y) * stepH
 
 
 type Domain = Double -> Double

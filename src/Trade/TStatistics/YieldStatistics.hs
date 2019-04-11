@@ -18,7 +18,7 @@ import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 import Trade.Type.Yield (LogYield(..), logYield2yield)
 
 import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO)
-import Trade.Report.Pretty (Pretty, pretty)
+import Trade.Report.Pretty (Pretty)
 import qualified Trade.Report.Table as Table
 
 import Trade.TStatistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
@@ -37,11 +37,11 @@ data YieldStatistics t ohlc = YieldStatistics {
   , kurtosisYield :: Statistics Double Double
   }
 
-yieldList2statistics ::
+yieldStatistics ::
   (Real (DeltaTy t)) =>
   [LogYield (DeltaTy t) ohlc] -> Maybe (YieldStatistics t ohlc)
-yieldList2statistics [] = Nothing
-yieldList2statistics ys = Just $
+yieldStatistics [] = Nothing
+yieldStatistics ys = Just $
   let (dts, zs) = unzip (map (\(LogYield dt y) -> (dt, y)) ys)
       dtsVec = Vec.map realToFrac (Vec.fromList dts)
       zsVec = Vec.fromList zs
@@ -80,8 +80,8 @@ yieldStatistics2table (Just ys) =
 instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToHtmlIO (Maybe (YieldStatistics t ohlc)) where
   toHtmlIO = Table.table . yieldStatistics2table
 
-yieldStatistics ::
+toYieldStatistics ::
   (Functor f, Real (DeltaTy t)) =>
   f [DeltaSignal t ohlc] -> f (Maybe (YieldStatistics t ohlc))
-yieldStatistics = fmap (yieldList2statistics . map DSA.yield)
+toYieldStatistics = fmap (yieldStatistics . map DSA.yield)
 

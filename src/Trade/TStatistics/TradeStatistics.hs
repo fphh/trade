@@ -1,8 +1,5 @@
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 
 module Trade.TStatistics.TradeStatistics where
@@ -20,13 +17,11 @@ import Trade.Type.Bars (DeltaTy)
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 
---import qualified Trade.Type.NestedMap as NMap
---import Trade.Type.NestedMap (NestedMap)
-
 import Trade.Type.Yield (LogYield(..), logYield2yield)
 
 import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO)
 import Trade.Report.Pretty (Pretty)
+import qualified Trade.Report.Table as Table
 
 import Trade.TStatistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
 
@@ -74,9 +69,12 @@ tradeStatistics2table ts =
   , "StdDev drawdown" : formatStat (stdDevDrawdown ts)
   ]
 
-{-
+
+instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToHtmlIO (TradeStatistics t ohlc) where
+  toHtmlIO = Table.table . tradeStatistics2table
+
 toTradeStatistics ::
   (Functor f, Real (DeltaTy t)) =>
-  f [DeltaSignal t ohlc] -> f (YieldStatistics t ohlc)
-toTradeStatistics = fmap (yieldList2statistics . map DSA.yield)
--}
+  f [DeltaSignal t ohlc] -> f (TradeStatistics t ohlc)
+toTradeStatistics = fmap tradeStatistics
+

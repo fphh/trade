@@ -116,10 +116,11 @@ tradeStatistics step dtl =
 
   let ts = DSA.sortDeltaSignals dtl
       sparks = Spark.toSparkLine step ts
-      stats = YS.yieldStatistics ts -- (TS.yieldStatistics ts, TS.tradeStatistics ts)
+      ystats = YS.toYieldStatistics ts
+      tstats = TS.toTradeStatistics ts
 
-      f _ _ st sp = toHtmlIO st <> toHtmlIO sp
-      zs = NestedMap.zipWith f stats sparks
+      f _ _ ys ts sp = toHtmlIO ys <> toHtmlIO ts <> toHtmlIO sp
+      zs = NestedMap.zipWith3 f ystats tstats sparks
 
       g pos wl htmlio =
         let sty = H5A.style (H5.stringValue "clear:both;margin:18px;padding-top:24px;color:#006600")

@@ -29,3 +29,15 @@ zipWith f (NestedMap m0) (NestedMap m1) =
   let err = error "NestedMap.zipWith: missing key"
       g k0 k1 x = maybe err (f k0 k1 x) (Map.lookup k0 m1 >>= Map.lookup k1)
   in NestedMap (Map.mapWithKey (Map.mapWithKey . g) m0)
+
+
+zipWith3 ::
+  (Ord k0, Ord k1) =>
+  (k0 -> k1 -> x -> y -> z -> a) -> NestedMap k0 k1 x -> NestedMap k0 k1 y -> NestedMap k0 k1 z -> NestedMap k0 k1 a
+zipWith3 f (NestedMap m0) (NestedMap m1) (NestedMap m2) =
+  let err = error "NestedMap.zipWith: missing key"
+      g k0 k1 x = maybe err id $ do
+        y <- Map.lookup k0 m1 >>= Map.lookup k1
+        z <- Map.lookup k0 m2 >>= Map.lookup k1
+        return (f k0 k1 x y z)
+  in NestedMap (Map.mapWithKey (Map.mapWithKey . g) m0)

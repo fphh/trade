@@ -43,6 +43,14 @@ data Sample t x = Sample {
   } deriving (Show, Read)
 
 
+split :: Double -> Signal t x -> Sample t x
+split q _ | q < 0 || q > 1 = error "Trade.Type.Signal.Price.split: q should be between 0 and 1"
+split q (Signal vs) =
+  let n = floor (q * fromIntegral (Vec.length vs))
+      (i, o) = Vec.splitAt n vs
+  in Sample (Signal i) (Signal o)
+
+
 map :: ((p, q) -> (r, s)) -> Signal p q -> Signal r s
 map f (Signal xs) = Signal (Vec.map f xs)
 
@@ -96,13 +104,6 @@ mapLast f (Signal ps)
 
 length :: Signal x y -> Int
 length (Signal xs) = Vec.length xs
-
-split :: Double -> Signal t x -> Sample t x
-split q _ | q < 0 || q > 1 = error "Trade.Type.Signal.Price.split: q should be between 0 and 1"
-split q (Signal vs) =
-  let n = floor (q * fromIntegral (Vec.length vs))
-      (i, o) = Vec.splitAt n vs
-  in Sample (Signal i) (Signal o)
 
 -- empty :: Signal t x
 -- empty = Signal (Vec.empty)
