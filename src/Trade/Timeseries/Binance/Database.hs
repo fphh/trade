@@ -33,6 +33,6 @@ instance ToUrl RequestParams where
     baseUrl
     ++ "?symbol=" ++ toUrl symbol
     ++ "&interval=" ++ toUrl interval
-    ++ maybe "" (\d -> "&limit=" ++ show d) limit
+    ++ "&limit=" ++ maybe "1000" show limit
     ++ maybe "" (\d -> "&startTime=" ++ show (utcToMillis d)) from
     ++ maybe "" (\d -> "&endTime=" ++ show (utcToMillis d)) to

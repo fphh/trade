@@ -180,7 +180,7 @@ instance OD.OHLCData (BacktestInput stgy t ohlc) where
 --------------------------------------------------------
 
 barLength :: BarLength
-barLength = Min 15
+barLength = Hour 1
 
 getSymbol :: Bin.Symbol -> IO (UTCTime, Signal UTCTime Price)
 getSymbol sym = do
@@ -191,16 +191,16 @@ getSymbol sym = do
         Bin.baseUrl = Bin.binanceBaseUrl
         , Bin.symbol = sym
         , Bin.interval = Bin.Interval barLength
-        , Bin.limit = Just 10000
+        , Bin.limit = Just 4000
         , Bin.from = Nothing
-        , Bin.to = Just ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
+        , Bin.to = Just now -- ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
         }
 
       toSignal row = (Bin.toDate row, Price (unClose (Bin.close row)))
 
       mcBegin = UTCTime (fromGregorian 2020 1 1) 0
   
-  fmap ((\x -> (mcBegin, x)) . Signal . Vec.map toSignal) (Bin.getUnsafe req)
+  fmap ((\x -> (mcBegin, x)) . Signal . Vec.map toSignal) (Bin.getTicker req)
 
 blackScholes :: IO (BarNo, Signal BarNo Price)
 blackScholes = do
