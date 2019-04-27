@@ -30,6 +30,7 @@ library
                         Trade.Analysis.TWR
                         Trade.Analysis.Yield
                         Trade.Example.Basic
+                        Trade.Example.Correlation
                         Trade.Example.Empty
                         Trade.Example.ReplayingTrades
                         Trade.Example.Simple
@@ -50,6 +51,10 @@ library
                         Trade.Report.SparkLine
                         Trade.Report.Style
                         Trade.Report.Table
+                        Trade.Strategy.Algorithm
+                        Trade.Strategy.Condition
+                        Trade.Strategy.Process
+                        Trade.Strategy.Type
                         Trade.Test.Data
                         Trade.Test.Time
                         Trade.Timeseries.Algorithm.Intersection

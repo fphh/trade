@@ -221,7 +221,7 @@ blackScholes = do
 example :: IO ()
 example = do
 
-  (mcBegin, sample) <- getSymbol Bin.BTCUSDT
+  (mcBegin, sample) <- getSymbol (Bin.USDT Bin.BTCUSDT)
   -- (mcBegin, sample) <- blackScholes
 
   let Signal.Sample inSamp outOfSamp = Signal.split 0.75 sample
