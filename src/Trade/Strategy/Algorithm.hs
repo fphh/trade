@@ -6,8 +6,11 @@ import Control.Monad.State (State, get, modify)
 
 import qualified Data.Map as Map
 
+
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
+
+import Trade.Type.Signal (Signal(..))
 
 import Trade.Strategy.Type (Index(..), Focus(..), Offset(..), Modified(..), Signals(..), AlignedSignals(..), IndexedSignals(..))
 
@@ -19,7 +22,7 @@ apply (Offset off) idx (f, vs) =
 
 indicator ::
   (Ord sym) =>
-  (Modified sym) -> Vector (t, x) -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
+  (Modified sym) -> Signal t x -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
 indicator mSym vs = do
   modify (\st -> st { signals = Map.insert mSym vs (signals st) })
   return $ \off -> do
@@ -47,11 +50,10 @@ modifySignal (MAvg win _) vs =
 
 now ::
   (Ord sym) =>
-  (sym, Vector (t, x)) -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
+  (sym, Signal t x) -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
 now (sym, vs) = indicator (Now sym) vs
 
 mavg ::
   (Ord sym) =>
-  Int -> (sym, Vector (t, x)) -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
+  Int -> (sym, Signal t x) -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
 mavg win (sym, vs) = indicator (MAvg win sym) vs
-

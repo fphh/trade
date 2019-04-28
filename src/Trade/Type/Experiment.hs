@@ -14,14 +14,10 @@ import qualified Text.Blaze.Html5.Attributes as H5A
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
-import Text.Printf (printf)
-
-
-import Trade.Type.Bars (DeltaTy, {- FormatDelta, -} Add, diff {- , formatDelta -} )
+import Trade.Type.Bars (DeltaTy, Add)
 import Trade.Type.Delta (Delta(..), ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 
-import Trade.Type.DeltaSignal (DeltaSignal)
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 
 import Trade.Type.DeltaTradeList (DeltaTradeList)
@@ -30,17 +26,13 @@ import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
 
 import qualified Trade.Type.NestedMap as NestedMap
-import Trade.Type.NestedMap (NestedMap)
-
-import Trade.Type.Price (Price)
 
 import Trade.Type.Signal (Signal(..))
-import qualified Trade.Type.Signal as Signal
 
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
 import Trade.Type.Trade (TradeList)
-import Trade.Type.Yield (LogYield, ToYield, toYield, logYield2yield)
+import Trade.Type.Yield (ToYield)
 
 import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList, impulse2tradeList)
 import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList, tradeList2DeltaTradeList)
@@ -49,7 +41,6 @@ import qualified Trade.Report.Line as Line
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.SparkLine as Spark
 import qualified Trade.Report.Style as Style
-import qualified Trade.Report.Table as Table
 
 import qualified Trade.TStatistics.SampleStatistics as SS
 import qualified Trade.TStatistics.Statistics as Stats
@@ -57,21 +48,21 @@ import qualified Trade.TStatistics.TradeStatistics as TS
 import qualified Trade.TStatistics.YieldStatistics as YS
 
 
-import Trade.Help.SafeTail (shead, slast)
+import Trade.Help.SafeTail (slast)
 
 import Trade.Report.HtmlIO (liftHtml, toHtmlIO, HtmlIO)
-import Trade.Report.Pretty (pretty, Pretty)
+import Trade.Report.Pretty (Pretty)
 
 
 data Input stgy t ohlc = Input {
   step :: StepTy stgy t
   , initialEquity :: Equity
-  , impulseGenerator :: OptimizedImpulseGenerator ohlc
+  , impulseGenerator :: OptimizedImpulseGenerator stgy ohlc
   , inputSignal :: Signal t ohlc
   }
 
-data Output t ohlc = Output {
-  impulseSignal :: ImpulseSignal t
+data Output stgy t ohlc = Output {
+  impulseSignal :: ImpulseSignal stgy t
   , deltaTradeList :: DeltaTradeList t ohlc
   , outputSignal :: Signal t Equity
   }
@@ -79,7 +70,7 @@ data Output t ohlc = Output {
 
 data Result stgy t ohlc = Result {
   input :: Input stgy t ohlc
-  , output :: Output t ohlc
+  , output :: Output stgy t ohlc
   }
 
 conduct ::
@@ -112,12 +103,12 @@ tradeStatistics ::
   , Real (DeltaTy t)
   , Pretty (DeltaTy t), Pretty (Stats.DeltaTyStats t)) =>
   StepTy stgy t -> DeltaTradeList t ohlc -> HtmlIO
-tradeStatistics step dtl =
+tradeStatistics stp dtl =
 
-  let ts = DSA.sortDeltaSignals dtl
-      sparks = Spark.toSparkLine step ts
-      ystats = YS.toYieldStatistics ts
-      tstats = TS.toTradeStatistics ts
+  let sts = DSA.sortDeltaSignals dtl
+      sparks = Spark.toSparkLine stp sts
+      ystats = YS.toYieldStatistics sts
+      tstats = TS.toTradeStatistics sts
 
       f _ _ ys ts sp = toHtmlIO ys <> toHtmlIO ts <> toHtmlIO sp
       zs = NestedMap.zipWith3 f ystats tstats sparks

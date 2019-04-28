@@ -31,11 +31,12 @@ instance Functor (Signal t) where
 instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where
   toNumberedList (Signal pps) = toNumberedList pps
 
+{-
 data OffsettedSignal t x = OffsettedSignal {
   offset :: t
   , signal :: Signal t x
   } deriving (Show, Read)
-
+-}
 
 data Sample t x = Sample {
   inSample :: Signal t x

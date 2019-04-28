@@ -20,9 +20,9 @@ import Trade.Report.HtmlIO (HtmlIO)
 
 import Trade.Analysis.ToReport (ToReport, report, OptimizationData(..), BacktestData(..))
  
-data Analysis optInp backInp = Analysis {
+data Analysis stgy optInp backInp = Analysis {
   title :: String
-  , impulseGenerator :: ImpulseGenerator (OptInpTy optInp) (OHLCDataTy optInp)
+  , impulseGenerator :: ImpulseGenerator stgy (OptInpTy optInp) (OHLCDataTy optInp)
   , optimizationInput :: optInp
   , backtestInput :: backInp
   }
@@ -41,7 +41,7 @@ analyze ::
   , ToReport (OptimizationData optInp (OptReportTy optInp))
   , ToReport (BacktestData backInp (BacktestReportTy backInp))
   , OHLCDataTy optInp ~ OHLCDataTy backInp)
-  => Analysis optInp backInp -> HtmlIO
+  => Analysis stgy optInp backInp -> HtmlIO
 analyze (Analysis ttle impGen optInp backInp) = do
   (optImpGen, optOut) <- liftIO (optimize impGen optInp)
 

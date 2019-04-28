@@ -17,9 +17,9 @@ class Optimize optInput where
   type OptInpTy optInput :: *
 
   optimize ::
-    ImpulseGenerator (OptInpTy optInput) (OHLCDataTy optInput)
+    ImpulseGenerator stgy (OptInpTy optInput) (OHLCDataTy optInput)
     -> optInput
-    -> IO (RankedStrategies (OHLCDataTy optInput), OptReportTy optInput)
+    -> IO (RankedStrategies stgy (OHLCDataTy optInput), OptReportTy optInput)
 
 
 data NoOptimization = NoOptimization
@@ -32,7 +32,7 @@ instance OHLCData NoOptimization where
 instance Optimize NoOptimization where
   type OptReportTy NoOptimization = NoOptimizationReport
   type OptInpTy NoOptimization = NoOptimization
-  
+
   optimize (ImpulseGenerator strat) NoOptimization =
     return (RankedStrategies [strat NoOptimization], NoOptimizationReport)
 

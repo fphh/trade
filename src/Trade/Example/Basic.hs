@@ -61,11 +61,11 @@ instance OD.OHLCData BacktestInput where
 
 --------------------------------------------------------
 
+
 example :: IO ()
 example = do
-  
 
-  let analysis :: Ana.Analysis OptimizationInput BacktestInput
+  let analysis :: Ana.Analysis stgy OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "Basic Report"
         , Ana.impulseGenerator = IG.optImpGen2impGen IG.noImpulses

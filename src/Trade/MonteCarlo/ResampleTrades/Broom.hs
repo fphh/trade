@@ -30,7 +30,6 @@ import Trade.Type.Broom (Broom(..))
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal (Signal)
 
-import Debug.Trace
 
 randomDelta ::
   Vector (DeltaSignal t ohlc) -> Vector (DeltaSignal t ohlc) -> [Int] -> [DeltaSignal t ohlc]
@@ -46,7 +45,7 @@ randomDelta is nis (r:rs) =
   in zipWith f rs as
 
 
-deltaBroom :: Experiment.Output t ohlc -> Broom (IO [DeltaSignal t ohlc])
+deltaBroom :: Experiment.Output stgy t ohlc -> Broom (IO [DeltaSignal t ohlc])
 deltaBroom (Experiment.Output _ (DeltaTradeList dtl) _) =
   let f x@(DeltaSignal _ pos _) (us, vs) =
         case pos of

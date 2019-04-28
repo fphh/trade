@@ -54,8 +54,8 @@ infixl 6 .+
 symbol :: (a, b) -> a
 symbol = fst
 
-cst :: Double -> Maybe Double
-cst = Just
+constant :: a -> Maybe a
+constant = Just
 
 
 data Condition sym =
@@ -68,12 +68,11 @@ infixr 0 :|:
 infix 1 :=:
 infix 1 :->
 
-
-eval :: Condition sym -> State (IndexedSignals sym t x) [(sym, DisInvest)]
-eval (sym :=: imps) =
+conditions :: Condition sym -> State (IndexedSignals sym t x) [(sym, DisInvest)]
+conditions (sym :=: imps) =
   let f (_ :-> bs) = [(sym, bs)]
       g (Just b :-> _) = b
       g _ = False
   in return (maybe [] f (List.find g imps))
 
-eval (t :|: s) = liftA2 (++) (eval t) (eval s)
+conditions (t :|: s) = liftA2 (++) (conditions t) (conditions s)

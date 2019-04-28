@@ -53,6 +53,8 @@ library
                         Trade.Report.Table
                         Trade.Strategy.Algorithm
                         Trade.Strategy.Condition
+                        Trade.Strategy.Library.BuyAndHold
+                        Trade.Strategy.Library.NoInvestment
                         Trade.Strategy.Process
                         Trade.Strategy.Type
                         Trade.Test.Data
@@ -81,7 +83,7 @@ library
                         Trade.TStatistics.YieldStatistics
                         Trade.Type.Bars
                         Trade.Type.Broom
-                        Trade.Type.Conversion.DisInvest2Impulse
+                        Trade.Type.Conversion.Invest2Impulse
                         Trade.Type.Conversion.Impulse2TradeList
                         Trade.Type.Conversion.TradeList2DeltaTradeList
                         Trade.Type.Delta

@@ -12,6 +12,8 @@ import Data.Time.Clock (UTCTime)
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Data.Vector as Vec
 
+import Data.Map (Map)
+
 import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.OHLCData as OD
@@ -25,16 +27,23 @@ import Trade.Type.Step.Commission (Commission(..), noCommission)
 import Trade.Type.Step.Fraction (Fraction(..), fullFraction)
 import Trade.Type.Step.Interests (Interests(..), interests)
 
+import Trade.Type.DisInvest (InvestSignal)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Impulse (invert)
+import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.NonEmptyList (NonEmptyList(..))
 import Trade.Type.Price (Price(..))
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Strategy (Long, Short)
 
+import Trade.Type.Conversion.Invest2Impulse (invest2impulse)
+
 import qualified Trade.Type.Experiment as Experiment
 import qualified Trade.Type.ImpulseGenerator as IG
 
+
+import Trade.Strategy.Library.BuyAndHold (buyAndHold)
+import qualified Trade.Strategy.Process as Strategy
 
 import qualified Trade.Report.Line as Line
 import qualified Trade.Report.Report as Rep
@@ -48,6 +57,8 @@ ticker :: Signal UTCTime Price
 ticker = Signal (Vec.map (fmap Price) TD.test2)
 
 --------------------------------------------------------
+
+{-
 
 data OptimizationInput = OptimizationInput (Signal UTCTime Price)
 
@@ -93,15 +104,18 @@ instance BT.Backtest BacktestInput where
           , longCommission = Commission (\c -> 0.05*c)
           }
 
+{-
         stp1 = ShortStep {
           shortFraction = Fraction 0.5
           , shortCommission = Commission (\c -> 0.05*c)
           , shortInterests = Interests (interests rtf 0.02)
           }
+-}
 
         expmntLW = Experiment.Input stp0 initEqty optStrat ps
         esLW = Experiment.conduct expmntLW
 
+{-
         expmntSW = Experiment.Input stp1 initEqty optStrat ps
         esSW = Experiment.conduct expmntSW
 
@@ -110,18 +124,19 @@ instance BT.Backtest BacktestInput where
 
         expmntSL = Experiment.Input stp1 initEqty (IG.invertOpt optStrat) ps
         esSL = Experiment.conduct expmntSL
+-}
 
-    in (BacktestResult esLW esSW esLL esSL)
+    in (BacktestResult esLW {- esSW esLL esSL -})
 
 data BacktestResult = BacktestResult {
   resultLW :: Experiment.Result Long UTCTime Price
-  , resultSW :: Experiment.Result Short UTCTime Price
-  , resultLL :: Experiment.Result Long UTCTime Price
-  , resultSL :: Experiment.Result Short UTCTime Price
+--  , resultSW :: Experiment.Result Short UTCTime Price
+--  , resultLL :: Experiment.Result Long UTCTime Price
+--  , resultSL :: Experiment.Result Short UTCTime Price
   }
 
 instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
-  toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult resLW resSW resLL resSL)) = do
+  toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult resLW {- resSW resLL resSL -})) = do
 
     Rep.subheader "Fees"
 
@@ -130,6 +145,7 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
     Rep.subheader "Backtest Result, Long, Winning"
     Experiment.render "Symbol at Close" "Backtest" resLW
 
+{-
     Rep.subheader "Backtest Result, Short, Winning"
     Experiment.render "Symbol at Close" "Backtest" resSW
 
@@ -138,7 +154,7 @@ instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
 
     Rep.subheader "Backtest Result, Short, Losing"
     Experiment.render "Symbol at Close" "Backtest" resSL
-
+-}
 
 --------------------------------------------------------
 
@@ -150,16 +166,33 @@ instance OD.OHLCData BacktestInput where
 
 --------------------------------------------------------
 
+-}
+
+
+data Symbol = A deriving (Show, Eq, Ord)
+
+
 example :: IO ()
 example = do
+
   
 
+  let stgy :: Map Symbol (InvestSignal UTCTime)
+      stgy = Strategy.run (buyAndHold (A, ticker))
+
+      xs :: Map Symbol (ImpulseSignal Short UTCTime)
+      xs = fmap invest2impulse stgy
+  
+  print xs
+
+
+{-
   let equity = Equity 10
   
-      analysis :: Ana.Analysis OptimizationInput BacktestInput
+      analysis :: Ana.Analysis Long OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "Long/Short - Winning/Losing"
-        , Ana.impulseGenerator = IG.optImpGen2impGen (IG.optimalBuySell unPrice)
+        , Ana.impulseGenerator = undefined -- IG.optImpGen2impGen (IG.optimalBuySell unPrice)
         , Ana.optimizationInput = OptimizationInput ticker
         , Ana.backtestInput = BacktestInput equity ticker
         }
@@ -169,3 +202,5 @@ example = do
   t <- Rep.renderReport rep
   
   BSL.putStrLn t
+
+-}

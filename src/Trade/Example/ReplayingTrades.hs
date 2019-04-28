@@ -31,7 +31,9 @@ import Trade.Type.Step.Fraction (Fraction(..), fullFraction)
 import Trade.Type.Step.Interests (Interests(..), interests)
 import Trade.Type.Step.Algorithm (StepFunction)
 import Trade.Type.Equity (Equity(..))
-import Trade.Type.ImpulseGenerator (ImpulseGenerator(..), OptimizedImpulseGenerator(..), RankedStrategies(..), impulsesFromTwoMovingAverages, invert)
+
+-- import Trade.Type.ImpulseGenerator (ImpulseGenerator(..), OptimizedImpulseGenerator(..), RankedStrategies(..), impulsesFromTwoMovingAverages, invert)
+
 import Trade.Type.NonEmptyList (NonEmptyList(..))
 import Trade.Type.OHLC (Close(..))
 import Trade.Type.Price (Price(..))
@@ -76,6 +78,8 @@ import qualified Trade.Timeseries.Binance.Interval as Bin
 import qualified Trade.Timeseries.Binance.Symbol as Bin
 import qualified Trade.Timeseries.Url as Url
 
+{-
+
 data OptimizationInput stgy t ohlc = OptimizationInput {
   optSample :: Signal t ohlc
   , igInput :: [(WindowSize, WindowSize)]
@@ -96,6 +100,7 @@ instance (Ord t, Add t, TradeList2DeltaTradeList stgy, Impulse2TradeList stgy, S
 
   type OptReportTy (OptimizationInput stgy t Price) = OptimizationResult t stgy
   type OptInpTy (OptimizationInput stgy t Price) = (WindowSize, WindowSize)
+  type OptStgyTy (OptimizationInput stgy t Price) = stgy
 
   optimize (ImpulseGenerator strat) optInp = do
     let findBestWinSize winSize acc =
@@ -278,3 +283,5 @@ example = do
   
   BSL.putStrLn t
  
+
+-}

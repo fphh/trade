@@ -13,18 +13,18 @@ import Trade.Type.Impulse (Impulse(..))
 import qualified Trade.Type.Impulse as Imp
 
 
-newtype ImpulseSignal t = ImpulseSignal {
+newtype ImpulseSignal stgy t = ImpulseSignal {
   unImpulseSignal :: Map t Impulse
   } deriving (Show)
 
-expandImpulseSignal :: (Ord t) => Signal t ohlc -> ImpulseSignal t -> Signal t (Maybe Impulse)
+expandImpulseSignal :: (Ord t) => Signal t ohlc -> ImpulseSignal stgy t -> Signal t (Maybe Impulse)
 expandImpulseSignal (Signal ps) (ImpulseSignal is) =
   let f (t, _) = (t, Map.lookup t is)
   in Signal (Vec.map f ps)
 
 
 -- | Allow only alternating Buy/Sell
-simplify :: (Ord t) => ImpulseSignal t -> ImpulseSignal t
+simplify :: (Ord t) => ImpulseSignal stgy t -> ImpulseSignal stgy t
 simplify (ImpulseSignal m) =
   let g (Nothing, o) k a = (Just a, Map.insert k a o)
       g acc@(Just x, _) _ a | a == x = acc
@@ -34,14 +34,14 @@ simplify (ImpulseSignal m) =
 
 curve ::
   (Ord t) =>
-  Signal t ohlc -> ImpulseSignal t -> Vector (t, Maybe Impulse)
+  Signal t ohlc -> ImpulseSignal stgy t -> Vector (t, Maybe Impulse)
 curve (Signal ps) (ImpulseSignal is) =
   let f t s  = (++[(t, Nothing), (t, Just s), (t, Nothing)])
       (t0, _) = Vec.head ps
       (tn, _) = Vec.last ps
   in Vec.snoc (Vec.fromList (Map.foldrWithKey' f [(t0, Nothing)] is)) (tn, Nothing)
 
-invert :: ImpulseSignal t -> ImpulseSignal t
+invert :: ImpulseSignal stgy t -> ImpulseSignal stgy t
 invert (ImpulseSignal m) = ImpulseSignal (fmap Imp.invert m)
 
 

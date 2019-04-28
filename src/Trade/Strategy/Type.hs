@@ -1,9 +1,12 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 
 module Trade.Strategy.Type where
 
 import Data.Map (Map)
 import Data.Vector (Vector)
+
+import Trade.Type.Signal (Signal)
 
 newtype Index = Index {
   unIndex :: Int
@@ -15,7 +18,7 @@ newtype Focus = Focus {
 
 newtype Offset = Offset {
   unOffset :: Int
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Num, Show)
 
 data Modified sym =
   Now sym
@@ -23,7 +26,7 @@ data Modified sym =
   deriving (Show, Eq, Ord)
 
 newtype Signals sym t x = Signals {
-  signals :: Map (Modified sym) (Vector (t, x))
+  signals :: Map (Modified sym) (Signal t x)
   } deriving (Show)
 
 data AlignedSignals sym t x = AlignedSignals {

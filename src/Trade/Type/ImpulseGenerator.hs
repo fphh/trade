@@ -20,24 +20,26 @@ import qualified Trade.Algorithm.MovingAverage as MAvg
 
 import qualified Trade.Timeseries.Algorithm.SyncZip as SZ
 
-newtype OptimizedImpulseGenerator ohlc = OptimizedImpulseGenerator {
-  unOptimizedImpulseGenerator :: forall t. (Ord t) => Signal t ohlc -> ImpulseSignal t
+newtype OptimizedImpulseGenerator stgy ohlc = OptimizedImpulseGenerator {
+  unOptimizedImpulseGenerator :: forall t. (Ord t) => Signal t ohlc -> ImpulseSignal stgy t
   }
 
-newtype ImpulseGenerator optData ohlc = ImpulseGenerator {
-  unImpulseGenerator :: optData -> OptimizedImpulseGenerator ohlc
+newtype ImpulseGenerator stgy optData ohlc = ImpulseGenerator {
+  unImpulseGenerator :: optData -> OptimizedImpulseGenerator stgy ohlc
   }
 
-newtype RankedStrategies ohlcDataTy = RankedStrategies {
-  rankedStrategies :: [OptimizedImpulseGenerator ohlcDataTy]
+newtype RankedStrategies stgy ohlcDataTy = RankedStrategies {
+  rankedStrategies :: [OptimizedImpulseGenerator stgy ohlcDataTy]
   }
 
-toImpGen :: (optData -> (forall t. Ord t => Signal t ohlc -> ImpulseSignal t)) -> ImpulseGenerator optData ohlc
+
+toImpGen :: (optData -> (forall t. Ord t => Signal t ohlc -> ImpulseSignal stgy t)) -> ImpulseGenerator stgy optData ohlc
 toImpGen ig = ImpulseGenerator (\optData -> OptimizedImpulseGenerator (ig optData))
 
-optImpGen2impGen :: OptimizedImpulseGenerator ohlc -> ImpulseGenerator optData ohlc
+optImpGen2impGen :: OptimizedImpulseGenerator stgy ohlc -> ImpulseGenerator stgy optData ohlc
 optImpGen2impGen ig = ImpulseGenerator (\_ -> ig)
 
+{-
 
 mapIG :: (Impulse -> Impulse) -> ImpulseGenerator optData ohlc -> ImpulseGenerator optData ohlc
 mapIG f (ImpulseGenerator ig) =
@@ -45,7 +47,7 @@ mapIG f (ImpulseGenerator ig) =
       newOIG (OptimizedImpulseGenerator oig) = OptimizedImpulseGenerator (\signal -> newIS (oig signal))
   in ImpulseGenerator (\d -> newOIG (ig d))
 
-invert :: ImpulseGenerator optData ohlc -> ImpulseGenerator optData ohlc
+invert :: ImpulseGenerator stgy optData ohlc -> ImpulseGenerator stgy optData ohlc
 invert = mapIG Imp.invert
 
 invertOpt :: OptimizedImpulseGenerator ohlc -> OptimizedImpulseGenerator ohlc
@@ -56,11 +58,13 @@ invertOpt (OptimizedImpulseGenerator ig) = OptimizedImpulseGenerator (fmap IS.in
 -- \f optData -> ((\(ImpulseGenerator ig) -> optImGen2impGen (ig optData) == toImpGen f)  (toImpGen f))
 -- Is it true? Somehow... quantification of optData is not ok...
 --
+-}
 
 -- | Do nothing
-noImpulses :: OptimizedImpulseGenerator ohlc
+noImpulses :: OptimizedImpulseGenerator stgy ohlc
 noImpulses = OptimizedImpulseGenerator (const (ImpulseSignal Map.empty))
 
+{-
 -- | Classic buy and hold
 buyAndHold :: OptimizedImpulseGenerator ohlc
 buyAndHold =
@@ -132,88 +136,5 @@ impulsesFromTwoMovingAverages trdAt =
         
   in toImpGen go
 
-{-
--- | Constuct impulses with crossing of two moving averages
-impulsesFromTwoMovingAverages ::
-  (ohlc -> Double) -> MAvg.WindowSize -> MAvg.WindowSize -> OptimizedImpulseGenerator ohlc
-impulsesFromTwoMovingAverages trdAt (MAvg.WindowSize j) (MAvg.WindowSize k) =
-  let go (Signal ps) =
-        let qs = Vec.map (fmap trdAt) ps
-
-            avgJ = MAvg.mavgBar j qs
-            avgK = MAvg.mavgBar k qs
-
-            g acc (t, Inter.Down) = Map.insert t Buy acc
-            g acc (t, Inter.Up) = Map.insert t Sell acc
-            g acc _ = acc
-
-        in ImpulseSignal (Vec.foldl' g Map.empty (Inter.intersection avgJ avgK))
-  in OptimizedImpulseGenerator go
--}
-
-
-{-
--- | Buy after n times up, sell after m times down.
-buySellAfterNM ::
-  (OHLC.OHLCInterface ohlc) => Int -> Int -> OptimizedImpulseGenerator ohlc
-buySellAfterNM b s =
-  let go (Signal ps) =
-        let f (_, x) = O.unClose (OHLC.ohlcClose x)
-            qs = Vec.toList (Vec.map f ps)
-
-            sell xs | length (take s xs) < s = map (const Nothing) xs 
-            sell xs@(_:as) =
-              let (y:ys, zs) = splitAt s xs
-              in case all (<y) ys of
-                   True -> map (const Nothing) ys ++ [Just Sell] ++ buy zs
-                   False -> Nothing : sell as
-            sell _ = error "ImpulseGenerator.buySellAfterNM: sell, never here"
-
-            buy xs | length (take b xs) < b = map (const Nothing) xs
-            buy xs@(_:as) =
-              let (y:ys, zs) = splitAt b xs
-              in case all (>y) ys of
-                   True -> map (const Nothing) ys ++ [Just Buy] ++ sell zs
-                   False -> Nothing : buy as
-            buy _ = error "ImpulseGenerator.buySellAfterNM: buy, never here"
-
-            g i x = (fst (ps Vec.! i), x)
-            res = Vec.imap g (Vec.fromList (buy qs))
-
-        in Signal res
-  in OptimizedImpulseGenerator go
 
 -}
-
-
-
-  
-{-
--- | Buy if index in signal is even, sell if odd
-buySell :: OptimizedImpulseGenerator ohlc
-buySell =
-  let go (Signal ps) =
-        let f i (t, _) =
-              (\x -> (t, Just x)) $
-              case even i of
-                True -> Buy
-                False -> Sell
-        in Signal (Vec.imap f ps)
-  in OptimizedImpulseGenerator go
-
-
--- | Buying, selling at absolute prices (using closing price).
-buyAtSellAtAbs ::
-  (OHLC.OHLCInterface ohlc) =>
-  Double -> Double -> OptimizedImpulseGenerator ohlc
-buyAtSellAtAbs buy sell =
-  let go =
-        let f (t, x) = (\u -> (t, u)) $
-              case O.unClose (OHLC.ohlcClose x) of
-                y | y > buy -> Just Buy 
-                y | y < sell -> Just Sell
-                _ -> Nothing
-        in IS.alternateBuySellKeepFirstOccurrence . Signal.map f
-  in OptimizedImpulseGenerator go
--}
-
