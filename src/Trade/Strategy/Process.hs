@@ -16,11 +16,12 @@ import qualified Data.List as List
 import qualified Data.Vector as Vec
 
 
-import Trade.Type.ImpulseSignal (ImpulseSignal(..))
-import Trade.Type.Position (Position(..))
+import Trade.Type.DisInvest (DisInvest(..), InvestSignal(..))
+-- import Trade.Type.Position (Position(..))
 
 import Trade.Strategy.Algorithm (modifySignal)
 import Trade.Strategy.Type (Signals(..), AlignedSignals(..), IndexedSignals(..), Index(..))
+
 
 
 align :: (Ord t, Fractional x) => Signals sym t x -> AlignedSignals sym t x
@@ -34,7 +35,7 @@ align (Signals tickers) =
 
 process ::
   (Ord t, Fractional x, Show t, Show x, Ord sym) =>
-  State (IndexedSignals sym t x) [(sym, Position)] -> State (Signals sym t x) (Map sym (ImpulseSignal t))
+  State (IndexedSignals sym t x) [(sym, DisInvest)] -> State (Signals sym t x) (Map sym (InvestSignal t))
 process frame = do
   st <- get
   let asigs = align st
@@ -43,7 +44,7 @@ process frame = do
       f (currentBS, acc) i t =
         let res = evalState frame (IndexedSignals (Index i) asigs)
         
-            p (sym, bs) = maybe (bs == Invested) (bs /=) (Map.lookup sym currentBS)
+            p (sym, bs) = maybe (bs == Invest) (bs /=) (Map.lookup sym currentBS)
             fres = filter p res
 
             g (sym, bs) acc = Map.insert sym bs acc
@@ -56,5 +57,5 @@ process frame = do
 
       (_, xs) = Vec.ifoldl f (Map.empty, Map.empty) atms
     
-  return (fmap ImpulseSignal xs)
+  return (fmap InvestSignal xs)
 

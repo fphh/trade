@@ -8,14 +8,14 @@ import Control.Monad.State (State)
 
 import qualified Data.List as List
 
-import Trade.Type.Position (Position(..))
+import Trade.Type.DisInvest (DisInvest(..))
 
 import Trade.Strategy.Type (IndexedSignals)
 
 
 
 data Implication =
-  Maybe Bool :-> Position
+  Maybe Bool :-> DisInvest
   deriving (Show)
 
 
@@ -69,7 +69,7 @@ infix 1 :=:
 infix 1 :->
 
 
-eval :: Condition sym -> State (IndexedSignals sym t x) [(sym, Position)]
+eval :: Condition sym -> State (IndexedSignals sym t x) [(sym, DisInvest)]
 eval (sym :=: imps) =
   let f (_ :-> bs) = [(sym, bs)]
       g (Just b :-> _) = b

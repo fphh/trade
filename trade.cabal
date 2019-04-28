@@ -81,12 +81,14 @@ library
                         Trade.TStatistics.YieldStatistics
                         Trade.Type.Bars
                         Trade.Type.Broom
+                        Trade.Type.Conversion.DisInvest2Impulse
                         Trade.Type.Conversion.Impulse2TradeList
                         Trade.Type.Conversion.TradeList2DeltaTradeList
                         Trade.Type.Delta
                         Trade.Type.DeltaSignal
                         Trade.Type.DeltaSignal.Algorithm
                         Trade.Type.DeltaTradeList
+                        Trade.Type.DisInvest
                         Trade.Type.Distribution
                         Trade.Type.Equity
                         Trade.Type.Experiment
