@@ -3,7 +3,7 @@
 module Trade.Strategy.Process where
 
 
-import Control.Monad.State (State, get, evalState)
+import Control.Monad.State (State, get, runState, evalState)
 
 
 import qualified Data.Map as Map
@@ -24,7 +24,7 @@ import Trade.Strategy.Type (Signals(..), AlignedSignals(..), IndexedSignals(..),
 
 
 
-align :: (Ord t, Fractional x) => Signals sym t x -> AlignedSignals sym t x
+align :: (Ord t, Fractional x, Floating x) => Signals sym t x -> AlignedSignals sym t x
 align (Signals tickers) =
   let tmsTickers = fmap (Set.fromList . Vec.toList . Vec.map fst . unSignal) tickers
       allTimes = foldMap id tmsTickers
@@ -34,8 +34,9 @@ align (Signals tickers) =
   in AlignedSignals (Vec.fromList (Set.toList tms)) modSigs
 
 process ::
-  (Ord t, Fractional x, Ord sym) =>
-  State (IndexedSignals sym t x) [(sym, DisInvest)] -> State (Signals sym t x) (Map sym (InvestSignal t))
+  (Ord t, Ord sym, Fractional x, Floating x) =>
+  State (IndexedSignals sym t x) [(sym, DisInvest)]
+  -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
 process frame = do
   st <- get
   let asigs = align st
@@ -59,9 +60,11 @@ process frame = do
 
       (_, xs) = Vec.ifoldl f (Map.empty, Map.empty) atms
     
-  return (fmap InvestSignal xs)
+  return (asigs, fmap InvestSignal xs)
 
 
 
-run :: State (Signals sym t x) (Map sym (InvestSignal t)) -> Map sym (InvestSignal t)
-run st = evalState st (Signals Map.empty)
+run ::
+  State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+  -> ((AlignedSignals sym t x, Map sym (InvestSignal t)), Signals sym t x)
+run st = runState st (Signals Map.empty)

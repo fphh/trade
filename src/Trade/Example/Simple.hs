@@ -175,15 +175,16 @@ data Symbol = A deriving (Show, Eq, Ord)
 example :: IO ()
 example = do
 
-  
-
+  undefined
+{-
   let stgy :: Map Symbol (InvestSignal UTCTime)
-      stgy = Strategy.run (buyAndHold (A, ticker))
+      (stgy, _) = Strategy.run (buyAndHold (A, ticker))
 
       xs :: Map Symbol (ImpulseSignal Short UTCTime)
       xs = fmap invest2impulse stgy
   
   print xs
+-}
 
 
 {-

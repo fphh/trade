@@ -66,3 +66,9 @@ testSimple :: Vector (UTCTime, Double)
 testSimple =
   let ys = [30, 20,40,60,80,100,80,60,40,20]
   in Vec.zip jan2017 (Vec.fromList ys)
+
+
+sinus :: Vector (UTCTime, Double)
+sinus =
+  let ys = map ((2+) . sin) [0, 0.1 .. ]
+  in Vec.zip (Vec.concat [jan2017, feb2017, mar2017, apr2017, may2017]) (Vec.fromList ys)

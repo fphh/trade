@@ -7,33 +7,33 @@ import Control.Monad.State (State)
 
 import Data.Map (Map)
 
-import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
 import Trade.Type.Signal (Signal)
-import qualified Trade.Type.Signal as Signal
+import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
 
-import Trade.Strategy.Type (Signals)
 
-import Trade.Strategy.Algorithm (time, now)
-import Trade.Strategy.Condition (symbol, constant, conditions, (.=), Condition((:=:)), Implication((:->)))
+import Trade.Strategy.Algorithm (time, now, start, end)
 import Trade.Strategy.Process (process)
+import Trade.Strategy.Type (Signals, AlignedSignals)
 
+import Trade.Strategy.Condition (symbol, conditions, (.=), Condition((:=:)), Implication((:->)))
 
 
 buyAndHold ::
-  (Ord t, Ord sym, Fractional x) =>
-  (sym, Signal t x) -> State (Signals sym t x) (Map sym (InvestSignal t))
+  (Ord t, Ord sym, Fractional x, Floating x) =>
+  (sym, Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
 buyAndHold vs@(_, xs) = do
 
-  let t0 = constant (fst (Signal.head xs))
-      tn = constant (fst (Signal.last xs))
-      
   void (now vs)
   
   process $ do
-    
+       
+    t0 <- start
+    tn <- end
+ 
     p <- time 0
-    
-    conditions $
       
+    conditions $
+
       symbol vs :=: [ p .= t0 :-> Invest
                     , p .= tn :-> Disinvest ]
+

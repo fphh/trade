@@ -34,6 +34,7 @@ library
                         Trade.Example.Empty
                         Trade.Example.ReplayingTrades
                         Trade.Example.Simple
+                        Trade.Example.Strategy
                         Trade.Help.SafeTail
                         Trade.MonteCarlo.ResampleTrades.Broom
                         Trade.MonteCarlo.Simulation.BlackScholes
@@ -54,8 +55,10 @@ library
                         Trade.Strategy.Algorithm
                         Trade.Strategy.Condition
                         Trade.Strategy.Library.BuyAndHold
+                        Trade.Strategy.Library.MovingAverages
                         Trade.Strategy.Library.NoInvestment
                         Trade.Strategy.Process
+                        Trade.Strategy.Report
                         Trade.Strategy.Type
                         Trade.Test.Data
                         Trade.Test.Time

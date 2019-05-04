@@ -32,6 +32,7 @@ simplify (ImpulseSignal m) =
       g _ _ _ = error "ImpulseSignal.simplify"
   in ImpulseSignal (snd (Map.foldlWithKey' g (Nothing, Map.empty) m))
 
+{-
 curve ::
   (Ord t) =>
   Signal t ohlc -> ImpulseSignal stgy t -> Vector (t, Maybe Impulse)
@@ -40,6 +41,17 @@ curve (Signal ps) (ImpulseSignal is) =
       (t0, _) = Vec.head ps
       (tn, _) = Vec.last ps
   in Vec.snoc (Vec.fromList (Map.foldrWithKey' f [(t0, Nothing)] is)) (tn, Nothing)
+-}
+
+curve ::
+  (Ord t) =>
+  Vector t -> ImpulseSignal stgy t -> Vector (t, Maybe Impulse)
+curve ts (ImpulseSignal is) =
+  let f t s  = (++[(t, Nothing), (t, Just s), (t, Nothing)])
+      t0 = Vec.head ts
+      tn = Vec.last ts
+  in Vec.snoc (Vec.fromList (Map.foldrWithKey' f [(t0, Nothing)] is)) (tn, Nothing)
+
 
 invert :: ImpulseSignal stgy t -> ImpulseSignal stgy t
 invert (ImpulseSignal m) = ImpulseSignal (fmap Imp.invert m)

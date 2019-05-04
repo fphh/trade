@@ -16,7 +16,7 @@ import Trade.Report.Pretty
 
 newtype Price = Price {
   unPrice :: Double
-  } deriving (Show, Eq, Ord, Num, Fractional, E.PlotValue)
+  } deriving (Show, Eq, Ord, Num, Fractional, Floating, E.PlotValue)
 
 instance Pretty Price where
   pretty (Price x) = printf "%.2fPrc" x

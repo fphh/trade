@@ -20,9 +20,26 @@ newtype Offset = Offset {
   unOffset :: Int
   } deriving (Eq, Ord, Num, Show)
 
+
+newtype Window = Window {
+  unWindow :: Int
+  } deriving (Eq, Ord, Num)
+
+instance Show Window where
+  show (Window x) = show x
+
+newtype K = K {
+  unK :: Double
+  } deriving (Eq, Ord)
+
+instance Show K where
+  show (K k) = show k
+
 data Modified sym =
   Now sym
-  | MAvg Int sym
+  | MAvg Window sym
+  | StdDev Window K sym
+  | Last sym
   deriving (Show, Eq, Ord)
 
 newtype Signals sym t x = Signals {

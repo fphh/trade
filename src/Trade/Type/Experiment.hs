@@ -6,7 +6,7 @@
 
 module Trade.Type.Experiment where
 
-
+import qualified Data.Vector as Vec
 
 import qualified Text.Blaze.Html5 as H5
 import Text.Blaze.Html5 ((!))
@@ -28,6 +28,7 @@ import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
 import qualified Trade.Type.NestedMap as NestedMap
 
 import Trade.Type.Signal (Signal(..))
+import qualified Trade.Type.Signal as Signal
 
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
@@ -137,12 +138,14 @@ render ::
 render symTitle btTitle (Result inp out) = do
   
   Rep.subheader "Experiment"
+
+  let ts = Vec.map fst (unSignal (inputSignal inp))
   
   Rep.backtestChart
     (Rep.gridChart (Style.axTitle "Equity")
       [ Line.line symTitle (inputSignal inp)
       , Line.line btTitle (outputSignal out)])
-    (Rep.impulseSignalCharts [curve (inputSignal inp) (impulseSignal out)])
+    (Rep.impulseSignalCharts [curve ts (impulseSignal out)])
 
   Rep.subsubheader "Summary"
 
