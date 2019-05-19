@@ -2,6 +2,17 @@
 
 module Trade.Type.ImpulseGenerator where
 
+import Control.Monad.State (State)
+
+import Data.Map (Map)
+
+import Trade.Type.DisInvest (InvestSignal(..))
+
+import Trade.Type.Signal (Signal(..))
+
+import Trade.Strategy.Type (Signals, AlignedSignals)
+
+{-
 import qualified Data.Vector as Vec
 
 import qualified Data.Map as Map
@@ -19,6 +30,35 @@ import qualified Trade.Timeseries.Algorithm.Intersection as Inter
 import qualified Trade.Algorithm.MovingAverage as MAvg
 
 import qualified Trade.Timeseries.Algorithm.SyncZip as SZ
+-}
+
+
+{-
+newtype OptimizedImpulseGenerator stgy signals = OptimizedImpulseGenerator {
+  unOptimizedImpulseGenerator :: forall t. (Ord t) => signals -> ImpulseSignal stgy t
+  }
+-}
+
+
+newtype OptimizedImpulseGenerator ohlc = OptimizedImpulseGenerator {
+  unOptimizedImpulseGenerator ::
+      forall t sym. (Ord sym, Ord t) =>
+      [(sym, Signal t ohlc)] -> State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym (InvestSignal t))
+  }
+
+
+newtype ImpulseGenerator optData ohlc = ImpulseGenerator {
+  unImpulseGenerator :: optData -> OptimizedImpulseGenerator ohlc
+  }
+
+
+newtype RankedStrategies ohlc = RankedStrategies {
+  rankedStrategies :: [OptimizedImpulseGenerator ohlc]
+  }
+
+
+
+{-
 
 newtype OptimizedImpulseGenerator stgy ohlc = OptimizedImpulseGenerator {
   unOptimizedImpulseGenerator :: forall t. (Ord t) => Signal t ohlc -> ImpulseSignal stgy t
@@ -137,4 +177,5 @@ impulsesFromTwoMovingAverages trdAt =
   in toImpGen go
 
 
+-}
 -}

@@ -23,7 +23,7 @@ data OptimizationInput = OptimizationInput
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
   type OptInpTy OptimizationInput = OD.NoOHLC
-  
+
   optimize (IG.ImpulseGenerator strat) OptimizationInput =
     return (IG.RankedStrategies [strat OD.NoOHLC], OptimizationResult)
 
@@ -65,10 +65,10 @@ instance OD.OHLCData BacktestInput where
 example :: IO ()
 example = do
 
-  let analysis :: Ana.Analysis stgy OptimizationInput BacktestInput
+  let analysis :: Ana.Analysis OptimizationInput BacktestInput
       analysis = Ana.Analysis {
         Ana.title = "Basic Report"
-        , Ana.impulseGenerator = IG.optImpGen2impGen IG.noImpulses
+        , Ana.impulseGenerator = undefined -- IG.optImpGen2impGen IG.noImpulses
         , Ana.optimizationInput = OptimizationInput
         , Ana.backtestInput = BacktestInput
         }

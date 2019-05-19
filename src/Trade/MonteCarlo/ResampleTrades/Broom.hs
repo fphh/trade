@@ -45,8 +45,8 @@ randomDelta is nis (r:rs) =
   in zipWith f rs as
 
 
-deltaBroom :: Experiment.Output stgy t ohlc -> Broom (IO [DeltaSignal t ohlc])
-deltaBroom (Experiment.Output _ (DeltaTradeList dtl) _) =
+deltaBroom :: Experiment.Output stgy sym t ohlc -> Broom (IO [DeltaSignal t ohlc])
+deltaBroom (Experiment.Output _ _ (DeltaTradeList dtl) _) =
   let f x@(DeltaSignal _ pos _) (us, vs) =
         case pos of
           Invested -> (x:us, vs)
@@ -99,7 +99,7 @@ defaultMC = MCConfig {
 
 mc ::
   (Ord t, Add t, StepFunction (StepTy stgy) t) =>
-  Experiment.Result stgy t ohlc -> MCConfig t -> IO (Broom (Signal t Equity))
+  Experiment.Result stgy sym t ohlc -> MCConfig t -> IO (Broom (Signal t Equity))
 mc result mtc = do
   let db = deltaBroom (Experiment.output result)
       stp = Experiment.step (Experiment.input result)

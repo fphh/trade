@@ -2,6 +2,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 
 module Trade.Report.Report where
@@ -42,9 +43,11 @@ import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
 import Trade.Report.HtmlIO (HtmlIO, HtmlT(..), liftHtml)
 
 import Trade.Report.Style (AxisConfig(..), colors, impulseAxisConf)
-import Trade.Report.Line (L(..))
-                        
+import Trade.Report.Line (Line(..), ToLine, toLine, XTy, YTy)
+import qualified Trade.Report.Render as Render
+
 import Trade.Type.Impulse (Impulse)
+import Trade.Type.Price (Price(..))
 
 
 clear :: H5.Attribute
@@ -114,40 +117,10 @@ renderReport html = do
 chartSize :: (Double, Double)
 chartSize = (1000, 520)
 
--- | TODO: use sockets or pipes?
-toBS :: (E.Default l, E.ToRenderable l) => D.FileOptions -> E.EC l () -> IO ByteString
-toBS fopts diagram = Temp.withSystemTempFile "svg-" $
-  \file h -> do
-    hClose h
-    D.toFile fopts file diagram
-    bs <- BSL.readFile file
-    -- remove clip-path attributes; clip-paths seem to be buggy in Charts-lib.
-    return (BSS.replace (BS.pack [99,108,105,112,45,112,97,116,104,61]) BSL.empty bs)
-
--- | TODO: use sockets or pipes?
-toBS2 :: D.FileOptions -> Renderable a -> IO ByteString
-toBS2 fopts r = Temp.withSystemTempFile "svg-" $
-  \file h -> do
-    hClose h
-    D.renderableToFile fopts file r
-    bs <- BSL.readFile file
-    -- remove clip-path attributes; clip-paths seem to be buggy in Charts-lib.
-    return (BSS.replace (BS.pack [99,108,105,112,45,112,97,116,104,61]) BSL.empty bs)
 
 candle :: String -> [Vector (E.Candle UTCTime Double)] -> HtmlIO
 candle label cs = HtmlT $ do
-  
-  let fstyle = E.def {
-        E._font_name = "monospace"
-        , E._font_size = 24
-        , E._font_weight = E.FontWeightNormal
-        }
-
-      df = E.def { D._fo_format = D.SVG_EMBEDDED
-                 , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-                 , D._fo_size = chartSize }
-
-      lineStyle n colour = E.line_width E..~ n
+  let lineStyle n colour = E.line_width E..~ n
                            $ E.line_color E..~ E.opaque colour
                            $ E.def
 
@@ -164,7 +137,96 @@ candle label cs = HtmlT $ do
 
         E.plot_candle_title E..= label
     
-  fmap H5.unsafeLazyByteString (toBS df (E.plot diagram))
+  fmap H5.unsafeLazyByteString (Render.ec2svg (E.plot diagram))
+
+chart ::
+  (Foldable t, ToLine a, E.PlotValue (XTy a), E.PlotValue (YTy a)) =>
+  AxisConfig (XTy a) b -> (AxisConfig (YTy a) c, t (Line a)) -> HtmlT IO ()
+chart acx (acy, ls) = HtmlT $ do
+  let diagram = do
+        E.setColors colors
+        
+        E.layout_x_axis E..= xAxisLayout acx
+        E.layout_bottom_axis_visibility E..= axisVisibility acx
+        case axisFn acx of
+          Just x -> E.layout_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        E.layout_y_axis E..= xAxisLayout acy
+        E.layout_left_axis_visibility E..= axisVisibility acy
+        case axisFn acy of
+          Just x -> E.layout_y_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+          
+        mapM_ (E.plot . toLine) ls
+        
+  fmap H5.unsafeLazyByteString (Render.ec2svg diagram)
+
+
+gridChart ::
+  (Ord (YTy a), E.PlotValue (XTy a), E.PlotValue (YTy a), Foldable t, ToLine a) =>
+  AxisConfig (XTy a) (YTy a) -> t (Line a) -> E.StackedLayout (XTy a)
+gridChart  ac ls =
+  let fstyle = E.def {
+        E._font_name = "monospace"
+        , E._font_size = 24
+        , E._font_weight = E.FontWeightNormal
+        }
+
+      df = E.def {
+        D._fo_format = D.SVG_EMBEDDED
+        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
+        , D._fo_size = chartSize
+        }
+           
+      diagram = E.execEC $ do
+        E.setColors colors
+ 
+        E.layout_x_axis E..= xAxisLayout ac
+        E.layout_y_axis E..= yAxisLayout ac
+        E.layout_bottom_axis_visibility E..= axisVisibility ac
+        
+        case axisFn ac of
+          Just x -> E.layout_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        mapM_ (E.plot . toLine) ls
+
+  in E.StackedLayout diagram
+
+impulseSignalCharts ::
+  (Ord x, E.PlotValue x) =>
+  [Vector (x, Maybe Impulse)] -> [E.StackedLayout x]
+impulseSignalCharts is =
+  let toChart sty ls = E.execEC $ do
+        E.setColors [ E.opaque E.darkgreen ]
+        
+        E.layout_x_axis E..= xAxisLayout sty
+        E.layout_legend E..= Nothing
+        E.layout_bottom_axis_visibility E..= (E.axis_show_labels E..~ False $ E.def)
+        
+        E.layout_y_axis E..= yAxisLayout sty
+        E.layout_left_axis_visibility E..= axisVisibility sty
+        
+        case axisFn sty of
+          Just x -> E.layout_x_axis . E.laxis_generate E..= x
+          Nothing -> return ()
+
+        mapM_ E.plot ls
+      
+      f impSig = toChart impulseAxisConf [E.line "down buy / up sell" (map Vec.toList is)]
+  in map (E.StackedLayout . f) is
+
+backtestChart :: (Ord x) => E.StackedLayout x -> [E.StackedLayout x] -> HtmlIO
+backtestChart a as =  HtmlT $ do
+  let layouts = E.StackedLayouts (a : as) False
+  fmap H5.unsafeLazyByteString (Render.renderable2svg (E.renderStackedLayouts layouts))
+
+
+
+
+
+
 
 {-
 chartLR ::
@@ -214,115 +276,3 @@ chartLR acx (acL, lsL) (acR, lsR) = HtmlT $ do
 
   fmap H5.unsafeLazyByteString (toBS df diagram)
 -}
-
-chart ::
-  (E.PlotValue x, E.PlotValue y) =>
-  AxisConfig x b -> (AxisConfig y c, [L [(x, y)]]) -> HtmlT IO ()
-chart acx (acy, ls) = HtmlT $ do
-  let fstyle = E.def {
-        E._font_name = "monospace"
-        , E._font_size = 24
-        , E._font_weight = E.FontWeightNormal
-        }
-
-      df = E.def {
-        D._fo_format = D.SVG_EMBEDDED
-        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-        , D._fo_size = chartSize
-        }
-           
-      diagram = do
-        E.setColors colors
-        
-        E.layout_x_axis E..= xAxisLayout acx
-        E.layout_bottom_axis_visibility E..= axisVisibility acx
-        case axisFn acx of
-          Just x -> E.layout_x_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-
-        E.layout_y_axis E..= xAxisLayout acy
-        E.layout_left_axis_visibility E..= axisVisibility acy
-        case axisFn acy of
-          Just x -> E.layout_y_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-          
-        let toLine (L str vs) = E.line str [vs]
-
-        mapM_ (E.plot . toLine) ls
-        
-  fmap H5.unsafeLazyByteString (toBS df diagram)
-
-
-gridChart ::
-  (E.PlotValue y, Ord y, E.PlotValue x) =>
-  AxisConfig x y -> [L [(x, y)]] -> E.StackedLayout x
-gridChart  ac ls =
-  let fstyle = E.def {
-        E._font_name = "monospace"
-        , E._font_size = 24
-        , E._font_weight = E.FontWeightNormal
-        }
-
-      df = E.def {
-        D._fo_format = D.SVG_EMBEDDED
-        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-        , D._fo_size = chartSize
-        }
-           
-      diagram = E.execEC $ do
-        E.setColors colors
- 
-        E.layout_x_axis E..= xAxisLayout ac
-        E.layout_y_axis E..= yAxisLayout ac
-        E.layout_bottom_axis_visibility E..= axisVisibility ac
-        
-        case axisFn ac of
-          Just x -> E.layout_x_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-
-        let toLine (L str vs) = E.line str [vs]
-
-        mapM_ (E.plot . toLine) ls
-
-  in E.StackedLayout diagram
-
-impulseSignalCharts ::
-  (Ord x, E.PlotValue x) =>
-  [Vector (x, Maybe Impulse)] -> [E.StackedLayout x]
-impulseSignalCharts is =
-  let toChart sty ls = E.execEC $ do
-        E.setColors [ E.opaque E.darkgreen ]
-        
-        E.layout_x_axis E..= xAxisLayout sty
-        E.layout_legend E..= Nothing
-        E.layout_bottom_axis_visibility E..= (E.axis_show_labels E..~ False $ E.def)
-        
-        E.layout_y_axis E..= yAxisLayout sty
-        E.layout_left_axis_visibility E..= axisVisibility sty
-        
-        case axisFn sty of
-          Just x -> E.layout_x_axis . E.laxis_generate E..= x
-          Nothing -> return ()
-
-        mapM_ E.plot ls
-      
-      f impSig = toChart impulseAxisConf [E.line "down buy / up sell" (map Vec.toList is)]
-  in map (E.StackedLayout . f) is
-
-backtestChart :: (Ord x) => E.StackedLayout x -> [E.StackedLayout x] -> HtmlIO
-backtestChart a as =  HtmlT $ do
-  let fstyle = E.def {
-        E._font_name = "monospace"
-        , E._font_size = 24
-        , E._font_weight = E.FontWeightNormal
-        }
-
-      df = E.def {
-        D._fo_format = D.SVG_EMBEDDED
-        , D._fo_fonts = fmap (. (const fstyle)) D.loadCommonFonts
-        , D._fo_size = chartSize
-        }
-
-      layouts = E.StackedLayouts (a : as) False
-      
-  fmap H5.unsafeLazyByteString (toBS2 df (E.renderStackedLayouts layouts))

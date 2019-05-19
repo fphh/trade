@@ -19,7 +19,7 @@ import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
 class Backtest btInput where
   type BacktestReportTy btInput :: *
   
-  backtest :: NonEmptyList (OptimizedImpulseGenerator stgy (OHLCDataTy btInput)) -> btInput -> BacktestReportTy btInput
+  backtest :: NonEmptyList (OptimizedImpulseGenerator (OHLCDataTy btInput)) -> btInput -> BacktestReportTy btInput
 
 
 data NoBacktest = NoBacktest

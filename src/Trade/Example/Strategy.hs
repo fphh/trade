@@ -6,6 +6,7 @@ import Data.Time.Clock (UTCTime)
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import qualified Data.Vector as Vec
+import Data.Vector (Vector)
 
 import Data.Map (Map)
 
@@ -22,7 +23,7 @@ import Trade.Strategy.Library.MovingAverages (movingAverages)
 
 import qualified Trade.Strategy.Process as Strategy
 import Trade.Strategy.Report (plot)
-import Trade.Strategy.Type (Window(..))
+import Trade.Strategy.Type (Window(..), AlignedSignals)
 
 import Trade.MonteCarlo.Simulation.BlackScholes (Mu(..), Sigma(..), blackScholesDet)
 
@@ -55,10 +56,10 @@ example = do
 
   bs <- blackScholes
 
-
   let strategy = movingAverages (Window 10) (Window 20)
-      
-      ((asigs, stgy), _) = Strategy.run (strategy (A, Signal.map (fmap unPrice) bs))
+
+      -- asigs :: (XTy (Vector (BarNo, Double)) => AlignedSignals Symbol BarNo Double
+      ((asigs, stgy), _) = Strategy.run (strategy [(A, bs)])
 
       xs :: Map Symbol (ImpulseSignal Long BarNo)
       xs = fmap invest2impulse stgy

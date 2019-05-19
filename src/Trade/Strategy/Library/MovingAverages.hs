@@ -11,11 +11,11 @@ import Data.Map (Map)
 
 import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
 import Trade.Type.Signal (Signal)
-import qualified Trade.Type.Signal as Signal
+--import qualified Trade.Type.Signal as Signal
 
 import Trade.Strategy.Type (Signals, AlignedSignals, Window(..))
 
-import Trade.Strategy.Algorithm (time, now, mavg)
+import Trade.Strategy.Algorithm (now, mavg)
 import Trade.Strategy.Condition (symbol, conditions, (.>), (.<), (.&&), Condition((:=:)), Implication((:->)))
 import Trade.Strategy.Process (process)
 
@@ -24,8 +24,9 @@ import Trade.Strategy.Process (process)
 
 movingAverages ::
   (Ord t, Ord sym, Ord x, Fractional x, Floating x) =>
-  Window -> Window -> (sym, Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
-movingAverages j k vs@(_, xs) = do
+  Window -> Window -> [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+movingAverages _ _ [] = error "movingAverages"
+movingAverages j k (vs:_) = do
 
   void (now vs)
 

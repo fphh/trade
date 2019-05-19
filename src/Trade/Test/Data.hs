@@ -70,5 +70,5 @@ testSimple =
 
 sinus :: Vector (UTCTime, Double)
 sinus =
-  let ys = map ((2+) . sin) [0, 0.1 .. ]
+  let ys = map ((2+) . sin) [0, 0.2 .. ]
   in Vec.zip (Vec.concat [jan2017, feb2017, mar2017, apr2017, may2017]) (Vec.fromList ys)

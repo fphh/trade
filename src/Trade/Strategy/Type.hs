@@ -61,8 +61,10 @@ newtype Statistics sym = Statistics {
   } deriving (Show)
 
 
+{-
 data DisInvest = Invest | Disinvest
 
 newtype InvestSignal t = InvestSignal {
   unInvestSignal :: Map t DisInvest
   }
+-}

@@ -13,7 +13,8 @@ import Prelude hiding (zip, zipWith)
 --import qualified Trade.Type.Conversion.Yield2Equity as Y2E
 
 -- import Trade.Report.Curve -- (Curve, curve)
-import qualified Trade.Report.Line as Line
+-- import qualified Trade.Report.Line as Line
+import Trade.Report.Line (Line(..))
 
 -- | A broom is a list of histories that we can analyse for profit and risk.
 newtype Broom signal = Broom {
@@ -25,10 +26,12 @@ instance Functor Broom where
   fmap f (Broom hs) = Broom (map f hs)
 
 -- | Turn a broom into a chart with `n` curves.
-broom2chart :: (Line.Line signal) => Int -> Broom signal -> [Line.L [(Line.TyX signal, Line.TyY signal)]]
+-- broom2chart :: (Line signal) => Int -> Broom signal -> [Line.L [(TyX signal, Line.TyY signal)]]
+broom2chart :: Int -> Broom a -> [Line a]
 broom2chart n (Broom xs) =
-  let f i x = Line.line (show i) x
+  let f i x = Line (show i) x
   in P.zipWith f [0 :: Integer ..] (take n xs)
+
 
 {-
 zipWith :: (a -> b -> c) -> Broom a -> Broom b -> Broom c

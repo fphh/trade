@@ -18,10 +18,11 @@ data AxisConfig a b = AxisConfig {
 -- axisConfDef = AxisConfig E.def E.def E.def {- E.def -} Nothing
 
 
-axTitle :: (E.PlotValue a) => String -> AxisConfig a Double
-axTitle str =
-  let al = E.laxis_title E..~ str $ E.def
-  in AxisConfig al E.def E.def Nothing
+axTitle :: (E.PlotValue x, E.PlotValue y) => String -> String -> AxisConfig x y
+axTitle strX strY =
+  let al = E.laxis_title E..~ strX $ E.def
+      bl = E.laxis_title E..~ strY $ E.def
+  in AxisConfig al bl E.def Nothing
 
   
 impulseAxisConf :: (E.PlotValue a, E.PlotValue b) => AxisConfig a b

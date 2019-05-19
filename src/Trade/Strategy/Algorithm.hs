@@ -17,13 +17,13 @@ import Trade.Type.Signal (Signal(..))
 import Trade.Strategy.Type (Index(..), Focus(..), Offset(..), Modified(..), Signals(..), AlignedSignals(..), IndexedSignals(..), Window(..), K(..))
 
 
-apply :: Offset -> Index -> (Index -> Focus, Vector x) -> Maybe x
+-- apply :: Offset -> Index -> (Index -> Focus, Vector x) -> Maybe x
 apply (Offset off) idx (f, vs) =
   let Focus foc = f idx
   in vs Vec.!? (foc+off)
 
 
-alignedSignals2signals :: (Eq t, Eq x) => AlignedSignals sym t x -> Map (Modified sym) (Maybe (Vector (t, x)))
+-- alignedSignals2signals :: (Eq t, Eq x) => AlignedSignals sym t x -> Map (Modified sym) (Maybe (Vector (t, x)))
 alignedSignals2signals (AlignedSignals tms m) =
   let f vs =
         let g i t = sequence (t, apply (Offset 0) (Index i) vs)

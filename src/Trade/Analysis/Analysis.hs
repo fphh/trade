@@ -15,14 +15,13 @@ import Trade.Analysis.OHLCData (OHLCDataTy)
 import Trade.Analysis.Optimize (Optimize, OptReportTy, OptInpTy, optimize)
 import Trade.Analysis.Backtest (Backtest, BacktestReportTy, backtest)
 
-import qualified Trade.Report.Report as Rep
 import Trade.Report.HtmlIO (HtmlIO)
 
 import Trade.Analysis.ToReport (ToReport, report, OptimizationData(..), BacktestData(..))
  
-data Analysis stgy optInp backInp = Analysis {
+data Analysis optInp backInp = Analysis {
   title :: String
-  , impulseGenerator :: ImpulseGenerator stgy (OptInpTy optInp) (OHLCDataTy optInp)
+  , impulseGenerator :: ImpulseGenerator (OptInpTy optInp) (OHLCDataTy optInp)
   , optimizationInput :: optInp
   , backtestInput :: backInp
   }
@@ -41,7 +40,7 @@ analyze ::
   , ToReport (OptimizationData optInp (OptReportTy optInp))
   , ToReport (BacktestData backInp (BacktestReportTy backInp))
   , OHLCDataTy optInp ~ OHLCDataTy backInp)
-  => Analysis stgy optInp backInp -> HtmlIO
+  => Analysis optInp backInp -> HtmlIO
 analyze (Analysis ttle impGen optInp backInp) = do
   (optImpGen, optOut) <- liftIO (optimize impGen optInp)
 

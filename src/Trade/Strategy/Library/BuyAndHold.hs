@@ -20,8 +20,9 @@ import Trade.Strategy.Condition (symbol, conditions, (.=), Condition((:=:)), Imp
 
 buyAndHold ::
   (Ord t, Ord sym, Fractional x, Floating x) =>
-  (sym, Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
-buyAndHold vs@(_, xs) = do
+  [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+buyAndHold [] = error "buyAndHold"
+buyAndHold (vs:_) = do
 
   void (now vs)
   

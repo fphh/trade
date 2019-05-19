@@ -17,9 +17,9 @@ class Optimize optInput where
   type OptInpTy optInput :: *
 
   optimize ::
-    ImpulseGenerator stgy (OptInpTy optInput) (OHLCDataTy optInput)
+    ImpulseGenerator (OptInpTy optInput) (OHLCDataTy optInput)
     -> optInput
-    -> IO (RankedStrategies stgy (OHLCDataTy optInput), OptReportTy optInput)
+    -> IO (RankedStrategies (OHLCDataTy optInput), OptReportTy optInput)
 
 
 data NoOptimization = NoOptimization
