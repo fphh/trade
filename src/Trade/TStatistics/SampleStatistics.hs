@@ -7,13 +7,10 @@ import Trade.Type.Signal (Signal)
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Yield (LogYield, ToYield, toYield, logYield2yield)
 
-import Trade.Analysis.ToReport (ToReport, toReport)
-
--- import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO, HtmlIO)
-
 
 import Trade.Report.Pretty (Pretty, pretty)
 import qualified Trade.Report.Table as Table
+import Trade.Report.ToReport (ToReport, toReport)
 
 
 data SampleStatistics t ohlc = SampleStatistics {

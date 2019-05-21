@@ -10,11 +10,12 @@ import qualified Trade.Type.ImpulseGenerator as IG
 
 import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.Analysis as Ana
-import qualified Trade.Analysis.ToReport as TR
 import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Analysis.OHLCData as OD
+import qualified Trade.Analysis.Report as ARep
 
 import qualified Trade.Report.Report as Rep
+import qualified Trade.Report.ToReport as TR
 
 --------------------------------------------------------
   
@@ -30,7 +31,7 @@ instance Opt.Optimize OptimizationInput where
 
 data OptimizationResult = OptimizationResult
 
-instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
+instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
   toReport _ = do
     Rep.subheader "Optimization"
     Rep.text "Nothing to optimize."
@@ -46,7 +47,7 @@ instance BT.Backtest BacktestInput where
 
 data BacktestResult = BacktestResult
 
-instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
+instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   toReport _ = do
     Rep.subheader "Backtest"
     Rep.text "Nothing to report."

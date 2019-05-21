@@ -7,7 +7,7 @@
 
 module Trade.Report.Report where
 
-import Control.Monad.Reader (ReaderT(..), runReaderT)
+import Control.Monad.Reader (runReaderT)
 
 import Data.ByteString.Lazy (ByteString)
 
@@ -22,23 +22,17 @@ import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html.Renderer.Utf8 as HtmlBSL
 import qualified Text.Blaze.Html5.Attributes as H5A
 
--- import Graphics.Rendering.Chart.Grid (Grid, aboveN, above, gridToRenderable, weights, tval, tspan)
--- import Graphics.Rendering.Chart.Layout (LayoutPick, layoutToGrid)
--- import Graphics.Rendering.Chart.Renderable (Renderable)
-
 import qualified Graphics.Rendering.Chart.Easy as E
--- import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
--- import qualified Graphics.Rendering.Chart.Backend.Cairo as D
 
 import Trade.Report.Config (HtmlReader, defConfig)
--- import Trade.Report.HtmlIO (HtmlIO, HtmlT(..), liftHtml)
 
 import Trade.Report.Style (AxisConfig(..), colors, impulseAxisConf)
 import Trade.Report.Line (Line(..), ToLine, toLine, XTy, YTy)
 import qualified Trade.Report.Render as Render
 
+import Trade.Report.ToReport (toReport)
+
 import Trade.Type.Impulse (Impulse)
--- import Trade.Type.Price (Price(..))
 
 
 
@@ -47,16 +41,16 @@ clear :: H5.Attribute
 clear = H5A.style (H5.stringValue "clear:both;")
 
 header :: String -> HtmlReader ()
-header = ReaderT . const . (H5.h1 ! clear) . H5.toHtml
+header = toReport . (H5.h1 ! clear) . H5.toHtml
 
 subheader :: String -> HtmlReader ()
-subheader = ReaderT . const . (H5.h2 ! clear) . H5.toHtml
+subheader = toReport . (H5.h2 ! clear) . H5.toHtml
 
 subsubheader :: String -> HtmlReader ()
-subsubheader = ReaderT . const . (H5.h3 ! clear) . H5.toHtml
+subsubheader = toReport . (H5.h3 ! clear) . H5.toHtml
 
 text :: String -> HtmlReader ()
-text = ReaderT . const . H5.p . H5.toHtml
+text = toReport . H5.p . H5.toHtml
 
 renderReport :: HtmlReader () -> IO ByteString
 renderReport html = do

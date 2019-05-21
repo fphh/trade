@@ -2,16 +2,14 @@
 
 module Trade.Report.Table where
 
-import Control.Monad.Reader (ReaderT(..))
-
 import qualified Data.List as List
 
 import qualified Text.Blaze.Html5 as H5
 import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5.Attributes as H5A
 
+import Trade.Report.ToReport (toReport)
 
--- import Trade.Report.HtmlIO (HtmlIO, HtmlT(..))
 import Trade.Report.Config (HtmlReader)
 
 seperator :: Char -> Int -> Int -> [String]
@@ -69,7 +67,7 @@ table rs =
       g ' ' = "&nbsp;"
       g c = [c]
       f = (H5.div ! cbSty) . H5.preEscapedToHtml . concatMap g
-  in ReaderT (const ((H5.div ! tbSty) (mapM_ f rows)))
+  in toReport ((H5.div ! tbSty) (mapM_ f rows))
 
 tableList :: [[[String]]] -> HtmlReader ()
 tableList = sequence_ . map table

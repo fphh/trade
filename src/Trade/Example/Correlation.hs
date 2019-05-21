@@ -5,7 +5,6 @@ module Trade.Example.Correlation where
 import Control.Applicative (liftA2)
 
 import qualified Data.Set as Set
-import Data.Set (Set)
 
 import qualified Data.Map as Map
 import Data.Map (Map)
@@ -15,7 +14,7 @@ import Data.Vector (Vector)
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
-import Data.Time.Clock (UTCTime, getCurrentTime)
+import Data.Time.Clock (getCurrentTime)
 
 import qualified Statistics.Sample as Sample
 
@@ -23,7 +22,6 @@ import Trade.Type.Bars (BarLength(..))
 
 import Trade.Type.OHLC (Close(..))
 
-import qualified Trade.Timeseries.Binance.Binance as Bin
 import qualified Trade.Timeseries.Binance.Binance as Bin
 import qualified Trade.Timeseries.Binance.Database as Bin
 import qualified Trade.Timeseries.Binance.Interval as Bin
@@ -42,7 +40,7 @@ ts :: [Bin.Symbol]
 ts = map Bin.ETH [ Bin.BNBETH, Bin.ENJETH, Bin.HOTETH, Bin.FUELETH, Bin.XRPETH, Bin.ADAETH, Bin.EOSETH, Bin.VETETH, Bin.TRXETH, Bin.DENTETH]
 
 getSymbols :: [Bin.Symbol] -> IO (Map Bin.Symbol (Vector Double))
-getSymbols ts = do
+getSymbols syms = do
 
   now <- getCurrentTime
   
@@ -57,7 +55,7 @@ getSymbols ts = do
 
       toSignal row = (Bin.toDate row, unClose (Bin.close row))
 
-  tickers <- fmap (fmap (Vec.map toSignal)) (Bin.getTickers req ts)
+  tickers <- fmap (fmap (Vec.map toSignal)) (Bin.getTickers req syms)
 
   let
       tmsTickers = fmap (Set.fromList . Vec.toList . Vec.map fst) tickers

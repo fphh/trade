@@ -7,10 +7,11 @@ module Trade.Analysis.Optimize where
 
 import Trade.Type.ImpulseGenerator (ImpulseGenerator(..), RankedStrategies(..))
 
-import qualified Trade.Report.Report as Rep
-import Trade.Analysis.ToReport (ToReport, toReport, OptimizationData(..))
-
+import Trade.Analysis.Report(OptimizationData(..))
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
+
+import qualified Trade.Report.Report as Rep
+import Trade.Report.ToReport (ToReport, toReport)
 
 class Optimize optInput where
   type OptReportTy optInput :: *

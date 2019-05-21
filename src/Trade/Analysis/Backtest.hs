@@ -10,10 +10,11 @@ module Trade.Analysis.Backtest where
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator)
 import Trade.Type.NonEmptyList (NonEmptyList)
 
-import qualified Trade.Report.Report as Rep
-import Trade.Analysis.ToReport (ToReport, toReport, BacktestData(..))
-
+import Trade.Analysis.Report (BacktestData(..))
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
+
+import qualified Trade.Report.Report as Rep
+import Trade.Report.ToReport (ToReport, toReport)
 
 
 class Backtest btInput where

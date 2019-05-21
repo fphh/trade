@@ -2,8 +2,6 @@
 
 module Trade.Report.Heatmap where
 
-import Control.Monad.Reader (ReaderT(..))
-
 import Text.Printf (printf)
 
 import qualified Data.List as List
@@ -18,6 +16,8 @@ import qualified Text.Blaze.Html5 as H5
 import Text.Blaze.Html5 (Html, (!))
 import qualified Text.Blaze.Html5.Attributes as H5A
 
+import Trade.Report.ToReport (toReport)
+
 import Trade.Report.Config (HtmlReader)
 
 data Cell y x =
@@ -27,7 +27,7 @@ data Cell y x =
   | Value (y, x)
 
 heatmap :: (Ord x, Ord y, Show y, Show x) => Double -> Map (y, x) Double -> HtmlReader ()
-heatmap bias m = do
+heatmap bias m =
   let (ys, xs) = unzip (Map.keys m)
       ys' = Set.toList (Set.fromList ys)
       xs' = Set.toList (Set.fromList xs)
@@ -89,5 +89,5 @@ heatmap bias m = do
 
       pad = H5A.style (H5.stringValue "padding-bottom:24px")
       
-  ReaderT (const ((H5.div ! pad) (mapM_ f rows)))
+  in toReport ((H5.div ! pad) (mapM_ f rows))
 

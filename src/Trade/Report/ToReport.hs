@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Trade.Report.ToReport where
@@ -10,10 +9,9 @@ import Control.Monad.Reader (ReaderT(..))
 
 import Text.Blaze.Html5 (Html)
 
-import qualified Trade.Report.Report as Rep
-import Trade.Report.Config (Config, HtmlReader)
+import Trade.Report.Config (HtmlReader)
 
-import Data.Monoid ((<>), mempty)
+import Data.Monoid (mempty)
 
 
 class ToReport a where

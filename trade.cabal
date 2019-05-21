@@ -25,8 +25,8 @@ library
                         Trade.Analysis.Backtest
                         Trade.Analysis.OHLCData
                         Trade.Analysis.Optimize
+                        Trade.Analysis.Report
                         Trade.Analysis.Risk
-                        Trade.Analysis.ToReport
                         Trade.Analysis.TWR
                         Trade.Analysis.Yield
                         Trade.Example.Basic
@@ -50,6 +50,7 @@ library
                         Trade.Report.SparkLine
                         Trade.Report.Style
                         Trade.Report.Table
+                        Trade.Report.ToReport
                         Trade.Strategy.Algorithm
                         Trade.Strategy.Condition
                         Trade.Strategy.Library.BuyAndHold

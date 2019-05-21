@@ -18,7 +18,7 @@ import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.OHLCData as OD
 import qualified Trade.Analysis.Optimize as Opt
-import qualified Trade.Analysis.ToReport as TR
+import qualified Trade.Analysis.Report as ARep
 
 import qualified Trade.Test.Data as TD
 
@@ -48,6 +48,7 @@ import qualified Trade.Strategy.Process as Strategy
 import Trade.Report.Line (Line(..))
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
+import qualified Trade.Report.ToReport as TR
 
 import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.DeltaSignal (DeltaSignal(..))
@@ -74,8 +75,8 @@ instance Opt.Optimize OptimizationInput where
 
 data OptimizationResult = OptimizationResult
 
-instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) where
-  toReport (TR.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
+instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
+  toReport (ARep.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
     Rep.text "Optimally buying and selling. Not possible in reality :( ..."
     
     Rep.subheader "Optimization Input"
@@ -136,8 +137,8 @@ data BacktestResult = BacktestResult {
   , resultSL :: Experiment.Result Short Symbol UTCTime Price
   }
 
-instance TR.ToReport (TR.BacktestData BacktestInput BacktestResult) where
-  toReport (TR.BacktestData (BacktestInput inEq ps) (BacktestResult resLW resSW resLL resSL)) = do
+instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
+  toReport (ARep.BacktestData (BacktestInput inEq ps) (BacktestResult resLW resSW resLL resSL)) = do
 
     Rep.subheader "Fees"
 

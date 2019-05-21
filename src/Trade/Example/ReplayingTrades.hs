@@ -60,7 +60,7 @@ import Trade.TStatistics.Statistics (DeltaTyStats)
 import qualified Trade.Analysis.TWR as TWR
 import qualified Trade.Analysis.Risk as Risk
 import qualified Trade.Analysis.OHLCData as OD
-import qualified Trade.Analysis.ToReport as TR
+import qualified Trade.Analysis.Report as ARep
 import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.Backtest as BT
@@ -71,6 +71,8 @@ import qualified Trade.Report.Heatmap as Heat
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Tab
+import qualified Trade.Report.ToReport as TR
+
 import Trade.Report.Pretty (Pretty)
 
 import Trade.MonteCarlo.ResampleTrades.Broom (MCConfig(..), mc, MCCount(..))
@@ -84,6 +86,8 @@ import qualified Trade.Timeseries.Binance.Database as Bin
 import qualified Trade.Timeseries.Binance.Interval as Bin
 import qualified Trade.Timeseries.Binance.Symbol as Bin
 import qualified Trade.Timeseries.Url as Url
+
+{-
 
 data Symbol = ASym deriving (Show, Eq, Ord)
 
@@ -330,3 +334,4 @@ example = do
   
   BSL.putStrLn t
  
+-}

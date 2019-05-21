@@ -6,22 +6,17 @@
 module Trade.Analysis.Analysis where
 
 
--- import Control.Monad.Trans (liftIO)
-
-import Control.Monad.Reader (Reader)
-
-import Text.Blaze.Html5 (Html)
-
 import Trade.Type.ImpulseGenerator (ImpulseGenerator, RankedStrategies(..))
 import Trade.Type.NonEmptyList (NonEmptyList(..))
 
 import Trade.Analysis.OHLCData (OHLCDataTy)
 import Trade.Analysis.Optimize (Optimize, OptReportTy, OptInpTy, optimize)
 import Trade.Analysis.Backtest (Backtest, BacktestReportTy, backtest)
+import Trade.Analysis.Report (OptimizationData(..), BacktestData(..), report)
 
 import Trade.Report.Config (HtmlReader)
+import Trade.Report.ToReport (ToReport)
 
-import Trade.Analysis.ToReport (ToReport, report, OptimizationData(..), BacktestData(..))
  
 data Analysis optInp backInp = Analysis {
   title :: String

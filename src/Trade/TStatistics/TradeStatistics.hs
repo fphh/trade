@@ -19,9 +19,7 @@ import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 
 import Trade.Type.Yield (LogYield(..), logYield2yield)
 
--- import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO)
-
-import Trade.Analysis.ToReport (ToReport, toReport)
+import Trade.Report.ToReport (ToReport, toReport)
 
 import Trade.Report.Pretty (Pretty)
 import qualified Trade.Report.Table as Table
@@ -75,12 +73,6 @@ tradeStatistics2table ts =
 
 instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToReport (TradeStatistics t ohlc) where
   toReport = Table.table . tradeStatistics2table
-
-{-
-
-instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToHtmlIO (TradeStatistics t ohlc) where
-  toHtmlIO = Table.table . tradeStatistics2table
--}
 
 toTradeStatistics ::
   (Functor f, Real (DeltaTy t)) =>

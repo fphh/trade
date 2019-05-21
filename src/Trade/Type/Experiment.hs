@@ -6,10 +6,8 @@
 
 module Trade.Type.Experiment where
 
-import Control.Monad (liftM)
 
 import Control.Monad.State (State)
-import Control.Monad.Reader (ReaderT(..))
 
 import qualified Data.Vector as Vec
 
@@ -17,13 +15,13 @@ import qualified Data.Map as Map
 import Data.Map (Map)
 
 import qualified Text.Blaze.Html5 as H5
-import Text.Blaze.Html5 (Html, (!))
+import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5.Attributes as H5A
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
 import Trade.Type.Bars (DeltaTy, Add)
-import Trade.Type.Delta (Delta(..), ToDelta)
+import Trade.Type.Delta (ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
@@ -32,7 +30,7 @@ import Trade.Type.DeltaTradeList (DeltaTradeList)
 import Trade.Type.DisInvest (InvestSignal)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
-import Trade.Type.ImpulseSignal (ImpulseSignal(..), curve)
+import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 
 import qualified Trade.Type.NestedMap as NestedMap
 
@@ -66,16 +64,14 @@ import qualified Trade.TStatistics.Statistics as Stats
 import qualified Trade.TStatistics.TradeStatistics as TS
 import qualified Trade.TStatistics.YieldStatistics as YS
 
-import Trade.Analysis.ToReport (toReport)
+import Trade.Report.ToReport (toReport)
 
 import Trade.Help.SafeTail (slast)
 
--- import Trade.Report.HtmlIO (liftHtml, toHtmlIO, HtmlIO)
-
-import Trade.Report.Config (Config, HtmlReader)
+import Trade.Report.Config (HtmlReader)
 import Trade.Report.Pretty (Pretty)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 data Input stgy sym t ohlc = Input {
@@ -164,14 +160,14 @@ tradeStatistics stp dtl =
       f _ _ ys ts sp = do
         toReport ys
         toReport ts
-        ReaderT (const (sequence_ sp))
+        toReport (sequence_ sp)
 
       zs = NestedMap.zipWith3 f ystats tstats sparks
 
       g pos wl table =
         let sty = H5A.style (H5.stringValue "clear:both;margin:18px;padding-top:24px;color:#006600")
-            header = (H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl)))
-        in [ReaderT (const header), table]
+            header = toReport ((H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl))))
+        in [header, table]
         
   in sequence_ (NestedMap.fold g zs)
 
