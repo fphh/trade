@@ -10,8 +10,6 @@ import qualified Statistics.Sample as Sample
 
 import qualified Trade.Report.Report as Rep
 
-import Trade.Report.HtmlIO (HtmlIO)
-
 {-
 
 dds :: [Double] -> [(Int, Double)]

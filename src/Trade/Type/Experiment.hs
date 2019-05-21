@@ -175,22 +175,6 @@ tradeStatistics stp dtl =
 lastEquity :: Result stgy sym t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
-{-
-render ::
-  ( Ord t
-  , PlotValue t
-  , StepFunction (StepTy stgy) t
-  , Pretty t, Pretty (DeltaTy t)
-  , Pretty (Stats.DeltaTyStats t), Pretty ohlc
-  , ToYield ohlc
-  , Add t, Ord (Delta ohlc)
-  , Num (DeltaTy t)
-  , Real (DeltaTy t)
-  , Line.TyX (Signal t ohlc) ~ t
-  , Line.TyY (Signal t ohlc) ~ Double
-  , Line.Line (Signal t ohlc)) =>
-  String -> String -> Result stgy sym t ohlc -> HtmlIO
--}
 render ::
   ( Show sym
   , Pretty t

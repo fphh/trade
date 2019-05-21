@@ -36,8 +36,6 @@ import Trade.Type.Signal (Signal(..))
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.WinningLosing (WinningLosing)
 
-import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO, HtmlIO, HtmlT(..), liftHtml)
-
 
 import Debug.Trace
 
@@ -141,20 +139,6 @@ spark conf (mean, stdDev, dom) sig@(Signal xs) =
   in svg conf $ do
     coord
     S.path ! sty ! A.d (mkPath (Vec.foldl' f (m 0 (ran 1)) as))
-
-
-instance ToHtmlIO [S.Svg] where
-  toHtmlIO =
-    let inSty = H5A.style (H5.stringValue "float:left;margin:12px;")
-        outSty = H5A.style (H5.stringValue "clear:both;margin:12px;")
-
-        go [] = return ()
-        go xs = do
-          let (as, bs) = List.splitAt 12 xs
-          H5.div ! outSty $ do
-            mapM_ (H5.div ! inSty) as
-          go bs
-    in HtmlT . return . go
 
 
 toSparkLine ::
