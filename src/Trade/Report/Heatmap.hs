@@ -2,6 +2,8 @@
 
 module Trade.Report.Heatmap where
 
+import Control.Monad.Reader (ReaderT(..))
+
 import Text.Printf (printf)
 
 import qualified Data.List as List
@@ -13,12 +15,10 @@ import qualified Data.Set as Set
 
 
 import qualified Text.Blaze.Html5 as H5
-import Text.Blaze.Html5 ((!))
+import Text.Blaze.Html5 (Html, (!))
 import qualified Text.Blaze.Html5.Attributes as H5A
 
-import Trade.Report.HtmlIO (HtmlIO, HtmlT(..))
-
-
+import Trade.Report.Config (HtmlReader)
 
 data Cell y x =
   Empty
@@ -26,7 +26,7 @@ data Cell y x =
   | YIndex y
   | Value (y, x)
 
-heatmap :: (Ord x, Ord y, Show y, Show x) => Double -> Map (y, x) Double -> HtmlIO
+heatmap :: (Ord x, Ord y, Show y, Show x) => Double -> Map (y, x) Double -> HtmlReader ()
 heatmap bias m = do
   let (ys, xs) = unzip (Map.keys m)
       ys' = Set.toList (Set.fromList ys)
@@ -54,14 +54,19 @@ heatmap bias m = do
                 y | (-1000) < y && y < 1000 -> "%3.3f"
                 y | (-10000) < y && y < 10000 -> "%4.2f"
                 y | (-100000) < y && y < 100000 -> "%5.1f"
-                y -> "%f"
+                _ -> "%f"
         in printf fmt x
                     
       content v =
         let bg =
               case v > bias of
-                True -> "color:#aa0044;font-weight:bold;background:rgb(0," ++ show (round (stepHi*(v-bias))) ++ ", 0);"
-                False -> "color:#4400aa;font-weight:bold;background:rgb(" ++ show (round (stepLo*(bias-v))) ++ ", 0, 0);"
+                True -> "color:#aa0044;font-weight:bold;background:rgb(0,"
+                        ++ show (round (stepHi*(v-bias)) :: Int)
+                        ++ ", 0);"
+                False -> "color:#4400aa;font-weight:bold;background:rgb("
+                         ++ show (round (stepLo*(bias-v)) :: Int)
+                         ++ ", 0, 0);"
+                         
             bgMa = "color:#000000;font-weight:bold;background:#bbffbb"
             bgMi = "color:#000000;font-weight:bold;background:#ffbbbb"
             sty =
@@ -84,5 +89,5 @@ heatmap bias m = do
 
       pad = H5A.style (H5.stringValue "padding-bottom:24px")
       
-  HtmlT (return ((H5.div ! pad) (mapM_ f rows)))
+  ReaderT (const ((H5.div ! pad) (mapM_ f rows)))
 

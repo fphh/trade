@@ -39,6 +39,7 @@ library
                         Trade.MonteCarlo.ResampleTrades.Broom
                         Trade.MonteCarlo.Simulation.BlackScholes
                         Trade.MonteCarlo.Simulation.MEBoot
+                        Trade.Report.Config
                         Trade.Report.Heatmap
                         Trade.Report.HtmlIO
                         Trade.Report.Line

@@ -6,7 +6,10 @@
 
 module Trade.Type.Experiment where
 
+import Control.Monad (liftM)
+
 import Control.Monad.State (State)
+import Control.Monad.Reader (ReaderT(..))
 
 import qualified Data.Vector as Vec
 
@@ -14,7 +17,7 @@ import qualified Data.Map as Map
 import Data.Map (Map)
 
 import qualified Text.Blaze.Html5 as H5
-import Text.Blaze.Html5 ((!))
+import Text.Blaze.Html5 (Html, (!))
 import qualified Text.Blaze.Html5.Attributes as H5A
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
@@ -63,10 +66,13 @@ import qualified Trade.TStatistics.Statistics as Stats
 import qualified Trade.TStatistics.TradeStatistics as TS
 import qualified Trade.TStatistics.YieldStatistics as YS
 
+import Trade.Analysis.ToReport (toReport)
 
 import Trade.Help.SafeTail (slast)
 
-import Trade.Report.HtmlIO (liftHtml, toHtmlIO, HtmlIO)
+-- import Trade.Report.HtmlIO (liftHtml, toHtmlIO, HtmlIO)
+
+import Trade.Report.Config (Config, HtmlReader)
 import Trade.Report.Pretty (Pretty)
 
 import Debug.Trace
@@ -138,6 +144,7 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) (ps:_)) =
     }
 
 
+
 tradeStatistics ::
   ( Eq t
   , Add t
@@ -145,7 +152,8 @@ tradeStatistics ::
   , Real (DeltaTy t)
   , Pretty (DeltaTy t)
   , Pretty (Stats.DeltaTyStats t)) =>
-  StepTy stgy t -> DeltaTradeList t ohlc -> HtmlIO
+  StepTy stgy t -> DeltaTradeList t ohlc -> HtmlReader ()
+
 tradeStatistics stp dtl =
 
   let sts = DSA.sortDeltaSignals dtl
@@ -153,16 +161,20 @@ tradeStatistics stp dtl =
       ystats = YS.toYieldStatistics sts
       tstats = TS.toTradeStatistics sts
 
-      f _ _ ys ts sp = toHtmlIO ys <> toHtmlIO ts <> toHtmlIO sp
+      f _ _ ys ts sp = do
+        toReport ys
+        toReport ts
+        ReaderT (const (sequence_ sp))
+
       zs = NestedMap.zipWith3 f ystats tstats sparks
 
-      g pos wl htmlio =
+      g pos wl table =
         let sty = H5A.style (H5.stringValue "clear:both;margin:18px;padding-top:24px;color:#006600")
             header = (H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl)))
-        in liftHtml (header <>) htmlio
+        in [ReaderT (const header), table]
         
-  in NestedMap.fold g zs
-  
+  in sequence_ (NestedMap.fold g zs)
+
 
 lastEquity :: Result stgy sym t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
@@ -198,7 +210,7 @@ render ::
   , Line.ToLine (Vec.Vector (t, ohlc))
   , Line.XTy (Vec.Vector (t, ohlc)) ~ t
   , Line.YTy (Vec.Vector (t, ohlc)) ~ ohlc) =>
-  String -> String -> Result stgy sym t ohlc -> HtmlIO
+  String -> String -> Result stgy sym t ohlc -> HtmlReader ()
 render symTitle btTitle (Result inp out) = do
   
   Rep.subheader "Experiment"
@@ -215,8 +227,8 @@ render symTitle btTitle (Result inp out) = do
 
   Rep.subsubheader "Summary"
 
-  toHtmlIO (SS.sampleStatistics (snd (head (inputSignals inp))))
-  toHtmlIO (SS.sampleStatistics (outputSignal out))
+  toReport (SS.sampleStatistics (snd (head (inputSignals inp))))
+  toReport (SS.sampleStatistics (outputSignal out))
 
   Rep.subsubheader "Trade statistics"
 

@@ -5,29 +5,30 @@ module Trade.Analysis.ToReport where
 
 import Control.Monad
 
+import Control.Monad.Reader (ReaderT(..))
+
+import Text.Blaze.Html5 (Html)
+
 import qualified Trade.Report.Report as Rep
+import Trade.Report.Config (Config, HtmlReader)
 
 import Data.Monoid ((<>), mempty)
 
-import Trade.Report.HtmlIO (HtmlIO)
 
--- We use IO here because charting needs IO.
--- We rather like to serialize charts into memory,
--- but the library only allows for serialization to disk.
 class ToReport a where
-  toReport :: a -> HtmlIO
+  toReport :: a -> HtmlReader ()
+
 
 instance ToReport () where
-  toReport _ = mempty
+  toReport _ = ReaderT (const mempty)
 
+{-
 instance (ToReport a) => ToReport (Maybe a) where
-  toReport = maybe mempty toReport
+  toReport = maybe (toReport ()) toReport
+-}
 
 instance (ToReport a) => ToReport [a] where
-  toReport = mconcat . map toReport
-
-instance (ToReport a, ToReport b) => ToReport (a, b) where
-  toReport (x, y) = toReport x <> toReport y
+  toReport = fmap mconcat . mapM toReport
 
 
 data OptimizationData optInput optOutput = OptimizationData {
@@ -41,7 +42,7 @@ data BacktestData backtestInput backtestOutput = BacktestData {
   }
 
 
-noBacktestDataReport :: HtmlIO
+noBacktestDataReport ::HtmlReader ()
 noBacktestDataReport = do
   Rep.subheader "Backtest Result"
   Rep.text "No optimized impulse generator found. No backtest done."
@@ -49,7 +50,7 @@ noBacktestDataReport = do
 report ::
   (ToReport (OptimizationData optInp optOut)
   , ToReport (BacktestData backInp backOut)) =>
-  String -> OptimizationData optInp optOut -> Maybe (BacktestData backInp backOut) -> HtmlIO
+  String -> OptimizationData optInp optOut -> Maybe (BacktestData backInp backOut) -> HtmlReader ()
 report ttle opt back =
   let title = Rep.header ttle
       optRep = toReport opt

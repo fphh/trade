@@ -6,7 +6,6 @@ import Data.Time.Clock (UTCTime)
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import qualified Data.Vector as Vec
-import Data.Vector (Vector)
 
 import Data.Map (Map)
 
@@ -14,9 +13,8 @@ import Trade.Type.Bars (BarNo(..))
 import Trade.Type.Conversion.Invest2Impulse (invest2impulse)
 import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.Price (Price(..))
-import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal (Signal(..))
-import Trade.Type.Strategy (Long, Short)
+import Trade.Type.Strategy (Long)
 
 import Trade.Strategy.Library.BuyAndHold (buyAndHold)
 import Trade.Strategy.Library.MovingAverages (movingAverages)

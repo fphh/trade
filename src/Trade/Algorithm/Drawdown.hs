@@ -12,6 +12,8 @@ import qualified Trade.Report.Report as Rep
 
 import Trade.Report.HtmlIO (HtmlIO)
 
+{-
+
 dds :: [Double] -> [(Int, Double)]
 dds xs =
   let go n a [] = [(n, a)]
@@ -92,3 +94,6 @@ reportDrawdownStats xs =
      : ["Drawdown mean", show meanDrawdown]
      : ["Drawdown stddev", show stdDevDrawdown]
      : []
+
+
+-}

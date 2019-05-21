@@ -69,7 +69,7 @@ instance Opt.Optimize OptimizationInput where
   type OptInpTy OptimizationInput = ()
 
   optimize (IG.ImpulseGenerator strat) (OptimizationInput sig) =
-    return (IG.RankedStrategies [strat ()], OptimizationResult)
+    (IG.RankedStrategies [strat ()], OptimizationResult)
 
 
 data OptimizationResult = OptimizationResult
@@ -84,7 +84,6 @@ instance TR.ToReport (TR.OptimizationData OptimizationInput OptimizationResult) 
       (Style.axTitle "Price" "Time" :: Style.AxisConfig Price UTCTime, [Line "Price" ps])
     Rep.subheader "Optimization Result"
     Rep.text "No optimization has been done."
-
 
 --------------------------------------------------------
 

@@ -7,13 +7,16 @@ import Trade.Type.Signal (Signal)
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Yield (LogYield, ToYield, toYield, logYield2yield)
 
+import Trade.Analysis.ToReport (ToReport, toReport)
 
-import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO, HtmlIO)
+-- import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO, HtmlIO)
+
+
 import Trade.Report.Pretty (Pretty, pretty)
 import qualified Trade.Report.Table as Table
 
 
-data SampleStatisitcs t ohlc = SampleStatistics {
+data SampleStatistics t ohlc = SampleStatistics {
   sampleLength :: !Int
   , initialEquity :: (t, ohlc)
   , finalEquity :: (t, ohlc)
@@ -22,7 +25,7 @@ data SampleStatisitcs t ohlc = SampleStatistics {
   }
 
 
-sampleStatistics :: (Add t, ToYield ohlc) => Signal t ohlc -> SampleStatisitcs t ohlc
+sampleStatistics :: (Add t, ToYield ohlc) => Signal t ohlc -> SampleStatistics t ohlc
 sampleStatistics xs =
   let ie@(t0, y0) = Signal.head xs
       fe@(tn, yn) = Signal.last xs
@@ -38,7 +41,7 @@ sampleStatistics xs =
 
 sampleStatistics2table ::
   (Pretty t, Pretty (DeltaTy t), Pretty ohlc) =>
-  SampleStatisitcs t ohlc -> [[String]]
+  SampleStatistics t ohlc -> [[String]]
 sampleStatistics2table ss =
   let format (x, y) = [pretty x, pretty y]
   in [ "Initial" : format (initialEquity ss)
@@ -47,6 +50,7 @@ sampleStatistics2table ss =
      , [ "Yield", "", pretty (logYield2yield (yield ss)) ]
      , [ "Sample length", pretty (sampleLength ss) ] ]
 
-instance (Pretty t, Pretty (DeltaTy t), Pretty ohlc) => ToHtmlIO (SampleStatisitcs t ohlc) where
-  toHtmlIO = Table.table . sampleStatistics2table
 
+
+instance (Pretty t, Pretty (DeltaTy t), Pretty ohlc) => ToReport (SampleStatistics t ohlc) where
+  toReport = Table.table . sampleStatistics2table

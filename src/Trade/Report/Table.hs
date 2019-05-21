@@ -2,25 +2,17 @@
 
 module Trade.Report.Table where
 
-import Control.Applicative (liftA2)
+import Control.Monad.Reader (ReaderT(..))
 
 import qualified Data.List as List
-
-import qualified Data.Map as Map
-import Data.Map (Map)
-
-import qualified Data.Set as Set
-
-import Text.Printf (printf)
-
 
 import qualified Text.Blaze.Html5 as H5
 import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5.Attributes as H5A
 
 
-import Trade.Report.HtmlIO (HtmlIO, HtmlT(..))
-
+-- import Trade.Report.HtmlIO (HtmlIO, HtmlT(..))
+import Trade.Report.Config (HtmlReader)
 
 seperator :: Char -> Int -> Int -> [String]
 seperator c width n = replicate n (replicate width c)
@@ -36,8 +28,11 @@ tableRows :: [[String]] -> [String]
 tableRows rs =
   let rowLens = map length rs
       maxRowLen = maximum rowLens
-      f len r = r ++ replicate (maxRowLen - length r) ""
-      filledRows = zipWith f rowLens rs
+      -- f len r = r ++ replicate (maxRowLen - length r) ""
+      -- filledRows = zipWith f rowLens rs
+
+      f r = r ++ replicate (maxRowLen - length r) ""
+      filledRows = map f rs
 
       rightPadding = 8
       
@@ -66,7 +61,7 @@ tableRows rs =
   in map concat es
 
 
-table :: [[String]] -> HtmlIO
+table :: [[String]] -> HtmlReader ()
 table rs =
   let rows = tableRows ([""] : rs ++[[""]])
       cbSty = H5A.style (H5.stringValue "clear:both")
@@ -74,7 +69,7 @@ table rs =
       g ' ' = "&nbsp;"
       g c = [c]
       f = (H5.div ! cbSty) . H5.preEscapedToHtml . concatMap g
-  in HtmlT (return ((H5.div ! tbSty) (mapM_ f rows)))
+  in ReaderT (const ((H5.div ! tbSty) (mapM_ f rows)))
 
-tableList :: [[[String]]] -> HtmlIO
+tableList :: [[[String]]] -> HtmlReader ()
 tableList = sequence_ . map table

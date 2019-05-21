@@ -1,71 +1,57 @@
 
 module Trade.Report.Render where
 
-import Control.Monad (forM_)
+import Control.Monad.Reader (ReaderT(..), reader)
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
-import qualified Data.Map as Map
 import qualified Data.Text as Text
 
-import qualified Text.Blaze.Renderer.Text as B
+-- import qualified Data.ByteString.Lazy.Search as BSS
 
-import qualified Graphics.Svg as Svg
+
+import Text.Blaze (unsafeLazyByteString)
+
 import Graphics.Svg.Core (renderBS)
-import Graphics.SVGFonts.WriteFont (makeSvgFont)
-
-
 import qualified Graphics.Rendering.Chart.Easy as E
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as D
 import qualified Graphics.Rendering.Chart.Renderable as R
 
 import qualified Diagrams.Prelude as DP
 import qualified Diagrams.TwoD as D2
--- import qualified Diagrams.TwoD.Arc as D2
--- import qualified Diagrams.TwoD.Text as D2
-
 
 import qualified Diagrams.Backend.SVG as DSVG
 
-width :: Double
-width = 600
+import Trade.Report.Config (HtmlReader, Config(..), readUserConfig, UserConfig(..))
 
-height :: Double
-height = 400
 
-toSvgEmbedded :: D.FontSelector Double -> E.BackendProgram a -> BSL.ByteString
-toSvgEmbedded fontSelector cb =
-  let env = (D.createEnv E.vectorAlignmentFns width height fontSelector) {- {
-        envFontStyle = def { _font_name = "monospace", _font_weight = FontWeightNormal }
-        } -}
-      (d, _, gs) = D.runBackendWithGlyphs env cb
-      fontDefs = Just . Svg.toElement . B.renderMarkup
-        $ forM_ (Map.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
-        let fs = D.envFontStyle env
-        let font = D.envSelectFont env $ fs {
-              E._font_name = fFam
-              , E._font_slant = fSlant
-              , E._font_weight = fWeight
-              }
-        makeSvgFont font usedGs
-      
-      opts = DSVG.SVGOptions (D2.dims2D width height) fontDefs Text.empty [] True
+toSvg :: E.BackendProgram a -> HtmlReader BSL.ByteString
+toSvg cb = do
+  (w, h) <- readUserConfig chartDimension
+  fs <- reader fontSelector
+  let env = D.createEnv E.vectorAlignmentFns w h fs
+      (d, _, _) = D.runBackendWithGlyphs env cb
+      opts = DSVG.SVGOptions (D2.dims2D w h) Nothing Text.empty [] True
       svg = DP.renderDia DSVG.SVG opts d
-  in renderBS svg
-
-toBackendProgram :: (E.ToRenderable r, E.Default r) => E.EC r () -> E.BackendProgram (E.PickFn ())
-toBackendProgram ec = R.render (R.toRenderable (E.execEC ec)) (width, height)
+  return (renderBS svg)
 
 
-ec2svg :: (E.ToRenderable r, E.Default r) => E.EC r () -> IO BSL.ByteString
-ec2svg ec = do
-  fontSelector <- D.loadCommonFonts
-  return (toSvgEmbedded fontSelector (toBackendProgram ec))
+toBackendProgram ::
+  (E.ToRenderable r, E.Default r) =>
+  E.EC r () -> HtmlReader (E.BackendProgram (E.PickFn ()))
+toBackendProgram ec = do
+  dim <- readUserConfig chartDimension
+  return (R.render (R.toRenderable (E.execEC ec)) dim)
 
 
-renderable2svg :: R.Renderable a -> IO BSL.ByteString
-renderable2svg r = do
-  fontSelector <- D.loadSansSerifFonts -- D.loadCommonFonts
-  return (toSvgEmbedded fontSelector (R.render r (width, height)))
+ec2svg :: (E.ToRenderable r, E.Default r) => E.EC r () -> HtmlReader ()
+ec2svg ec =
+  toBackendProgram ec >>= toSvg >>= ReaderT . const . unsafeLazyByteString
+
+
+renderable2svg :: R.Renderable a -> HtmlReader ()
+renderable2svg r =
+  readUserConfig chartDimension >>= toSvg . R.render r >>= ReaderT . const . unsafeLazyByteString
+
 
 
 

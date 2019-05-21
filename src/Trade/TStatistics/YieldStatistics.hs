@@ -17,9 +17,11 @@ import Trade.Type.DeltaSignal (DeltaSignal(..))
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 import Trade.Type.Yield (LogYield(..), logYield2yield)
 
-import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO)
+-- import Trade.Report.HtmlIO (ToHtmlIO, toHtmlIO)
 import Trade.Report.Pretty (Pretty)
 import qualified Trade.Report.Table as Table
+
+import Trade.Analysis.ToReport (ToReport, toReport)
 
 import Trade.TStatistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
 
@@ -77,8 +79,13 @@ yieldStatistics2table (Just ys) =
   , "Kurtosis (log yield)" : formatStat (kurtosisYield ys)
   ]
 
+instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToReport (Maybe (YieldStatistics t ohlc)) where
+  toReport = Table.table . yieldStatistics2table
+
+{-
 instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToHtmlIO (Maybe (YieldStatistics t ohlc)) where
   toHtmlIO = Table.table . yieldStatistics2table
+-}
 
 toYieldStatistics ::
   (Functor f, Real (DeltaTy t)) =>

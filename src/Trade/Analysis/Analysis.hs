@@ -6,7 +6,11 @@
 module Trade.Analysis.Analysis where
 
 
-import Control.Monad.Trans (liftIO)
+-- import Control.Monad.Trans (liftIO)
+
+import Control.Monad.Reader (Reader)
+
+import Text.Blaze.Html5 (Html)
 
 import Trade.Type.ImpulseGenerator (ImpulseGenerator, RankedStrategies(..))
 import Trade.Type.NonEmptyList (NonEmptyList(..))
@@ -15,7 +19,7 @@ import Trade.Analysis.OHLCData (OHLCDataTy)
 import Trade.Analysis.Optimize (Optimize, OptReportTy, OptInpTy, optimize)
 import Trade.Analysis.Backtest (Backtest, BacktestReportTy, backtest)
 
-import Trade.Report.HtmlIO (HtmlIO)
+import Trade.Report.Config (HtmlReader)
 
 import Trade.Analysis.ToReport (ToReport, report, OptimizationData(..), BacktestData(..))
  
@@ -40,11 +44,11 @@ analyze ::
   , ToReport (OptimizationData optInp (OptReportTy optInp))
   , ToReport (BacktestData backInp (BacktestReportTy backInp))
   , OHLCDataTy optInp ~ OHLCDataTy backInp)
-  => Analysis optInp backInp -> HtmlIO
+  => Analysis optInp backInp -> HtmlReader ()
 analyze (Analysis ttle impGen optInp backInp) = do
-  (optImpGen, optOut) <- liftIO (optimize impGen optInp)
-
-  let btData =
+  
+  let (optImpGen, optOut) = optimize impGen optInp
+      btData =
         case optImpGen of
           RankedStrategies [] -> Nothing
           RankedStrategies (best:rest) ->
@@ -52,10 +56,3 @@ analyze (Analysis ttle impGen optInp backInp) = do
             in Just (BacktestData backInp backOut)
 
   report ttle (OptimizationData optInp optOut) btData
-
-{-
-analyze (Analysis ttle impGen optInp backInp) = do
-  (optImpGen, optOut) <- liftIO (optimize impGen optInp)
-  let backOut = backtest optImpGen backInp
-  report ttle (OptimizationData optInp optOut) (BacktestData backInp backOut)
--}

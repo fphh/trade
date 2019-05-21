@@ -87,7 +87,7 @@ import qualified Trade.Timeseries.Url as Url
 
 data Symbol = ASym deriving (Show, Eq, Ord)
 
-{-
+
 data OptimizationInput stgy sym t ohlc = OptimizationInput {
   optSample :: (sym, Signal t ohlc)
   , igInput :: [(Window, Window)]
@@ -99,7 +99,7 @@ data OptimizationInput stgy sym t ohlc = OptimizationInput {
   
 data OptimizationResult t sym stgy = OptimizationResult {
   result :: Experiment.Result stgy sym t Price
-  , broom :: Broom (Signal t Equity)
+  -- , broom :: Broom (Signal t Equity)
   , lastEquities :: Map (Window, Window) Equity
   }
   
@@ -116,7 +116,7 @@ instance ( Ord sym
   type OptReportTy (OptimizationInput stgy sym t Price) = OptimizationResult t sym stgy
   type OptInpTy (OptimizationInput stgy sym t Price) = (Window, Window)
 
-  optimize (ImpulseGenerator strat) optInp = do
+  optimize (ImpulseGenerator strat) optInp =
     let findBestWinSize winSize acc =
           let e = Experiment.Input (step optInp) (optEquity optInp) (strat winSize) [optSample optInp]
           in Map.insert winSize (Experiment.conduct e) acc
@@ -131,9 +131,9 @@ instance ( Ord sym
         expmnt = Experiment.Input (step optInp) (optEquity optInp) optStrat [optSample optInp]
         res = Experiment.conduct expmnt
     
-    brm <- mc res (mcConfig optInp)
+    -- brm <- mc res (mcConfig optInp)
 
-    return (RankedStrategies sortedStarts, OptimizationResult res brm (fmap Experiment.lastEquity strats))
+    in (RankedStrategies sortedStarts, OptimizationResult res {- brm -} (fmap Experiment.lastEquity strats))
 
 
 instance ( Show sym
@@ -150,7 +150,7 @@ instance ( Show sym
          , StepFunction (StepTy stgy) t) =>
   TR.ToReport (TR.OptimizationData (OptimizationInput stgy sym t Price) (OptimizationResult t sym stgy)) where
 
-  toReport (TR.OptimizationData optInp (OptimizationResult res brm lastEqty)) = do
+  toReport (TR.OptimizationData optInp (OptimizationResult res {- brm -} lastEqty)) = do
     let nOfSamp = 20
     
     Rep.subheader "Optimization Input"
@@ -165,10 +165,12 @@ instance ( Show sym
 
     Rep.subsubheader "Generated Broom"
     Rep.text ("Showing " ++ show nOfSamp ++ " Monte Carlo samples")
+
+    {-
     Rep.chart
       (Style.axTitle "Time" "Bars" {- :: Style.AxisConfig t Price -})
       (Style.axTitle "Time" "Equity" {- :: Style.AxisConfig Equity t -}, broom2chart nOfSamp brm)
-
+-}
 
 data BacktestInput stgy sym t ohlc = BacktestInput {
   btEquity :: Equity
@@ -328,4 +330,3 @@ example = do
   
   BSL.putStrLn t
  
--}

@@ -4,11 +4,16 @@
 
 module Trade.Strategy.Report where
 
+import Control.Monad.Reader (Reader)
+
+import Data.Vector
 
 import qualified Data.Map as Map
 import Data.Map (Map)
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
+
+import Text.Blaze.Html5 (Html)
 
 import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
 
@@ -18,10 +23,9 @@ import Trade.Strategy.Type (AlignedSignals(..))
 import Trade.Report.Line (Line(..), XTy, YTy, ToLine)
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
-import Trade.Report.HtmlIO (HtmlIO)
+import Trade.Report.Config (Config, HtmlReader)
 
 import Trade.Strategy.Type
-import Data.Vector
 
 {-
 plot ::
@@ -38,7 +42,7 @@ plot ::
   , ToLine (Vector (t, ohlc))
   , XTy (Vector (t, ohlc)) ~ t
   , YTy (Vector (t, ohlc)) ~ ohlc) =>
-  Map p (ImpulseSignal stgy t) -> AlignedSignals sym t ohlc -> HtmlIO
+  Map p (ImpulseSignal stgy t) -> AlignedSignals sym t ohlc -> HtmlReader ()
 plot is asigs@(AlignedSignals ts _) = do
   let -- f :: _
       f sym (Just ss) acc = Line (show sym) ss : acc
