@@ -7,6 +7,8 @@ import Control.Monad.Reader (runReaderT)
 
 import Data.ByteString.Lazy (ByteString)
 
+import qualified Data.Map as Map
+import Data.Map (Map)
 
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
@@ -22,15 +24,21 @@ import qualified Graphics.Rendering.Chart.Easy as E
 
 import Trade.Report.Config (HtmlReader, defConfig)
 
-import Trade.Report.Style (AxisConfig(..), colors, impulseAxisConf)
+import Trade.Report.Style (AxisConfig(..), colors, impulseAxisConf, axTitle)
 
-import Trade.Report.Line (Line, line) --  XTy, YTy)
+import Trade.Report.Line (Line, line)
 
 import qualified Trade.Report.Render as Render
 
 import Trade.Report.ToReport (toReport)
 
+import Trade.Strategy.Algorithm (alignedSignals2signals)
+import Trade.Strategy.Type (AlignedSignals(..))
+
+import Trade.Type.Equity (Equity)
 import Trade.Type.Impulse (Impulse)
+import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
+import Trade.Type.Signal (Signal)
 
 import Debug.Trace
 
@@ -165,4 +173,27 @@ backtestChart :: (Ord x) => E.StackedLayout x -> [E.StackedLayout x] -> HtmlRead
 backtestChart a as =
   let layouts = E.StackedLayouts (a : as) False
   in Render.renderable2svg (E.renderStackedLayouts layouts)
+
+
+strategyChart ::
+  ( Show sym
+  , Eq ohlc
+  , E.PlotValue ohlc
+  , Ord t
+  , E.PlotValue t
+  , Line (Vector (t, ohlc))) =>
+  Map p (ImpulseSignal stgy t) -> AlignedSignals sym t ohlc -> Maybe (Signal t Equity) -> HtmlReader ()
+strategyChart is asigs@(AlignedSignals ts _) output = do
+  let f sym (Just ss) acc = line (show sym) ss : acc
+      f _ _ acc = acc
+
+      mout = maybe [] ((:[]) . line "Equity out") output
+      cs = Map.foldrWithKey' f mout (alignedSignals2signals asigs)
+
+      g _ i acc = curve ts i : acc
+      ks = Map.foldrWithKey' g [] is
+  
+  backtestChart
+    (gridChart (axTitle "Time" "Equity / Price") cs)
+    (impulseSignalCharts ks)
 

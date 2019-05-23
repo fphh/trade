@@ -56,7 +56,6 @@ library
                         Trade.Strategy.Library.MovingAverages
                         Trade.Strategy.Library.NoInvestment
                         Trade.Strategy.Process
-                        Trade.Strategy.Report
                         Trade.Strategy.Type
                         Trade.Test.Data
                         Trade.Test.Time

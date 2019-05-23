@@ -50,7 +50,6 @@ import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList,
 
 import Trade.Strategy.Type (Signals(..), AlignedSignals(..))
 import qualified Trade.Strategy.Process as Strategy
-import qualified Trade.Strategy.Report as SRep
 
 import qualified Trade.Report.Line as Line
 import Trade.Report.Line (Line(..))
@@ -196,19 +195,7 @@ render symTitle btTitle (Result inp out) = do
 
   let ts = Vec.map fst (unSignal (snd (head (inputSignals inp))))
       
-  SRep.plot (impulseSignals out) (alignedSignals out) (Just (outputSignal out))
-
-{-
-  Rep.subheader "666XXX666"
-
-  let xs = fmap (curve ts) (impulseSignals out)
-  
-  Rep.backtestChart
-    (Rep.gridChart (Style.axTitle "Time" "Equity / Price")
-      [ line symTitle (snd (head (inputSignals inp)))
-      , line btTitle (outputSignal out) ])
-    (Rep.impulseSignalCharts (Map.elems xs))
--}
+  Rep.strategyChart (impulseSignals out) (alignedSignals out) (Just (outputSignal out))
 
   Rep.subsubheader "Summary"
 
