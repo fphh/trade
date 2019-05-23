@@ -39,13 +39,15 @@ library
                         Trade.MonteCarlo.ResampleTrades.Broom
                         Trade.MonteCarlo.Simulation.BlackScholes
                         Trade.MonteCarlo.Simulation.MEBoot
+                        Trade.Report.Basic
+                        Trade.Report.Chart
                         Trade.Report.Config
                         Trade.Report.Heatmap
+                        Trade.Report.HtmlReader
                         Trade.Report.Line
                         Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Render
-                        Trade.Report.Report
                         Trade.Report.SparkLine
                         Trade.Report.Style
                         Trade.Report.Table

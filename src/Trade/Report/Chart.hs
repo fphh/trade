@@ -1,11 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
-module Trade.Report.Report where
-
-import Control.Monad.Reader (runReaderT)
-
-import Data.ByteString.Lazy (ByteString)
+module Trade.Report.Chart where
 
 import qualified Data.Map as Map
 import Data.Map (Map)
@@ -15,22 +11,15 @@ import Data.Vector (Vector)
 
 import Data.Time.Clock
 
-import qualified Text.Blaze.Html5 as H5
-import Text.Blaze.Html5 ((!))
-import qualified Text.Blaze.Html.Renderer.Utf8 as HtmlBSL
-import qualified Text.Blaze.Html5.Attributes as H5A
-
 import qualified Graphics.Rendering.Chart.Easy as E
 
-import Trade.Report.Config (HtmlReader, defConfig)
+import Trade.Report.Config (HtmlReader)
 
 import Trade.Report.Style (AxisConfig(..), colors, impulseAxisConf, axTitle)
 
 import Trade.Report.Line (Line, line)
 
 import qualified Trade.Report.Render as Render
-
-import Trade.Report.ToReport (toReport)
 
 import Trade.Strategy.Algorithm (alignedSignals2signals)
 import Trade.Strategy.Type (AlignedSignals(..))
@@ -40,38 +29,6 @@ import Trade.Type.Impulse (Impulse)
 import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
 import Trade.Type.Signal (Signal)
 
-import Debug.Trace
-
-
-clear :: H5.Attribute
-clear = H5A.style (H5.stringValue "clear:both;")
-
-header :: String -> HtmlReader ()
-header = toReport . (H5.h1 ! clear) . H5.toHtml
-
-subheader :: String -> HtmlReader ()
-subheader = toReport . (H5.h2 ! clear) . H5.toHtml
-
-subsubheader :: String -> HtmlReader ()
-subsubheader = toReport . (H5.h3 ! clear) . H5.toHtml
-
-text :: String -> HtmlReader ()
-text = toReport . H5.p . H5.toHtml
-
-renderReport :: HtmlReader () -> IO ByteString
-renderReport html = do
-  config <- defConfig
-  let sty = H5A.style (H5.stringValue "font-family:monospace;padding:20px;")
-      bodySty = H5A.style (H5.stringValue "width:20000px")
-
-      innerHtml = runReaderT html config
-      
-      doc = do
-        H5.docType
-        H5.html ! sty $ do
-          (H5.body ! bodySty) $ innerHtml
-          
-  return (HtmlBSL.renderHtml doc)
 
 
 
@@ -99,10 +56,10 @@ candle lbl cs =
 
 
 
-chart ::
+lines ::
   (Foldable t, E.ToPlot p, E.PlotValue x, E.PlotValue y) =>
   AxisConfig x b -> (c, t (E.EC (E.Layout x y) (p x y))) -> HtmlReader ()
-chart acx (acy, ls) =
+lines acx (_acy, ls) =
   let diagram = do
         E.setColors colors
         
@@ -125,10 +82,10 @@ chart acx (acy, ls) =
   in Render.ec2svg diagram
 
 
-gridChart ::
+grid ::
   (E.PlotValue x, E.PlotValue b, Foldable t, E.ToPlot p) =>
   AxisConfig x b -> t (E.EC (E.Layout x b) (p x b)) -> E.StackedLayout x
-gridChart  ac ls =
+grid  ac ls =
   let diagram = E.execEC $ do
         E.setColors colors
  
@@ -145,10 +102,10 @@ gridChart  ac ls =
   in E.StackedLayout diagram
 
 
-impulseSignalCharts ::
+impulseSignals ::
   (Ord x, E.PlotValue x) =>
   [Vector (x, Maybe Impulse)] -> [E.StackedLayout x]
-impulseSignalCharts is =
+impulseSignals is =
   let toChart sty ls = E.execEC $ do
         E.setColors [ E.opaque E.darkgreen ]
         
@@ -169,13 +126,13 @@ impulseSignalCharts is =
   in map (E.StackedLayout . f) is
 
 
-backtestChart :: (Ord x) => E.StackedLayout x -> [E.StackedLayout x] -> HtmlReader ()
-backtestChart a as =
+backtest :: (Ord x) => E.StackedLayout x -> [E.StackedLayout x] -> HtmlReader ()
+backtest a as =
   let layouts = E.StackedLayouts (a : as) False
   in Render.renderable2svg (E.renderStackedLayouts layouts)
 
 
-strategyChart ::
+strategy ::
   ( Show sym
   , Eq ohlc
   , E.PlotValue ohlc
@@ -183,7 +140,7 @@ strategyChart ::
   , E.PlotValue t
   , Line (Vector (t, ohlc))) =>
   Map p (ImpulseSignal stgy t) -> AlignedSignals sym t ohlc -> Maybe (Signal t Equity) -> HtmlReader ()
-strategyChart is asigs@(AlignedSignals ts _) output = do
+strategy is asigs@(AlignedSignals ts _) output = do
   let f sym (Just ss) acc = line (show sym) ss : acc
       f _ _ acc = acc
 
@@ -193,7 +150,7 @@ strategyChart is asigs@(AlignedSignals ts _) output = do
       g _ i acc = curve ts i : acc
       ks = Map.foldrWithKey' g [] is
   
-  backtestChart
-    (gridChart (axTitle "Time" "Equity / Price") cs)
-    (impulseSignalCharts ks)
+  backtest
+    (grid (axTitle "Time" "Equity / Price") cs)
+    (impulseSignals ks)
 

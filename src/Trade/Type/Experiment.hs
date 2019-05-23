@@ -30,7 +30,7 @@ import Trade.Type.DeltaTradeList (DeltaTradeList)
 import Trade.Type.DisInvest (InvestSignal)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
-import Trade.Type.ImpulseSignal (ImpulseSignal(..), curve)
+import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 
 import qualified Trade.Type.NestedMap as NestedMap
 
@@ -51,12 +51,13 @@ import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList,
 import Trade.Strategy.Type (Signals(..), AlignedSignals(..))
 import qualified Trade.Strategy.Process as Strategy
 
-import qualified Trade.Report.Line as Line
 import Trade.Report.Line (Line(..))
 
-import qualified Trade.Report.Report as Rep
+--import qualified Trade.Report.Report as Rep
+
+import Trade.Report.Basic (subheader, subsubheader)
+import qualified Trade.Report.Chart as Chart
 import qualified Trade.Report.SparkLine as Spark
-import qualified Trade.Report.Style as Style
 
 import qualified Trade.TStatistics.SampleStatistics as SS
 import qualified Trade.TStatistics.Statistics as Stats
@@ -187,21 +188,21 @@ render ::
   , PlotValue ohlc
   , Line (Signal t ohlc)
   , Line (Vec.Vector (t, ohlc))) =>
-  String -> String -> Result stgy sym t ohlc -> HtmlReader ()
+  Result stgy sym t ohlc -> HtmlReader ()
 
-render symTitle btTitle (Result inp out) = do
+render (Result inp out) = do
   
-  Rep.subheader "Experiment"
-
-  let ts = Vec.map fst (unSignal (snd (head (inputSignals inp))))
+  subheader "Experiment"
       
-  Rep.strategyChart (impulseSignals out) (alignedSignals out) (Just (outputSignal out))
+  Chart.strategy (impulseSignals out) (alignedSignals out) (Just (outputSignal out))
 
-  Rep.subsubheader "Summary"
+  subsubheader "Summary"
 
   toReport (SS.sampleStatistics (snd (head (inputSignals inp))))
   toReport (SS.sampleStatistics (outputSignal out))
 
-  Rep.subsubheader "Trade statistics"
+  subsubheader "Trade statistics"
 
   tradeStatistics (step inp) (deltaTradeList out)
+
+

@@ -16,7 +16,7 @@ import Trade.Type.Price (Price(..))
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.Strategy (Long)
 
-import Trade.Strategy.Library.BuyAndHold (buyAndHold)
+-- import Trade.Strategy.Library.BuyAndHold (buyAndHold)
 import Trade.Strategy.Library.MovingAverages (movingAverages)
 
 import qualified Trade.Strategy.Process as Strategy
@@ -26,7 +26,9 @@ import Trade.MonteCarlo.Simulation.BlackScholes (Mu(..), Sigma(..), blackScholes
 
 import qualified Trade.Test.Data as TD
 
-import qualified Trade.Report.Report as Rep
+import qualified Trade.Report.Chart as Chart
+import Trade.Report.HtmlReader (render)
+
 
 
 
@@ -61,6 +63,6 @@ example = do
       xs :: Map Symbol (ImpulseSignal Long BarNo)
       xs = fmap invest2impulse stgy
 
-  t <- Rep.renderReport (Rep.strategyChart xs asigs Nothing)
+  t <- render (Chart.strategy xs asigs Nothing)
   BSL.putStrLn t
   

@@ -67,8 +67,9 @@ import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.Backtest as BT
 
 
+import Trade.Report.Basic (subheader, subsubheader, text)
 import qualified Trade.Report.Heatmap as Heat
-import qualified Trade.Report.Report as Rep
+import Trade.Report.HtmlReader (render)
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Tab
 import qualified Trade.Report.ToReport as TR
@@ -154,18 +155,18 @@ instance ( Show sym
   toReport (ARep.OptimizationData optInp (OptimizationResult res {- brm -} lastEqty)) = do
     let nOfSamp = 20
     
-    Rep.subheader "Optimization Input"
+    subheader "Optimization Input"
 
-    Experiment.render "Symbol at Close" "Backtest" res
+    Experiment.render res
 
-    Rep.subsubheader "Table of last equities"
+    subsubheader "Table of last equities"
 
     Heat.heatmap
       (unEquity (optEquity optInp))
       (Map.mapKeys (\(Window y, Window x) -> (y, x)) (fmap unEquity lastEqty))
 
-    Rep.subsubheader "Generated Broom"
-    Rep.text ("Showing " ++ show nOfSamp ++ " Monte Carlo samples")
+    subsubheader "Generated Broom"
+    text ("Showing " ++ show nOfSamp ++ " Monte Carlo samples")
 
     {-
     Rep.chart
@@ -212,8 +213,8 @@ instance (E.PlotValue t
   TR.ToReport (ARep.BacktestData (BacktestInput stgy sym t ohlc) (BacktestResult stgy sym t ohlc)) where
   
   toReport (ARep.BacktestData _ (BacktestResult res)) = do
-    Rep.subheader "Backtest"
-    Experiment.render "Symbol at Close" "Backtest" res
+    subheader "Backtest"
+    Experiment.render res
  
  --------------------------------------------------------
 
@@ -324,7 +325,7 @@ example = do
 
       rep = Ana.analyze analysis
 
-  t <- Rep.renderReport rep
+  t <- render rep
   
   BSL.putStrLn t
  

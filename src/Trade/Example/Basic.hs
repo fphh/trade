@@ -14,7 +14,8 @@ import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Analysis.OHLCData as OD
 import qualified Trade.Analysis.Report as ARep
 
-import qualified Trade.Report.Report as Rep
+import Trade.Report.Basic (subheader, text)
+import Trade.Report.HtmlReader (render)
 import qualified Trade.Report.ToReport as TR
 
 --------------------------------------------------------
@@ -33,8 +34,8 @@ data OptimizationResult = OptimizationResult
 
 instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
   toReport _ = do
-    Rep.subheader "Optimization"
-    Rep.text "Nothing to optimize."
+    subheader "Optimization"
+    text "Nothing to optimize."
     
 --------------------------------------------------------
 
@@ -49,8 +50,8 @@ data BacktestResult = BacktestResult
 
 instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   toReport _ = do
-    Rep.subheader "Backtest"
-    Rep.text "Nothing to report."
+    subheader "Backtest"
+    text "Nothing to report."
     
 --------------------------------------------------------
 
@@ -76,7 +77,7 @@ example = do
 
       rep = Ana.analyze analysis
 
-  t <- Rep.renderReport rep
+  t <- render rep
   
   BSL.putStrLn t
 

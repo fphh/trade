@@ -8,7 +8,6 @@ import qualified Data.Vector as Vec
 
 import qualified Statistics.Sample as Sample
 
-import qualified Trade.Report.Report as Rep
 
 {-
 

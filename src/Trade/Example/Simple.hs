@@ -47,8 +47,12 @@ import Trade.Strategy.Library.MovingAverages (movingAverages)
 import Trade.Strategy.Type (Window(..))
 import qualified Trade.Strategy.Process as Strategy
 
-import Trade.Report.Line (Line, line) -- , XTy, YTy)
-import qualified Trade.Report.Report as Rep
+import Trade.Report.Line (Line, line)
+
+
+import Trade.Report.Basic (text, header, subheader)
+import qualified Trade.Report.Chart as Chart
+import Trade.Report.HtmlReader (render)
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.ToReport as TR
 
@@ -77,19 +81,17 @@ instance Opt.Optimize OptimizationInput where
 
 data OptimizationResult = OptimizationResult
 
-instance -- (Line (Signal UTCTime Price)) =>
-
-  TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
+instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
   
   toReport (ARep.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
-    Rep.text "Optimally buying and selling. Not possible in reality :( ..."
+    text "Optimally buying and selling. Not possible in reality :( ..."
     
-    Rep.subheader "Optimization Input"
-    Rep.chart
+    subheader "Optimization Input"
+    Chart.lines
       (Style.axTitle "Symbol" "Time" :: Style.AxisConfig UTCTime Price)
       (Style.axTitle "Price" "Time" :: Style.AxisConfig Price UTCTime, [line "Price" ps])
-    Rep.subheader "Optimization Result"
-    Rep.text "No optimization has been done."
+    subheader "Optimization Result"
+    text "No optimization has been done."
 
 --------------------------------------------------------
 
@@ -119,7 +121,6 @@ instance BT.Backtest BacktestInput where
           , shortInterests = Interests (interests rtf 0)
           }
 
-        -- expmntLW :: Experiment.Input Long Symbol UTCTime Price
         expmntLW = Experiment.Input stp0 initEqty optStrat ps
         esLW = Experiment.conduct expmntLW
 
@@ -133,36 +134,26 @@ instance BT.Backtest BacktestInput where
         esSL = Experiment.conduct expmntSL
 
 
-    in (BacktestResult esLW esSW esLL esSL)
+    in (BacktestResult esLW esSW {- esLL esSL -})
 
 data BacktestResult = BacktestResult {
   resultLW :: Experiment.Result Long Symbol UTCTime Price
   , resultSW :: Experiment.Result Short Symbol UTCTime Price
-  , resultLL :: Experiment.Result Long Symbol UTCTime Price
-  , resultSL :: Experiment.Result Short Symbol UTCTime Price
   }
 
-instance -- ( Line (Signal UTCTime Price)) =>
-  TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
+instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   
-  toReport (ARep.BacktestData (BacktestInput inEq ps) (BacktestResult resLW resSW resLL resSL)) = do
+  toReport (ARep.BacktestData (BacktestInput inEq ps) (BacktestResult resLW resSW)) = do
 
-    Rep.subheader "Fees"
+    subheader "Fees"
 
-    Rep.text "Trading at fraction 0.5, commission per buy/sell 5%, short interests 2% per day."
+    text "Trading at fraction 0.5, commission per buy/sell 5%, short interests 2% per day."
 
-    Rep.header "Backtest Result, Long, Winning"
-    Experiment.render "Symbol at Close" "Backtest" resLW
+    header "Backtest Result, Long"
+    Experiment.render resLW
 
-    Rep.header "Backtest Result, Short, Winning"
-    Experiment.render "Symbol at Close" "Backtest" resSW
-{-
-    Rep.header "Backtest Result, Long, Losing"
-    Experiment.render "Symbol at Close" "Backtest" resLL
-
-    Rep.header "Backtest Result, Short, Losing"
-    Experiment.render "Symbol at Close" "Backtest" resSL
--}
+    header "Backtest Result, Short"
+    Experiment.render resSW
 
 --------------------------------------------------------
 
@@ -179,18 +170,26 @@ example :: IO ()
 example = do
 
   let equity = Equity 3
+
+      win5 = Window 5
+      win10 = Window 10
   
-      analysis :: Ana.Analysis OptimizationInput BacktestInput
-      analysis = Ana.Analysis {
+      gen_5_10 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator (movingAverages win5 win10)))
+      gen_10_5 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator (movingAverages win10 win5)))
+
+      analysis :: IG.ImpulseGenerator () Price -> Ana.Analysis OptimizationInput BacktestInput
+      analysis gen = Ana.Analysis {
         Ana.title = "Long/Short - Winning/Losing"
-        -- , Ana.impulseGenerator = IG.ImpulseGenerator (\() -> IG.OptimizedImpulseGenerator buyAndHold)
-        , Ana.impulseGenerator = IG.ImpulseGenerator (\() -> IG.OptimizedImpulseGenerator (movingAverages (Window 5) (Window 10)))
+        , Ana.impulseGenerator = gen
         , Ana.optimizationInput = OptimizationInput [(A, ticker)]
         , Ana.backtestInput = BacktestInput equity [(A, ticker)]
         }
 
-      rep = Ana.analyze analysis
+      repA = Ana.analyze (analysis gen_5_10)
+      repB = Ana.analyze (analysis gen_10_5)
 
-  t <- Rep.renderReport rep
-  
-  BSL.putStrLn t
+  a <- render repA
+  BSL.putStrLn a
+
+  b <- render repB
+  BSL.putStrLn b

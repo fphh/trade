@@ -10,7 +10,7 @@ import Trade.Type.ImpulseGenerator (ImpulseGenerator(..), RankedStrategies(..))
 import Trade.Analysis.Report(OptimizationData(..))
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
 
-import qualified Trade.Report.Report as Rep
+import Trade.Report.Basic (text)
 import Trade.Report.ToReport (ToReport, toReport)
 
 class Optimize optInput where
@@ -38,5 +38,5 @@ instance Optimize NoOptimization where
     (RankedStrategies [strat NoOptimization], NoOptimizationReport)
 
 instance ToReport (OptimizationData NoOptimization NoOptimizationReport) where
-  toReport _ = Rep.text "No optimization was done."
+  toReport _ = text "No optimization was done."
 

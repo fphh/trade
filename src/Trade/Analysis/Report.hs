@@ -5,9 +5,8 @@ module Trade.Analysis.Report where
 
 import Control.Monad (liftM3)
 
-
+import Trade.Report.Basic (header, subheader, text)
 import Trade.Report.Config (HtmlReader)
-import Trade.Report.Report (header, subheader, text)
 import Trade.Report.ToReport (ToReport, toReport)
 
 

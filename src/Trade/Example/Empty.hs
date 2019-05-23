@@ -3,9 +3,9 @@ module Trade.Example.Empty where
 
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
-import qualified Trade.Report.Report as Report
 
--- import Trade.Type.ImpulseGenerator (noImpulses, optImpGen2impGen)
+import Trade.Report.HtmlReader (render)
+
 import Trade.Analysis.Analysis (Analysis(..), analyze)
 import Trade.Analysis.Optimize (NoOptimization(..))
 import Trade.Analysis.Backtest (NoBacktest(..))
@@ -25,7 +25,7 @@ example = do
 
       rep = analyze analysis
 
-  t <- Report.renderReport rep
+  t <- render rep
   
   BSL.putStrLn t
   

@@ -13,7 +13,7 @@ import Trade.Type.NonEmptyList (NonEmptyList)
 import Trade.Analysis.Report (BacktestData(..))
 import Trade.Analysis.OHLCData (OHLCData, OHLCDataTy, NoOHLC)
 
-import qualified Trade.Report.Report as Rep
+import Trade.Report.Basic (text)
 import Trade.Report.ToReport (ToReport, toReport)
 
 
@@ -35,4 +35,4 @@ instance Backtest NoBacktest where
   backtest _ NoBacktest = NoBacktestReport
 
 instance ToReport (BacktestData NoBacktest NoBacktestReport) where
-  toReport _ = Rep.text "No backtest done."
+  toReport _ = text "No backtest done."
