@@ -56,12 +56,12 @@ example = do
 
   let strategy = movingAverages (Window 10) (Window 20)
 
-      -- asigs :: (XTy (Vector (BarNo, Double)) => AlignedSignals Symbol BarNo Double
+      asigs :: AlignedSignals Symbol BarNo Price
       ((asigs, stgy), _) = Strategy.run (strategy [(A, bs)])
 
       xs :: Map Symbol (ImpulseSignal Long BarNo)
       xs = fmap invest2impulse stgy
 
-  t <- Rep.renderReport (plot xs asigs)
+  t <- Rep.renderReport (plot xs asigs Nothing)
   BSL.putStrLn t
   

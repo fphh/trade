@@ -14,6 +14,8 @@ import qualified Data.Vector as Vec
 
 import Data.Map (Map)
 
+import qualified Graphics.Rendering.Chart.Easy as E
+
 import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.Backtest as BT
 import qualified Trade.Analysis.OHLCData as OD
@@ -45,7 +47,7 @@ import Trade.Strategy.Library.MovingAverages (movingAverages)
 import Trade.Strategy.Type (Window(..))
 import qualified Trade.Strategy.Process as Strategy
 
-import Trade.Report.Line (Line(..))
+import Trade.Report.Line (Line, line) -- , XTy, YTy)
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.ToReport as TR
@@ -75,14 +77,17 @@ instance Opt.Optimize OptimizationInput where
 
 data OptimizationResult = OptimizationResult
 
-instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
+instance -- (Line (Signal UTCTime Price)) =>
+
+  TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
+  
   toReport (ARep.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
     Rep.text "Optimally buying and selling. Not possible in reality :( ..."
     
     Rep.subheader "Optimization Input"
     Rep.chart
       (Style.axTitle "Symbol" "Time" :: Style.AxisConfig UTCTime Price)
-      (Style.axTitle "Price" "Time" :: Style.AxisConfig Price UTCTime, [Line "Price" ps])
+      (Style.axTitle "Price" "Time" :: Style.AxisConfig Price UTCTime, [line "Price" ps])
     Rep.subheader "Optimization Result"
     Rep.text "No optimization has been done."
 
@@ -137,7 +142,9 @@ data BacktestResult = BacktestResult {
   , resultSL :: Experiment.Result Short Symbol UTCTime Price
   }
 
-instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
+instance -- ( Line (Signal UTCTime Price)) =>
+  TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
+  
   toReport (ARep.BacktestData (BacktestInput inEq ps) (BacktestResult resLW resSW resLL resSL)) = do
 
     Rep.subheader "Fees"

@@ -30,7 +30,7 @@ import Trade.Type.DeltaTradeList (DeltaTradeList)
 import Trade.Type.DisInvest (InvestSignal)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
-import Trade.Type.ImpulseSignal (ImpulseSignal(..))
+import Trade.Type.ImpulseSignal (ImpulseSignal(..), curve)
 
 import qualified Trade.Type.NestedMap as NestedMap
 
@@ -121,8 +121,6 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) (ps:_)) =
           [] -> ImpulseSignal Map.empty
           x:_ -> x
 
---      impSig:_ = trace (show impSigs) Map.elems impSigs
-
       ts :: TradeList stgy t ohlc
       ts = impulse2tradeList (snd ps) impSig
       dts = tradeList2DeltaTradeList ts
@@ -175,35 +173,42 @@ tradeStatistics stp dtl =
 lastEquity :: Result stgy sym t ohlc -> Equity
 lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
 
+
 render ::
   ( Show sym
   , Pretty t
   , Add t
   , StepFunction (StepTy stgy) t
   , PlotValue t
-  , PlotValue ohlc
-  , ToYield ohlc
-  , Pretty ohlc
   , Pretty (DeltaTy t)
   , Real (DeltaTy t)
   , Pretty (Stats.DeltaTyStats t)
-  , Line.ToLine (Vec.Vector (t, ohlc))
-  , Line.XTy (Vec.Vector (t, ohlc)) ~ t
-  , Line.YTy (Vec.Vector (t, ohlc)) ~ ohlc) =>
+  , ToYield ohlc
+  , Pretty ohlc
+  , PlotValue ohlc
+  , Line (Signal t ohlc)
+  , Line (Vec.Vector (t, ohlc))) =>
   String -> String -> Result stgy sym t ohlc -> HtmlReader ()
+
 render symTitle btTitle (Result inp out) = do
   
   Rep.subheader "Experiment"
 
   let ts = Vec.map fst (unSignal (snd (head (inputSignals inp))))
+      
+  SRep.plot (impulseSignals out) (alignedSignals out) (Just (outputSignal out))
 
-  SRep.plot (impulseSignals out) (alignedSignals out)
+{-
+  Rep.subheader "666XXX666"
+
+  let xs = fmap (curve ts) (impulseSignals out)
   
   Rep.backtestChart
-    (Rep.gridChart (Style.axTitle "Equity" "XXX")
-      [ Line symTitle (snd (head (inputSignals inp))) ])
---      , Line btTitle (outputSignal out)])
-    (Rep.impulseSignalCharts []) -- curve ts (snd (head (impulseSignals out)))])
+    (Rep.gridChart (Style.axTitle "Time" "Equity / Price")
+      [ line symTitle (snd (head (inputSignals inp)))
+      , line btTitle (outputSignal out) ])
+    (Rep.impulseSignalCharts (Map.elems xs))
+-}
 
   Rep.subsubheader "Summary"
 

@@ -23,14 +23,16 @@ import qualified Graphics.Rendering.Chart.Easy as E
 import Trade.Report.Config (HtmlReader, defConfig)
 
 import Trade.Report.Style (AxisConfig(..), colors, impulseAxisConf)
-import Trade.Report.Line (Line(..), ToLine, toLine, XTy, YTy)
+
+import Trade.Report.Line (Line, line) --  XTy, YTy)
+
 import qualified Trade.Report.Render as Render
 
 import Trade.Report.ToReport (toReport)
 
 import Trade.Type.Impulse (Impulse)
 
-
+import Debug.Trace
 
 
 clear :: H5.Attribute
@@ -88,9 +90,10 @@ candle lbl cs =
   in Render.ec2svg (E.plot diagram)
 
 
+
 chart ::
-  (Foldable t, ToLine a, E.PlotValue (XTy a), E.PlotValue (YTy a)) =>
-  AxisConfig (XTy a) b -> (AxisConfig (YTy a) c, t (Line a)) -> HtmlReader ()
+  (Foldable t, E.ToPlot p, E.PlotValue x, E.PlotValue y) =>
+  AxisConfig x b -> (c, t (E.EC (E.Layout x y) (p x y))) -> HtmlReader ()
 chart acx (acy, ls) =
   let diagram = do
         E.setColors colors
@@ -101,20 +104,22 @@ chart acx (acy, ls) =
           Just x -> E.layout_x_axis . E.laxis_generate E..= x
           Nothing -> return ()
 
+{-
         E.layout_y_axis E..= xAxisLayout acy
         E.layout_left_axis_visibility E..= axisVisibility acy
         case axisFn acy of
           Just x -> E.layout_y_axis . E.laxis_generate E..= x
           Nothing -> return ()
-          
-        mapM_ (E.plot . toLine) ls
-        
+-}
+
+        mapM_ E.plot ls
+
   in Render.ec2svg diagram
 
 
 gridChart ::
-  (Ord (YTy a), E.PlotValue (XTy a), E.PlotValue (YTy a), Foldable t, ToLine a) =>
-  AxisConfig (XTy a) (YTy a) -> t (Line a) -> E.StackedLayout (XTy a)
+  (E.PlotValue x, E.PlotValue b, Foldable t, E.ToPlot p) =>
+  AxisConfig x b -> t (E.EC (E.Layout x b) (p x b)) -> E.StackedLayout x
 gridChart  ac ls =
   let diagram = E.execEC $ do
         E.setColors colors
@@ -127,7 +132,7 @@ gridChart  ac ls =
           Just x -> E.layout_x_axis . E.laxis_generate E..= x
           Nothing -> return ()
 
-        mapM_ (E.plot . toLine) ls
+        mapM_ E.plot ls
 
   in E.StackedLayout diagram
 
@@ -151,7 +156,7 @@ impulseSignalCharts is =
           Nothing -> return ()
 
         mapM_ E.plot ls
-      
+        
       f _impSig = toChart impulseAxisConf [E.line "down buy / up sell" (map Vec.toList is)]
   in map (E.StackedLayout . f) is
 
@@ -160,3 +165,4 @@ backtestChart :: (Ord x) => E.StackedLayout x -> [E.StackedLayout x] -> HtmlRead
 backtestChart a as =
   let layouts = E.StackedLayouts (a : as) False
   in Render.renderable2svg (E.renderStackedLayouts layouts)
+

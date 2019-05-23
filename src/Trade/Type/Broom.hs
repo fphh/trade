@@ -25,12 +25,14 @@ newtype Broom signal = Broom {
 instance Functor Broom where
   fmap f (Broom hs) = Broom (map f hs)
 
+{-
 -- | Turn a broom into a chart with `n` curves.
 -- broom2chart :: (Line signal) => Int -> Broom signal -> [Line.L [(TyX signal, Line.TyY signal)]]
 broom2chart :: Int -> Broom a -> [Line a]
 broom2chart n (Broom xs) =
   let f i x = Line (show i) x
   in P.zipWith f [0 :: Integer ..] (take n xs)
+-}
 
 
 {-

@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
+-- {-# LANGUAGE UndecidableInstances #-}
 
 module Trade.Example.ReplayingTrades where
 
@@ -23,7 +24,7 @@ import qualified Data.Vector as Vec
 import Text.Printf (printf)
 
 import Trade.Type.Bars (DeltaTy, Add, BarLength(..), BarNo(..))
-import Trade.Type.Broom (Broom, broom2chart)
+import Trade.Type.Broom (Broom) -- , broom2chart)
 import Trade.Type.Delta (ToDelta)
 -- import qualified Trade.Type.Distribution as Dist
 import Trade.Type.Step.Commission (Commission(..), noCommission)
@@ -52,8 +53,8 @@ import Trade.Type.Conversion.Invest2Impulse (Invest2Impulse, invest2impulse)
 import Trade.Type.Yield (ToYield)
 
 -- import Trade.Algorithm.MovingAverage (WindowSize(..))
-import Trade.Strategy.Type (Window(..))
-import Trade.Strategy.Library.MovingAverages (movingAverages)
+import Trade.Strategy.Type (Window(..), K(..))
+import Trade.Strategy.Library.MovingAverages (movingAverages, stdBreakout)
 
 import Trade.TStatistics.Statistics (DeltaTyStats)
 
@@ -66,12 +67,12 @@ import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.Backtest as BT
 
 
-import qualified Trade.Report.Line as Line
 import qualified Trade.Report.Heatmap as Heat
 import qualified Trade.Report.Report as Rep
 import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Tab
 import qualified Trade.Report.ToReport as TR
+import Trade.Report.Line (Line)
 
 import Trade.Report.Pretty (Pretty)
 
@@ -87,7 +88,6 @@ import qualified Trade.Timeseries.Binance.Interval as Bin
 import qualified Trade.Timeseries.Binance.Symbol as Bin
 import qualified Trade.Timeseries.Url as Url
 
-{-
 
 data Symbol = ASym deriving (Show, Eq, Ord)
 
@@ -145,16 +145,13 @@ instance ( Show sym
          , Add t
          , Num (DeltaTy t)
          , Real (DeltaTy t)
-         , Line.XTy (Vec.Vector (t, Equity)) ~ t
-         , Line.YTy (Vec.Vector (t, Equity)) ~ Equity
-         , Line.ToLine (Vec.Vector (t, Equity))
          , Pretty t
          , Pretty (DeltaTy t)
          , Pretty (DeltaTyStats t)
          , StepFunction (StepTy stgy) t) =>
-  TR.ToReport (TR.OptimizationData (OptimizationInput stgy sym t Price) (OptimizationResult t sym stgy)) where
+  TR.ToReport (ARep.OptimizationData (OptimizationInput stgy sym t Price) (OptimizationResult t sym stgy)) where
 
-  toReport (TR.OptimizationData optInp (OptimizationResult res {- brm -} lastEqty)) = do
+  toReport (ARep.OptimizationData optInp (OptimizationResult res {- brm -} lastEqty)) = do
     let nOfSamp = 20
     
     Rep.subheader "Optimization Input"
@@ -204,18 +201,17 @@ instance (E.PlotValue t
          , Add t
          , Real (DeltaTy t)
          , E.PlotValue ohlc
-         , Line.ToLine (Vec.Vector (t, ohlc))
-         , Line.XTy (Vec.Vector (t, ohlc)) ~ t
-         , Line.YTy (Vec.Vector (t, ohlc)) ~ ohlc
          , StepFunction (StepTy stgy) t
          , Pretty t, Pretty (DeltaTy t)
          , Pretty (DeltaTyStats t)
          , Pretty ohlc
          , Eq ohlc
-         , ToYield ohlc) =>
-  TR.ToReport (TR.BacktestData (BacktestInput stgy sym t ohlc) (BacktestResult stgy sym t ohlc)) where
+         , ToYield ohlc
+         , Line (Signal t ohlc)
+         , Line (Vec.Vector (t, ohlc))) =>
+  TR.ToReport (ARep.BacktestData (BacktestInput stgy sym t ohlc) (BacktestResult stgy sym t ohlc)) where
   
-  toReport (TR.BacktestData _ (BacktestResult res)) = do
+  toReport (ARep.BacktestData _ (BacktestResult res)) = do
     Rep.subheader "Backtest"
     Experiment.render "Symbol at Close" "Backtest" res
  
@@ -275,7 +271,7 @@ example :: IO ()
 example = do
 
   let sym = Bin.USDT Bin.BTCUSDT
-  (mcBegin, sample) <- getSymbol (Bin.USDT Bin.BTCUSDT)
+  (mcBegin, sample) <- getSymbol sym
   -- (mcBegin, sample) <- blackScholes
 
 
@@ -289,8 +285,6 @@ example = do
         longFraction = Fraction 1
         , longCommission = Commission (const 0) -- (\c -> 0.001*c)
         }
-
-
 
       -- rtf :: NominalDiffTime -> Double
       rtf dt =
@@ -334,4 +328,3 @@ example = do
   
   BSL.putStrLn t
  
--}
