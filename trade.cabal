@@ -79,11 +79,11 @@ library
                         Trade.Timeseries.Time
                         Trade.Timeseries.Timeseries
                         Trade.Timeseries.Url
-                        Trade.TStatistics.Algorithm
-                        Trade.TStatistics.SampleStatistics
-                        Trade.TStatistics.Statistics
-                        Trade.TStatistics.TradeStatistics
-                        Trade.TStatistics.YieldStatistics
+                        Trade.Statistics.Algorithm
+                        Trade.Statistics.SampleStatistics
+                        Trade.Statistics.Statistics
+                        Trade.Statistics.TradeStatistics
+                        Trade.Statistics.YieldStatistics
                         Trade.Type.Bars
                         Trade.Type.Broom
                         Trade.Type.Conversion.Invest2Impulse

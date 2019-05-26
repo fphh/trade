@@ -39,7 +39,6 @@ data Modified sym =
   Now sym
   | MAvg Window sym
   | StdDev Window K sym
-  | Last sym
   deriving (Show, Eq, Ord)
 
 newtype Signals sym t x = Signals {

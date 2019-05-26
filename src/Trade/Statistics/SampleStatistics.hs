@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Trade.TStatistics.SampleStatistics where
+module Trade.Statistics.SampleStatistics where
 
 import Trade.Type.Bars (DeltaTy, Add, diff)
 import Trade.Type.Signal (Signal)

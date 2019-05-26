@@ -2,7 +2,6 @@
 
 module Trade.Strategy.Algorithm where
 
-import Control.Monad (liftM)
 
 import Control.Monad.State (State, get, modify)
 
@@ -16,19 +15,19 @@ import Trade.Type.Add (Add, add)
 import Trade.Type.Scale (Scale, scale)
 import Trade.Type.Signal (Signal(..))
 
-import Trade.TStatistics.Algorithm (Statistics)
-import qualified Trade.TStatistics.Algorithm as SA
+import Trade.Statistics.Algorithm (Statistics)
+import qualified Trade.Statistics.Algorithm as SA
 
 import Trade.Strategy.Type (Index(..), Focus(..), Offset(..), Modified(..), Signals(..), AlignedSignals(..), IndexedSignals(..), Window(..), K(..))
 
 
--- apply :: Offset -> Index -> (Index -> Focus, Vector x) -> Maybe x
+apply :: Offset -> p -> (p -> Focus, Vector a) -> Maybe a
 apply (Offset off) idx (f, vs) =
   let Focus foc = f idx
   in vs Vec.!? (foc+off)
 
 
--- alignedSignals2signals :: (Eq t, Eq x) => AlignedSignals sym t x -> Map (Modified sym) (Maybe (Vector (t, x)))
+alignedSignals2signals :: (Eq t, Eq x) => AlignedSignals sym t x -> Map (Modified sym) (Maybe (Vector (t, x)))
 alignedSignals2signals (AlignedSignals tms m) =
   let f vs =
         let g i t = sequence (t, apply (Offset 0) (Index i) vs)
@@ -74,32 +73,15 @@ modifySignal (Now _) vs = (\(Index idx) -> Focus idx, vs)
 modifySignal (MAvg (Window win) _) vs = 
   let us = Vec.imap (\i _ -> SA.mean (Vec.slice i win vs)) vs
   in (\(Index idx) -> Focus (idx-win+1), Vec.slice 0 (Vec.length vs - win + 1) us)
-  
+
 modifySignal (StdDev (Window win) (K k) _) vs =
   let f i _ =
         let ws = Vec.slice i win vs
         in SA.mean ws `add` scale k (SA.stdDev ws)
       us = Vec.imap f vs
   in (\(Index idx) -> Focus (idx-win+1), Vec.slice 0 (Vec.length vs - win + 1) us)
-  
-  
-{-
-modifySignal (MAvg (Window win) _) vs = 
-  let winLen = fromIntegral win
-      us = Vec.imap (\i _ -> (Vec.sum (Vec.slice i win vs) / winLen)) vs
-  in (\(Index idx) -> Focus (idx-win+1), Vec.slice 0 (Vec.length vs - win + 1) us)
-modifySignal (StdDev (Window win) (K k) _) vs =
-  let winLen = fromIntegral win
-      f i _ =
-        let ws = Vec.slice i win vs
-            mean = Vec.sum ws / winLen
-            s = sqrt (Vec.sum (Vec.map ((**2) . (+ negate mean)) ws) / winLen)
-        in mean + fromRational (toRational k) * s
-            
-      us = Vec.imap f vs
-      
-  in (\(Index idx) -> Focus (idx-win+1), Vec.slice 0 (Vec.length vs - win + 1) us)
--}
+
+
 
 now ::
   (Ord sym) =>

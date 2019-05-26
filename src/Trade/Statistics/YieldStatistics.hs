@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
-module Trade.TStatistics.YieldStatistics where
+module Trade.Statistics.YieldStatistics where
 
 
 import qualified Data.List as List
@@ -22,7 +22,7 @@ import qualified Trade.Report.Table as Table
 
 import Trade.Report.ToReport (ToReport, toReport)
 
-import Trade.TStatistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
+import Trade.Statistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
 
 
 

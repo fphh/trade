@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Trade.TStatistics.Statistics where
+module Trade.Statistics.Statistics where
 
 
 import Data.Time.Clock (UTCTime, NominalDiffTime)

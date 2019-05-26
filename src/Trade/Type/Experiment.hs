@@ -59,10 +59,10 @@ import Trade.Report.Basic (subheader, subsubheader)
 import qualified Trade.Report.Chart as Chart
 import qualified Trade.Report.SparkLine as Spark
 
-import qualified Trade.TStatistics.SampleStatistics as SS
-import qualified Trade.TStatistics.Statistics as Stats
-import qualified Trade.TStatistics.TradeStatistics as TS
-import qualified Trade.TStatistics.YieldStatistics as YS
+import qualified Trade.Statistics.SampleStatistics as SS
+import qualified Trade.Statistics.Statistics as Stats
+import qualified Trade.Statistics.TradeStatistics as TS
+import qualified Trade.Statistics.YieldStatistics as YS
 
 import Trade.Report.ToReport (toReport)
 

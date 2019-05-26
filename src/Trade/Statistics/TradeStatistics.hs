@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
-module Trade.TStatistics.TradeStatistics where
+module Trade.Statistics.TradeStatistics where
 
 
 import qualified Data.Vector as Vec
@@ -24,7 +24,7 @@ import Trade.Report.ToReport (ToReport, toReport)
 import Trade.Report.Pretty (Pretty)
 import qualified Trade.Report.Table as Table
 
-import Trade.TStatistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
+import Trade.Statistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
 
 
 data TradeStatistics t ohlc = TradeStatistics {

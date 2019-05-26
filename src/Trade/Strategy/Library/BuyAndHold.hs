@@ -20,7 +20,7 @@ import Trade.Strategy.Type (Signals, AlignedSignals)
 
 import Trade.Strategy.Condition (symbol, conditions, (.=), Condition((:=:)), Implication((:->)))
 
-import Trade.TStatistics.Algorithm (Statistics)
+import Trade.Statistics.Algorithm (Statistics)
 
 
 buyAndHold ::

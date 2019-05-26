@@ -22,7 +22,7 @@ import Trade.Strategy.Algorithm (now, mavg, stdDev)
 import Trade.Strategy.Condition (symbol, conditions, (.>), (.<), (.&&), Condition((:=:)), Implication((:->)))
 import Trade.Strategy.Process (process)
 
-import Trade.TStatistics.Algorithm (Statistics)
+import Trade.Statistics.Algorithm (Statistics)
 
 
 

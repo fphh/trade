@@ -56,7 +56,7 @@ import Trade.Type.Yield (ToYield)
 import Trade.Strategy.Type (Window(..), K(..))
 import Trade.Strategy.Library.MovingAverages (movingAverages, stdBreakout)
 
-import Trade.TStatistics.Statistics (DeltaTyStats)
+import Trade.Statistics.Statistics (DeltaTyStats)
 
 import qualified Trade.Analysis.TWR as TWR
 import qualified Trade.Analysis.Risk as Risk

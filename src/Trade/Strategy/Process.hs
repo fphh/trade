@@ -21,7 +21,8 @@ import Trade.Type.DisInvest (DisInvest(..), InvestSignal(..))
 import Trade.Type.Add (Add)
 import Trade.Type.Scale (Scale)
 import Trade.Type.Signal (Signal(..))
-import Trade.TStatistics.Algorithm (Statistics)
+
+import Trade.Statistics.Algorithm (Statistics)
 
 import Trade.Strategy.Algorithm (modifySignal)
 import Trade.Strategy.Type (Signals(..), AlignedSignals(..), IndexedSignals(..), Index(..))
