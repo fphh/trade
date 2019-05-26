@@ -9,6 +9,9 @@ import Control.Monad.State (State)
 
 import Data.Map (Map)
 
+import Trade.Type.Add (Add)
+import Trade.Type.Scale (Scale)
+
 import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
 import Trade.Type.Signal (Signal)
 --import qualified Trade.Type.Signal as Signal
@@ -19,11 +22,12 @@ import Trade.Strategy.Algorithm (now, mavg, stdDev)
 import Trade.Strategy.Condition (symbol, conditions, (.>), (.<), (.&&), Condition((:=:)), Implication((:->)))
 import Trade.Strategy.Process (process)
 
+import Trade.TStatistics.Algorithm (Statistics)
 
 
 
 movingAverages ::
-  (Ord t, Ord sym, Ord x, Fractional x, Floating x) =>
+  (Ord t, Ord sym, Ord x, Statistics x, Scale x, Add x) =>
   Window -> Window -> [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
 movingAverages _ _ [] = error "movingAverages"
 movingAverages j k (vs:_) = do
@@ -47,7 +51,7 @@ movingAverages j k (vs:_) = do
                     , v10_1 .< v20_1 .&& v10_0 .> v20_0 :-> Invest ]
 
 stdBreakout ::
-  (Ord t, Ord sym, Ord x, Fractional x, Floating x) =>
+  (Ord t, Ord sym, Ord x, Statistics x, Scale x, Add x) =>
   Window -> K -> [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
 stdBreakout _ _ [] = error "stdBreakout"
 stdBreakout j (K n) (vs:_) = do

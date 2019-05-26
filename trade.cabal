@@ -79,6 +79,7 @@ library
                         Trade.Timeseries.Time
                         Trade.Timeseries.Timeseries
                         Trade.Timeseries.Url
+                        Trade.TStatistics.Algorithm
                         Trade.TStatistics.SampleStatistics
                         Trade.TStatistics.Statistics
                         Trade.TStatistics.TradeStatistics
@@ -104,6 +105,7 @@ library
                         Trade.Type.OHLC
                         Trade.Type.Position
                         Trade.Type.Price
+                        Trade.Type.Scale
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity
                         Trade.Type.Signal.Price

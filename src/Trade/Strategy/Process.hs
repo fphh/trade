@@ -17,14 +17,18 @@ import qualified Data.Vector as Vec
 
 
 import Trade.Type.DisInvest (DisInvest(..), InvestSignal(..))
+
+import Trade.Type.Add (Add)
+import Trade.Type.Scale (Scale)
 import Trade.Type.Signal (Signal(..))
+import Trade.TStatistics.Algorithm (Statistics)
 
 import Trade.Strategy.Algorithm (modifySignal)
 import Trade.Strategy.Type (Signals(..), AlignedSignals(..), IndexedSignals(..), Index(..))
 
 
 
-align :: (Ord t, Fractional x, Floating x) => Signals sym t x -> AlignedSignals sym t x
+align :: (Ord t, Statistics x, Add x, Scale x) => Signals sym t x -> AlignedSignals sym t x
 align (Signals tickers) =
   let tmsTickers = fmap (Set.fromList . Vec.toList . Vec.map fst . unSignal) tickers
       allTimes = foldMap id tmsTickers
@@ -34,7 +38,7 @@ align (Signals tickers) =
   in AlignedSignals (Vec.fromList (Set.toList tms)) modSigs
 
 process ::
-  (Ord t, Ord sym, Fractional x, Floating x) =>
+  (Ord t, Ord sym, Statistics x, Add x, Scale x) =>
   State (IndexedSignals sym t x) [(sym, DisInvest)]
   -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
 process frame = do

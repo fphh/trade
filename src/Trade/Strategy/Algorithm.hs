@@ -12,7 +12,12 @@ import Data.Map (Map)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
+import Trade.Type.Add (Add, add)
+import Trade.Type.Scale (Scale, scale)
 import Trade.Type.Signal (Signal(..))
+
+import Trade.TStatistics.Algorithm (Statistics)
+import qualified Trade.TStatistics.Algorithm as SA
 
 import Trade.Strategy.Type (Index(..), Focus(..), Offset(..), Modified(..), Signals(..), AlignedSignals(..), IndexedSignals(..), Window(..), K(..))
 
@@ -63,9 +68,22 @@ end = do
 
 
 
-
-modifySignal :: (Fractional x, Floating x) => (Modified sym) -> Vector x -> (Index -> Focus, Vector x)
+modifySignal :: (Statistics x, Add x, Scale x) => (Modified sym) -> Vector x -> (Index -> Focus, Vector x)
 modifySignal (Now _) vs = (\(Index idx) -> Focus idx, vs)
+
+modifySignal (MAvg (Window win) _) vs = 
+  let us = Vec.imap (\i _ -> SA.mean (Vec.slice i win vs)) vs
+  in (\(Index idx) -> Focus (idx-win+1), Vec.slice 0 (Vec.length vs - win + 1) us)
+  
+modifySignal (StdDev (Window win) (K k) _) vs =
+  let f i _ =
+        let ws = Vec.slice i win vs
+        in SA.mean ws `add` scale k (SA.stdDev ws)
+      us = Vec.imap f vs
+  in (\(Index idx) -> Focus (idx-win+1), Vec.slice 0 (Vec.length vs - win + 1) us)
+  
+  
+{-
 modifySignal (MAvg (Window win) _) vs = 
   let winLen = fromIntegral win
       us = Vec.imap (\i _ -> (Vec.sum (Vec.slice i win vs) / winLen)) vs
@@ -81,7 +99,7 @@ modifySignal (StdDev (Window win) (K k) _) vs =
       us = Vec.imap f vs
       
   in (\(Index idx) -> Focus (idx-win+1), Vec.slice 0 (Vec.length vs - win + 1) us)
-
+-}
 
 now ::
   (Ord sym) =>

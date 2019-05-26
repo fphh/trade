@@ -11,15 +11,20 @@ import Trade.Type.Signal (Signal)
 import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
 
 
+import Trade.Type.Add (Add)
+import Trade.Type.Scale (Scale)
+
 import Trade.Strategy.Algorithm (time, now, start, end)
 import Trade.Strategy.Process (process)
 import Trade.Strategy.Type (Signals, AlignedSignals)
 
 import Trade.Strategy.Condition (symbol, conditions, (.=), Condition((:=:)), Implication((:->)))
 
+import Trade.TStatistics.Algorithm (Statistics)
+
 
 buyAndHold ::
-  (Ord t, Ord sym, Fractional x, Floating x) =>
+  (Ord t, Ord sym, Statistics x, Scale x, Add x) =>
   [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
 buyAndHold [] = error "buyAndHold"
 buyAndHold (vs:_) = do
