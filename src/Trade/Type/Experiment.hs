@@ -14,6 +14,8 @@ import qualified Data.Vector as Vec
 import qualified Data.Map as Map
 import Data.Map (Map)
 
+import qualified Data.List as List
+
 import qualified Text.Blaze.Html5 as H5
 import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5.Attributes as H5A
@@ -71,7 +73,6 @@ import Trade.Help.SafeTail (slast)
 import Trade.Report.Config (HtmlReader)
 import Trade.Report.Pretty (Pretty)
 
--- import Debug.Trace
 
 
 data Input stgy sym t ohlc = Input {
@@ -132,7 +133,7 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) (ps:_)) =
         impulseSignals = impSigs
         , alignedSignals = asigs
         , deltaTradeList = dts
-        , outputSignal = Signal.adjust timeLine (concatDeltaSignals stp eqty dts)
+        , outputSignal = Signal.adjust eqty timeLine (concatDeltaSignals stp eqty dts)
         }
       
   in Result {

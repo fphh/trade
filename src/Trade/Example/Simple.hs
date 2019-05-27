@@ -140,13 +140,14 @@ instance BT.Backtest BacktestInput where
         expmntSL = Experiment.Input stp1 initEqty bl optStrat ps
         esSL = Experiment.conduct expmntSL
 
+    in (BacktestResult esLW esSW)
 
-    in (BacktestResult esLW esSW {- esLL esSL -})
 
 data BacktestResult = BacktestResult {
   resultLW :: Experiment.Result Long Symbol UTCTime Price
   , resultSW :: Experiment.Result Short Symbol UTCTime Price
   }
+
 
 instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   
@@ -154,13 +155,15 @@ instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
 
     subheader "Fees"
 
-    text "Trading at fraction 0.5, commission per buy/sell 5%, short interests 2% per day."
+    text "Trading at fraction 0.5, commission ??, short interests ?? per day."
 
     header "Backtest Result, Long"
     Experiment.render resLW
 
     header "Backtest Result, Short"
     Experiment.render resSW
+
+    -- mapM_ text (map show (Vec.toList (Vec.map show (unSignal $ Experiment.outputSignal (Experiment.output resLW)))))
 
 --------------------------------------------------------
 

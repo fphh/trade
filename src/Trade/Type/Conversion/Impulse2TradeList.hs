@@ -21,6 +21,7 @@ import Trade.Type.Strategy (Long, Short)
 import Trade.Help.SafeTail (shead, stail)
 
 
+
 class Impulse2TradeList stgy where
   impulse2tradeList :: (Ord t) => Signal t ohlc -> ImpulseSignal stgy t -> TradeList stgy t ohlc
 
@@ -40,11 +41,12 @@ extend len vs =
       vs1 = if l < len then Vec.snoc vs len else vs
   in vs1
 
+
 impulse2tradeListHelp ::
   (Ord t) => (Impulse -> Position) -> Signal t ohlc -> ImpulseSignal stgy t -> TradeList stgy t ohlc
 impulse2tradeListHelp tag (Signal ps) (ImpulseSignal is) =
   let idxs = extend (Vec.length ps - 1) (Vec.findIndices ((`Set.member` (Map.keysSet is)) . fst) ps)
-      f i j = Vec.slice i (j-i+1) ps
+      f i j = Vec.slice i (j-i) ps
       xs = Vec.zipWith f idxs (stail "stail: impulse2tradeListHelp" idxs)
       g zs =
         let (t, _) = shead "shead: impulse2tradeListHelp" zs

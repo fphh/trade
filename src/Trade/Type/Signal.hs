@@ -127,17 +127,17 @@ drop :: Int -> Signal t x -> Signal t x
 drop n (Signal xs) = Signal (Vec.drop n xs)
 
 
-adjust :: (Ord t) => Vector t -> Signal t x -> Signal t x
-adjust ts (Signal xs)
+adjust :: (Ord t) => x -> Vector t -> Signal t x -> Signal t x
+adjust e ts (Signal xs)
   | Vec.length xs == 0 = error "Signal.adjust: empty vector"
   | otherwise =
-    let (t0, y0) = Vec.head xs
+    let (t0, _) = Vec.head xs
         (tn, yn) = Vec.last xs
         (as, bs) = Vec.span (< t0) ts
         cs = Vec.dropWhile (<= tn) bs
     in Signal
        $ Vec.concat
-       [ Vec.map (\t -> (t, y0)) as
+       [ Vec.map (\t -> (t, e)) as
        , xs
        , Vec.map (\t -> (t, yn)) cs ]
        
