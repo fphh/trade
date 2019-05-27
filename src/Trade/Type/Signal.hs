@@ -91,17 +91,13 @@ last (Signal ps) = slast "Signal.tail" ps
 
 mapFirst :: (y -> y) -> Signal t y -> Signal t y
 mapFirst f (Signal ps)
-  | Vec.length ps == 0 = error "Signal.setLast: empty vector"
-  | otherwise =
-      let ([(t, y)], ps') = (\(as, bs) -> (Vec.toList as, bs)) (Vec.splitAt 1 ps)
-      in Signal ((t, f y) `Vec.cons` ps')
+  | Vec.length ps == 0 = error "Signal.mapFirst: empty vector"
+  | otherwise = Signal (ps Vec.// [(1, fmap f (Vec.head ps))])
 
 mapLast :: (y -> y) -> Signal t y -> Signal t y
 mapLast f (Signal ps)
-  | Vec.length ps == 0 = error "Signal.setLast: empty vector"
-  | otherwise =
-      let (ps', [(t, y)]) = fmap Vec.toList (Vec.splitAt (Vec.length ps-1) ps)
-      in Signal (ps' `Vec.snoc` (t, f y))
+  | Vec.length ps == 0 = error "Signal.mapLast: empty vector"
+  | otherwise = Signal (ps Vec.// [(Vec.length ps - 1, fmap f (Vec.last ps))])
 
 length :: Signal x y -> Int
 length (Signal xs) = Vec.length xs
@@ -125,3 +121,23 @@ minimum (Signal xs) = Vec.minimumBy (compare `on` snd) xs
 
 maximum :: (Ord x, Eq t) => Signal t x -> (t, x)
 maximum (Signal xs) = Vec.maximumBy (compare `on` snd) xs
+
+
+drop :: Int -> Signal t x -> Signal t x
+drop n (Signal xs) = Signal (Vec.drop n xs)
+
+
+adjust :: (Ord t) => Vector t -> Signal t x -> Signal t x
+adjust ts (Signal xs)
+  | Vec.length xs == 0 = error "Signal.adjust: empty vector"
+  | otherwise =
+    let (t0, y0) = Vec.head xs
+        (tn, yn) = Vec.last xs
+        (as, bs) = Vec.span (< t0) ts
+        cs = Vec.dropWhile (<= tn) bs
+    in Signal
+       $ Vec.concat
+       [ Vec.map (\t -> (t, y0)) as
+       , xs
+       , Vec.map (\t -> (t, yn)) cs ]
+       

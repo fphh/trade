@@ -2,10 +2,10 @@
 
 module Trade.Statistics.SampleStatistics where
 
-import Trade.Type.Bars (DeltaTy, Add, diff)
+import Trade.Type.Bars (DeltaTy, BarLength, Add, diff, barLength2diffTime)
 import Trade.Type.Signal (Signal)
 import qualified Trade.Type.Signal as Signal
-import Trade.Type.Yield (LogYield, ToYield, toYield, logYield2yield)
+import Trade.Type.Yield (LogYield(..), ToYield, toYield, logYield2yield)
 
 
 import Trade.Report.Pretty (Pretty, pretty)
@@ -19,21 +19,26 @@ data SampleStatistics t ohlc = SampleStatistics {
   , finalEquity :: (t, ohlc)
   , timeSpan :: DeltaTy t
   , yield :: LogYield (DeltaTy t) ohlc
+  , yieldPerBar :: LogYield (DeltaTy t) ohlc
   }
 
 
-sampleStatistics :: (Add t, ToYield ohlc) => Signal t ohlc -> SampleStatistics t ohlc
-sampleStatistics xs =
+sampleStatistics ::
+  (Add t, ToYield ohlc) =>
+  DeltaTy t -> Signal t ohlc -> SampleStatistics t ohlc
+sampleStatistics barLen xs =
   let ie@(t0, y0) = Signal.head xs
       fe@(tn, yn) = Signal.last xs
       ts = tn `diff` t0
-      yld = toYield ts yn y0
+      yld@(LogYield _ y) = toYield ts yn y0
+      yldPerBar = LogYield barLen (y / fromIntegral (Signal.length xs))
   in SampleStatistics {
     sampleLength = Signal.length xs
     , initialEquity = ie
     , finalEquity = fe
     , timeSpan = ts
     , yield = yld
+    , yieldPerBar = yldPerBar
     }
 
 sampleStatistics2table ::
@@ -45,6 +50,7 @@ sampleStatistics2table ss =
      , "Final" : format (finalEquity ss)
      , [ "Time span", pretty (timeSpan ss) ]
      , [ "Yield", "", pretty (logYield2yield (yield ss)) ]
+     , [ "Yield per bar", "", pretty (logYield2yield (yieldPerBar ss)) ]
      , [ "Sample length", pretty (sampleLength ss) ] ]
 
 

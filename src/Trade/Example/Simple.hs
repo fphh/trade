@@ -7,7 +7,7 @@
 
 module Trade.Example.Simple where
 
-import Data.Time.Clock (UTCTime)
+import Data.Time.Clock (UTCTime, NominalDiffTime)
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Data.Vector as Vec
@@ -23,6 +23,8 @@ import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Analysis.Report as ARep
 
 import qualified Trade.Test.Data as TD
+
+import Trade.Type.Bars (BarLength(Day), barLength2diffTime)
 
 import Trade.Type.Step (StepTy(LongStep, ShortStep), longFraction, shortFraction, longCommission, shortCommission, shortInterests)
 import Trade.Type.Step.Commission (Commission(..), noCommission)
@@ -62,6 +64,9 @@ import Trade.Type.DeltaSignal (DeltaSignal(..))
 
 data Symbol = A deriving (Show, Eq, Ord)
 
+barLen :: BarLength
+barLen = Day 1
+
 ticker :: Signal UTCTime Price
 -- ticker = Signal (Vec.map (fmap Price) TD.testSimple)
 ticker = Signal (Vec.map (fmap Price) TD.sinus)
@@ -97,13 +102,14 @@ instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult
 
 data BacktestInput = BacktestInput {
   initialEquity :: Equity
+  , barLength :: NominalDiffTime
   , outOfSample :: [(Symbol, Signal UTCTime Price)]
   }
 
 instance BT.Backtest BacktestInput where
   type BacktestReportTy BacktestInput = BacktestResult
 
-  backtest (NonEmptyList optStrat@(IG.OptimizedImpulseGenerator strat) _) (BacktestInput initEqty ps) =
+  backtest (NonEmptyList optStrat@(IG.OptimizedImpulseGenerator strat) _) (BacktestInput initEqty bl ps) =
 
     let rtf dt =
           let day = 24*60*60
@@ -121,16 +127,17 @@ instance BT.Backtest BacktestInput where
           , shortInterests = Interests (interests rtf 0)
           }
 
-        expmntLW = Experiment.Input stp0 initEqty optStrat ps
+
+        expmntLW = Experiment.Input stp0 initEqty bl optStrat ps
         esLW = Experiment.conduct expmntLW
 
-        expmntSW = Experiment.Input stp1 initEqty optStrat ps
+        expmntSW = Experiment.Input stp1 initEqty bl optStrat ps
         esSW = Experiment.conduct expmntSW
 
-        expmntLL = Experiment.Input stp0 initEqty optStrat ps
+        expmntLL = Experiment.Input stp0 initEqty bl optStrat ps
         esLL = Experiment.conduct expmntLL
 
-        expmntSL = Experiment.Input stp1 initEqty optStrat ps
+        expmntSL = Experiment.Input stp1 initEqty bl optStrat ps
         esSL = Experiment.conduct expmntSL
 
 
@@ -143,7 +150,7 @@ data BacktestResult = BacktestResult {
 
 instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   
-  toReport (ARep.BacktestData (BacktestInput inEq ps) (BacktestResult resLW resSW)) = do
+  toReport (ARep.BacktestData (BacktestInput inEq _ ps) (BacktestResult resLW resSW)) = do
 
     subheader "Fees"
 
@@ -182,7 +189,7 @@ example = do
         Ana.title = "Long/Short - Winning/Losing"
         , Ana.impulseGenerator = gen
         , Ana.optimizationInput = OptimizationInput [(A, ticker)]
-        , Ana.backtestInput = BacktestInput equity [(A, ticker)]
+        , Ana.backtestInput = BacktestInput equity (barLength2diffTime barLen) [(A, ticker)]
         }
 
       repA = Ana.analyze (analysis gen_5_10)

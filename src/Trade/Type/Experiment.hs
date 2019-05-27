@@ -20,7 +20,7 @@ import qualified Text.Blaze.Html5.Attributes as H5A
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
-import Trade.Type.Bars (DeltaTy, Add)
+import Trade.Type.Bars (DeltaTy, BarLength, Add)
 import Trade.Type.Delta (ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 
@@ -35,7 +35,7 @@ import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 import qualified Trade.Type.NestedMap as NestedMap
 
 import Trade.Type.Signal (Signal(..))
--- import qualified Trade.Type.Signal as Signal
+import qualified Trade.Type.Signal as Signal
 
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
@@ -77,6 +77,7 @@ import Trade.Report.Pretty (Pretty)
 data Input stgy sym t ohlc = Input {
   step :: StepTy stgy t
   , initialEquity :: Equity
+  , barLength :: DeltaTy t
   , impulseGenerator :: OptimizedImpulseGenerator ohlc
   , inputSignals :: [(sym, Signal t ohlc)]
   }
@@ -107,7 +108,7 @@ conduct ::
   , StepFunction (StepTy stgy) t) =>
   Input stgy sym t ohlc -> Result stgy sym t ohlc
  
-conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) (ps:_)) =
+conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) (ps:_)) =
   let 
       strategy :: State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym (InvestSignal t))
       strategy = impGen [ps]
@@ -125,11 +126,13 @@ conduct inp@(Input stp eqty (OptimizedImpulseGenerator impGen) (ps:_)) =
       ts = impulse2tradeList (snd ps) impSig
       dts = tradeList2DeltaTradeList ts
 
+      timeLine = alignedTimes asigs
+
       out = Output {
         impulseSignals = impSigs
         , alignedSignals = asigs
         , deltaTradeList = dts
-        , outputSignal = concatDeltaSignals stp eqty dts
+        , outputSignal = Signal.adjust timeLine (concatDeltaSignals stp eqty dts)
         }
       
   in Result {
@@ -198,8 +201,8 @@ render (Result inp out) = do
 
   subsubheader "Summary"
 
-  toReport (SS.sampleStatistics (snd (head (inputSignals inp))))
-  toReport (SS.sampleStatistics (outputSignal out))
+  toReport (SS.sampleStatistics (barLength inp) (snd (head (inputSignals inp))))
+  toReport (SS.sampleStatistics (barLength inp) (outputSignal out))
 
   subsubheader "Trade statistics"
 

@@ -25,7 +25,6 @@ instance Add UTCTime where
   add dt t = addUTCTime dt t
   diff x y = diffUTCTime x y
 
-
 -- | Duration.
 newtype Bars = Bars {
   unBars :: Int
@@ -84,4 +83,3 @@ barLength2diffTime t = fromIntegral $
     Day x -> 24*60*60*x
     Week x -> 7*24*60*60*x
     Month x -> 30*24*60*60*x
-

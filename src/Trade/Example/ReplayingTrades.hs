@@ -23,7 +23,7 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
-import Trade.Type.Bars (DeltaTy, Add, BarLength(..), BarNo(..))
+import Trade.Type.Bars (DeltaTy, Add, BarLength(..), BarNo(..), barLength2diffTime)
 import Trade.Type.Broom (Broom) -- , broom2chart)
 import Trade.Type.Delta (ToDelta)
 -- import qualified Trade.Type.Distribution as Dist
@@ -98,6 +98,7 @@ data OptimizationInput stgy sym t ohlc = OptimizationInput {
   , igInput :: [(Window, Window)]
   , mcConfig :: MCConfig t
   , optEquity :: Equity
+  , barLength :: DeltaTy t
   , step :: StepTy stgy t
   }
 
@@ -107,7 +108,9 @@ data OptimizationResult t sym stgy = OptimizationResult {
   -- , broom :: Broom (Signal t Equity)
   , lastEquities :: Map (Window, Window) Equity
   }
-  
+
+
+
 instance ( Ord sym
          , Show sym, Show t
          , Ord t
@@ -123,7 +126,7 @@ instance ( Ord sym
 
   optimize (ImpulseGenerator strat) optInp =
     let findBestWinSize winSize acc =
-          let e = Experiment.Input (step optInp) (optEquity optInp) (strat winSize) [optSample optInp]
+          let e = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (strat winSize) [optSample optInp]
           in Map.insert winSize (Experiment.conduct e) acc
 
         p e0 e1 = compare (Experiment.lastEquity e1) (Experiment.lastEquity e0)
@@ -133,7 +136,7 @@ instance ( Ord sym
         f (Experiment.Result inp _) = Experiment.impulseGenerator inp
         sortedStarts@(optStrat:_) = map f (List.sortBy p (Map.elems strats))
  
-        expmnt = Experiment.Input (step optInp) (optEquity optInp) optStrat [optSample optInp]
+        expmnt = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) optStrat [optSample optInp]
         res = Experiment.conduct expmnt
     
     -- brm <- mc res (mcConfig optInp)
@@ -177,6 +180,7 @@ instance ( Show sym
 data BacktestInput stgy sym t ohlc = BacktestInput {
   btEquity :: Equity
   , btSample :: (sym, Signal t ohlc)
+  , btBarLength :: DeltaTy t
   , btStep :: StepTy stgy t
   }
   
@@ -193,8 +197,8 @@ instance ( ToDelta ohlc
   
   type BacktestReportTy (BacktestInput stgy sym t ohlc) = BacktestResult stgy sym t ohlc
 
-  backtest (NonEmptyList optStrat _) (BacktestInput initEqty ps step) =
-    let expmnt = Experiment.Input step initEqty optStrat [ps]
+  backtest (NonEmptyList optStrat _) (BacktestInput initEqty ps bl step) =
+    let expmnt = Experiment.Input step initEqty bl optStrat [ps]
     in BacktestResult (Experiment.conduct expmnt)
 
 instance (E.PlotValue t
@@ -227,8 +231,8 @@ instance OD.OHLCData (BacktestInput stgy sym t ohlc) where
 
 --------------------------------------------------------
 
-barLength :: BarLength
-barLength = Hour 1
+barLen :: BarLength
+barLen = Min 15
 
 
 getSymbol :: Bin.Symbol -> IO (UTCTime, Signal UTCTime Price)
@@ -239,7 +243,7 @@ getSymbol sym = do
   let req = Bin.RequestParams {
         Bin.baseUrl = Bin.binanceBaseUrl
         , Bin.symbol = sym
-        , Bin.interval = Bin.Interval barLength
+        , Bin.interval = Bin.Interval barLen
         , Bin.limit = Just 1000
         , Bin.from = Nothing
         , Bin.to = Just now -- ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
@@ -308,6 +312,7 @@ example = do
             optSample = (sym, inSamp)
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head inSamp)))
+            , barLength = barLength2diffTime barLen
             , mcConfig = MCConfig {
                 mcBars = 60
                 , mcCount = MCCount 10
@@ -319,6 +324,7 @@ example = do
         , Ana.backtestInput = BacktestInput {
             btEquity = Equity (unPrice (snd (Signal.head outOfSamp)))
             , btSample = (sym, outOfSamp)
+            , btBarLength = barLength2diffTime barLen
             , btStep = longStep
             }
         }
@@ -328,4 +334,4 @@ example = do
   t <- render rep
   
   BSL.putStrLn t
- 
+
