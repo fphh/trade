@@ -5,7 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 
-module Trade.Example.Simple where
+module Trade.Example.Linear where
 
 import Data.Time.Clock (UTCTime, NominalDiffTime)
 
@@ -46,6 +46,7 @@ import qualified Trade.Type.ImpulseGenerator as IG
 
 
 import Trade.Strategy.Library.BuyAndHold (buyAndHold)
+import Trade.Strategy.Library.EvenOdd (evenOdd)
 import Trade.Strategy.Library.MovingAverages (movingAverages)
 import Trade.Strategy.Type (Window(..))
 import qualified Trade.Strategy.Process as Strategy
@@ -70,7 +71,7 @@ barLen = Day 1
 
 ticker :: Signal UTCTime Price
 -- ticker = Signal (Vec.map (fmap Price) TD.testSimple)
-ticker = Signal (Vec.map (fmap Price) TD.sinus)
+ticker = Signal (Vec.map (fmap Price) (Vec.take 7 TD.linear))
 
 --------------------------------------------------------
 
@@ -118,12 +119,12 @@ instance BT.Backtest BacktestInput where
 
 
         stp0 = LongStep {
-          longFraction = Fraction 0.5
+          longFraction = Fraction 1
           , longCommission = Commission (const 0) -- (\c -> 0.05*c)
           }
 
         stp1 = ShortStep {
-          shortFraction = Fraction 0.5
+          shortFraction = Fraction 1
           , shortCommission = Commission (const 0) -- (\c -> 0.05*c)
           , shortInterests = Interests (interests rtf 0)
           }
@@ -134,12 +135,6 @@ instance BT.Backtest BacktestInput where
 
         expmntSW = Experiment.Input stp1 initEqty bl optStrat ps
         esSW = Experiment.conduct expmntSW
-
-        expmntLL = Experiment.Input stp0 initEqty bl optStrat ps
-        esLL = Experiment.conduct expmntLL
-
-        expmntSL = Experiment.Input stp1 initEqty bl optStrat ps
-        esSL = Experiment.conduct expmntSL
 
     in (BacktestResult esLW esSW)
 
@@ -154,15 +149,11 @@ instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   
   toReport (ARep.BacktestData (BacktestInput inEq _ ps) (BacktestResult resLW resSW)) = do
 
-    subheader "Fees"
-
-    text "Trading at fraction 0.5, commission ??, short interests ?? per day."
-
     header "Backtest Result, Long"
     Experiment.render resLW
 
-    header "Backtest Result, Short"
-    Experiment.render resSW
+--    header "Backtest Result, Short"
+--    Experiment.render resSW
 
     -- mapM_ text (map show (Vec.toList (Vec.map show (unSignal $ Experiment.outputSignal (Experiment.output resLW)))))
 
@@ -180,13 +171,12 @@ instance OD.OHLCData BacktestInput where
 example :: IO ()
 example = do
 
-  let equity = Equity 3
+  let equity = Equity 1
 
       win5 = Window 5
       win10 = Window 10
   
-      gen_5_10 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator (movingAverages win5 win10)))
-      gen_10_5 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator (movingAverages win10 win5)))
+      gen_5_10 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator evenOdd))
 
       analysis :: IG.ImpulseGenerator () Price -> Ana.Analysis OptimizationInput BacktestInput
       analysis gen = Ana.Analysis {
@@ -197,10 +187,6 @@ example = do
         }
 
       repA = Ana.analyze (analysis gen_5_10)
-      repB = Ana.analyze (analysis gen_10_5)
 
   a <- render repA
   BSL.putStrLn a
-
-  b <- render repB
-  BSL.putStrLn b

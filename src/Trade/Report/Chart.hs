@@ -139,12 +139,13 @@ strategy ::
   , Ord t
   , E.PlotValue t
   , Line (Vector (t, ohlc))) =>
-  Map p (ImpulseSignal stgy t) -> AlignedSignals sym t ohlc -> Maybe (Signal t Equity) -> HtmlReader ()
+  Map p (ImpulseSignal stgy t) -> AlignedSignals sym t ohlc -> Map sym (Signal t Equity) -> HtmlReader ()
 strategy is asigs@(AlignedSignals ts _) output = do
-  let f sym (Just ss) acc = line (show sym) ss : acc
-      f _ _ acc = acc
+  let h sym o acc = line (show sym) o : acc
+      mout = Map.foldrWithKey' h [] output
 
-      mout = maybe [] ((:[]) . line "Equity out") output
+      f sym (Just ss) acc = line (show sym) ss : acc
+      f _ _ acc = acc      
       cs = Map.foldrWithKey' f mout (alignedSignals2signals asigs)
 
       g _ i acc = curve ts i : acc

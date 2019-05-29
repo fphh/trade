@@ -10,6 +10,8 @@ import System.Random (newStdGen, randoms)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
+import qualified Data.Map as Map
+
 import qualified Data.List as List
 
 import Trade.Type.DeltaSignal (DeltaSignal(..))
@@ -31,6 +33,7 @@ import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal (Signal)
 
 
+
 randomDelta ::
   Vector (DeltaSignal t ohlc) -> Vector (DeltaSignal t ohlc) -> [Int] -> [DeltaSignal t ohlc]
 randomDelta _ _ [] = error "Trade.MonteCarlo.ResampleTrades.Broom.randomDelta: empty list"
@@ -46,8 +49,9 @@ randomDelta is nis (r:rs) =
 
 
 deltaBroom :: Experiment.Output stgy sym t ohlc -> Broom (IO [DeltaSignal t ohlc])
-deltaBroom (Experiment.Output _ _ (DeltaTradeList dtl) _) =
-  let f x@(DeltaSignal _ pos _) (us, vs) =
+deltaBroom (Experiment.Output _ _ ds _) =
+  let (_, DeltaTradeList dtl):_ = Map.toList ds
+      f x@(DeltaSignal _ pos _) (us, vs) =
         case pos of
           Invested -> (x:us, vs)
           NotInvested -> (us, x:vs)
@@ -59,9 +63,11 @@ deltaBroom (Experiment.Output _ _ (DeltaTradeList dtl) _) =
   in Broom (repeat g)
 
 
+
 newtype MCCount = MCCount {
   unMCCount :: Int
   } deriving (Show)
+
 
 
 boundaries ::
@@ -83,6 +89,7 @@ boundaries begin duration (MCCount n) (Broom ioDs) = do
   fmap (Broom . map (DeltaTradeList . f begin)) (sequence ds)
 
 
+
 data MCConfig t = MCConfig {
   mcBegin :: t
   , mcBars :: DeltaTy t
@@ -97,6 +104,7 @@ defaultMC = MCConfig {
   }
 -}
 
+
 mc ::
   (Ord t, Add t, StepFunction (StepTy stgy) t) =>
   Experiment.Result stgy sym t ohlc -> MCConfig t -> IO (Broom (Signal t Equity))
@@ -106,7 +114,6 @@ mc result mtc = do
       eqty = Experiment.initialEquity (Experiment.input result)
   broom <- boundaries (mcBegin mtc) (mcBars mtc) (mcCount mtc) db
   return (fmap (concatDeltaSignals stp eqty) broom)
-
 
 
 

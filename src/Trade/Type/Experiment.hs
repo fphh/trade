@@ -42,7 +42,7 @@ import qualified Trade.Type.Signal as Signal
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
 -- import Trade.Type.Strategy (Long, Short)
-import Trade.Type.Trade (TradeList)
+import Trade.Type.Trade (TradeList, emptyTradeList)
 import Trade.Type.Yield (ToYield)
 
 import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList, impulse2tradeList)
@@ -57,7 +57,7 @@ import Trade.Report.Line (Line(..))
 
 --import qualified Trade.Report.Report as Rep
 
-import Trade.Report.Basic (subheader, subsubheader)
+import Trade.Report.Basic (subheader, subsubheader, text)
 import qualified Trade.Report.Chart as Chart
 import qualified Trade.Report.SparkLine as Spark
 
@@ -80,14 +80,14 @@ data Input stgy sym t ohlc = Input {
   , initialEquity :: Equity
   , barLength :: DeltaTy t
   , impulseGenerator :: OptimizedImpulseGenerator ohlc
-  , inputSignals :: [(sym, Signal t ohlc)]
+  , inputSignals :: Map sym (Signal t ohlc)
   }
 
 data Output stgy sym t ohlc = Output {
   impulseSignals :: Map sym (ImpulseSignal stgy t)
   , alignedSignals :: AlignedSignals sym t ohlc
-  , deltaTradeList :: DeltaTradeList t ohlc
-  , outputSignal :: Signal t Equity
+  , deltaTradeList :: Map sym (DeltaTradeList t ohlc)
+  , outputSignal :: Map sym (Signal t Equity)
   }
 
 
@@ -110,23 +110,28 @@ conduct ::
   , StepFunction (StepTy stgy) t) =>
   Input stgy sym t ohlc -> Result stgy sym t ohlc
  
-conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) (ps:_)) =
+conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
   let 
       strategy :: State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym (InvestSignal t))
-      strategy = impGen [ps]
+      strategy = impGen ps
       ((asigs, stgy), _) = Strategy.run strategy
 
       impSigs :: Map sym (ImpulseSignal stgy t)
       impSigs = fmap invest2impulse stgy
 
+{-
       impSig =
         case Map.elems impSigs of
           [] -> ImpulseSignal Map.empty
           x:_ -> x
+-}
 
-      ts :: TradeList stgy t ohlc
-      ts = impulse2tradeList (snd ps) impSig
-      dts = tradeList2DeltaTradeList ts
+      f sym isig = maybe emptyTradeList (flip impulse2tradeList isig) (Map.lookup sym ps)
+      ts :: Map sym (TradeList stgy t ohlc)
+      ts = Map.mapWithKey f impSigs
+      
+      -- ts = impulse2tradeList (snd ps) impSig
+      dts = fmap tradeList2DeltaTradeList ts
 
       timeLine = alignedTimes asigs
 
@@ -134,7 +139,8 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) (ps:_)) =
         impulseSignals = impSigs
         , alignedSignals = asigs
         , deltaTradeList = dts
-        , outputSignal = Signal.adjust eqty timeLine (concatDeltaSignals stp eqty dts)
+        , outputSignal = fmap (Signal.adjust eqty timeLine . concatDeltaSignals stp eqty) dts
+        -- , outputSignal = Signal.adjust eqty timeLine (concatDeltaSignals stp eqty dts)
         }
       
   in Result {
@@ -176,10 +182,12 @@ tradeStatistics stp dtl =
 
 
 lastEquity :: Result stgy sym t ohlc -> Equity
-lastEquity (Result _ out) = snd (slast "Experiment.lastEquity" (unSignal (outputSignal out)))
-
+lastEquity (Result _ out) =
+  let xs:_ = Map.elems (outputSignal out)
+  in snd (Signal.last xs)
 
 render ::
+  forall stgy t ohlc sym.
   ( Show sym
   , Pretty t
   , Add t
@@ -199,15 +207,29 @@ render (Result inp out) = do
   
   subheader "Experiment"
       
-  Chart.strategy (impulseSignals out) (alignedSignals out) (Just (outputSignal out))
+  Chart.strategy (impulseSignals out) (alignedSignals out) (outputSignal out)
 
   subsubheader "Summary"
 
-  toReport (SS.sampleStatistics (barLength inp) (snd (head (inputSignals inp))))
-  toReport (SS.sampleStatistics (barLength inp) (outputSignal out))
+  let -- why do we need the signature ???
+      f :: (ToYield x, Pretty x) => sym -> Signal t x -> HtmlReader () -> HtmlReader ()
+      f sym sig acc = do
+        text ("Symbol " ++ show sym)
+        toReport (SS.sampleStatistics (barLength inp) sig)
+        acc
+
+  Map.foldrWithKey' f (return ()) (inputSignals inp)
+  Map.foldrWithKey' f (return ()) (outputSignal out)
 
   subsubheader "Trade statistics"
 
-  tradeStatistics (step inp) (deltaTradeList out)
+
+
+  let g sym sig acc = do
+        text ("Symbole " ++ show sym)
+        tradeStatistics (step inp) sig
+        acc
+
+  Map.foldrWithKey' g (return ()) (deltaTradeList out)
 
 

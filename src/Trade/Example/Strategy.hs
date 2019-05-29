@@ -7,6 +7,7 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import qualified Data.Vector as Vec
 
+import qualified Data.Map as Map
 import Data.Map (Map)
 
 import Trade.Type.Bars (BarNo(..))
@@ -58,11 +59,11 @@ example = do
   let strategy = movingAverages (Window 10) (Window 20)
 
       asigs :: AlignedSignals Symbol BarNo Price
-      ((asigs, stgy), _) = Strategy.run (strategy [(A, bs)])
+      ((asigs, stgy), _) = Strategy.run (strategy (Map.fromList [(A, bs)]))
 
       xs :: Map Symbol (ImpulseSignal Long BarNo)
       xs = fmap invest2impulse stgy
 
-  t <- render (Chart.strategy xs asigs Nothing)
+  t <- render (Chart.strategy xs asigs Map.empty)
   BSL.putStrLn t
   

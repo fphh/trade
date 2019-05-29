@@ -7,6 +7,7 @@ import Control.Monad (void)
 
 import Control.Monad.State (State)
 
+import qualified Data.Map as Map
 import Data.Map (Map)
 
 import Trade.Type.Add (Add)
@@ -28,10 +29,12 @@ import Trade.Statistics.Algorithm (Statistics)
 
 movingAverages ::
   (Ord t, Ord sym, Ord x, Statistics x, Scale x, Add x) =>
-  Window -> Window -> [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
-movingAverages _ _ [] = error "movingAverages"
-movingAverages j k (vs:_) = do
+  Window -> Window -> Map sym (Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+movingAverages _ _ ms | Map.null ms = error "movingAverages"
+movingAverages j k ms = do
 
+  let vs:_ = Map.toList ms
+  
   void (now vs)
 
   vs10 <- mavg j vs

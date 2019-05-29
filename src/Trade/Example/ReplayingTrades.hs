@@ -94,7 +94,7 @@ data Symbol = ASym deriving (Show, Eq, Ord)
 
 
 data OptimizationInput stgy sym t ohlc = OptimizationInput {
-  optSample :: (sym, Signal t ohlc)
+  optSample :: Map sym (Signal t ohlc)
   , igInput :: [(Window, Window)]
   , mcConfig :: MCConfig t
   , optEquity :: Equity
@@ -126,7 +126,7 @@ instance ( Ord sym
 
   optimize (ImpulseGenerator strat) optInp =
     let findBestWinSize winSize acc =
-          let e = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (strat winSize) [optSample optInp]
+          let e = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (strat winSize) (optSample optInp)
           in Map.insert winSize (Experiment.conduct e) acc
 
         p e0 e1 = compare (Experiment.lastEquity e1) (Experiment.lastEquity e0)
@@ -136,7 +136,7 @@ instance ( Ord sym
         f (Experiment.Result inp _) = Experiment.impulseGenerator inp
         sortedStarts@(optStrat:_) = map f (List.sortBy p (Map.elems strats))
  
-        expmnt = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) optStrat [optSample optInp]
+        expmnt = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) optStrat (optSample optInp)
         res = Experiment.conduct expmnt
     
     -- brm <- mc res (mcConfig optInp)
@@ -179,7 +179,7 @@ instance ( Show sym
 
 data BacktestInput stgy sym t ohlc = BacktestInput {
   btEquity :: Equity
-  , btSample :: (sym, Signal t ohlc)
+  , btSample :: Map sym (Signal t ohlc)
   , btBarLength :: DeltaTy t
   , btStep :: StepTy stgy t
   }
@@ -199,7 +199,7 @@ instance ( ToDelta ohlc
   type BacktestReportTy (BacktestInput stgy sym t ohlc) = BacktestResult stgy sym t ohlc
 
   backtest (NonEmptyList optStrat _) (BacktestInput initEqty ps bl step) =
-    let expmnt = Experiment.Input step initEqty bl optStrat [ps]
+    let expmnt = Experiment.Input step initEqty bl optStrat ps
     in BacktestResult (Experiment.conduct expmnt)
 
 instance (E.PlotValue t
@@ -310,7 +310,7 @@ example = do
         , Ana.impulseGenerator = IG.ImpulseGenerator (\(j, k) -> IG.OptimizedImpulseGenerator (movingAverages j k))
 
         , Ana.optimizationInput = OptimizationInput {
-            optSample = (sym, inSamp)
+            optSample = Map.fromList [(sym, inSamp)]
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head inSamp)))
             , barLength = barLength2diffTime barLen
@@ -324,7 +324,7 @@ example = do
             }
         , Ana.backtestInput = BacktestInput {
             btEquity = Equity (unPrice (snd (Signal.head outOfSamp)))
-            , btSample = (sym, outOfSamp)
+            , btSample = Map.fromList [(sym, outOfSamp)]
             , btBarLength = barLength2diffTime barLen
             , btStep = longStep
             }

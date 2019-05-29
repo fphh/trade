@@ -86,6 +86,7 @@ library
                         Trade.Statistics.Statistics
                         Trade.Statistics.TradeStatistics
                         Trade.Statistics.YieldStatistics
+                        Trade.Type.Add
                         Trade.Type.Bars
                         Trade.Type.Broom
                         Trade.Type.Conversion.Invest2Impulse

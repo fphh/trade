@@ -22,3 +22,6 @@ newtype TradeList stgy t ohlc = TradeList {
 instance Functor (TradeList stgy t) where
   fmap f (TradeList tl) = TradeList (map (fmap f) tl)
 
+
+emptyTradeList :: TradeList stgy t ohlc
+emptyTradeList = TradeList []

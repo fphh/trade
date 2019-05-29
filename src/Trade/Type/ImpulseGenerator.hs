@@ -16,7 +16,7 @@ import Trade.Strategy.Type (Signals, AlignedSignals)
 newtype OptimizedImpulseGenerator ohlc = OptimizedImpulseGenerator {
   unOptimizedImpulseGenerator ::
       forall t sym. (Ord sym, Ord t) =>
-      [(sym, Signal t ohlc)] -> State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym (InvestSignal t))
+      Map sym (Signal t ohlc) -> State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym (InvestSignal t))
   }
 
 
