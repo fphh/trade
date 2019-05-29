@@ -190,6 +190,7 @@ instance ( ToDelta ohlc
          , Ord sym
          , Ord t
          , Add t
+         , Show t, Show ohlc
          , TradeList2DeltaTradeList stgy
          , Impulse2TradeList stgy
          , Invest2Impulse stgy

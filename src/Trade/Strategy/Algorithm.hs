@@ -64,6 +64,10 @@ end = do
   let tms = alignedTimes ast
   return (tms Vec.!? (Vec.length tms - 1))
 
+index :: State (IndexedSignals sym t x) Index
+index = do
+  IndexedSignals idx _ <- get
+  return idx
 
 
 

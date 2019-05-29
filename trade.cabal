@@ -32,6 +32,7 @@ library
                         Trade.Example.Basic
                         Trade.Example.Correlation
                         Trade.Example.Empty
+                        Trade.Example.Linear
                         Trade.Example.ReplayingTrades
                         Trade.Example.Simple
                         Trade.Example.Strategy
@@ -55,6 +56,7 @@ library
                         Trade.Strategy.Algorithm
                         Trade.Strategy.Condition
                         Trade.Strategy.Library.BuyAndHold
+                        Trade.Strategy.Library.EvenOdd
                         Trade.Strategy.Library.MovingAverages
                         Trade.Strategy.Library.NoInvestment
                         Trade.Strategy.Process

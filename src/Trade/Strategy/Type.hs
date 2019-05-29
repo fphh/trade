@@ -10,7 +10,7 @@ import Trade.Type.Signal (Signal)
 
 newtype Index = Index {
   unIndex :: Int
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Num, Enum, Real, Integral)
 
 newtype Focus = Focus {
   unFocus :: Int
@@ -49,7 +49,7 @@ data AlignedSignals sym t x = AlignedSignals {
   alignedTimes :: Vector t
   , modifiedSignals :: Map (Modified sym) (Index -> Focus, Vector x)
   }
-
+  
 data IndexedSignals sym t x = IndexedSignals {
   index :: Index
   , alignedSignals :: AlignedSignals sym t x

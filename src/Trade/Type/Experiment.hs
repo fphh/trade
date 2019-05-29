@@ -102,6 +102,7 @@ conduct ::
   ( Ord sym
   , Ord t
   , Add t
+  , Show t, Show ohlc
   , ToDelta ohlc
   , TradeList2DeltaTradeList stgy
   , Impulse2TradeList stgy
