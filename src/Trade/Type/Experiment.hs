@@ -84,7 +84,7 @@ data Input stgy sym t ohlc = Input {
   }
 
 data Output stgy sym t ohlc = Output {
-  impulseSignals :: Map sym (ImpulseSignal stgy t)
+  impulseSignals :: Map sym (ImpulseSignal stgy)
   , alignedSignals :: AlignedSignals sym t ohlc
   , deltaTradeList :: Map sym (DeltaTradeList t ohlc)
   , outputSignal :: Map sym (Signal t Equity)
@@ -112,11 +112,11 @@ conduct ::
  
 conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
   let 
-      strategy :: State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym (InvestSignal t))
+      strategy :: State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym InvestSignal)
       strategy = impGen ps
       ((asigs, stgy), _) = Strategy.run strategy
 
-      impSigs :: Map sym (ImpulseSignal stgy t)
+      impSigs :: Map sym (ImpulseSignal stgy)
       impSigs = fmap invest2impulse stgy
 
       f sym isig = maybe emptyTradeList (flip impulse2tradeList isig) (Map.lookup sym ps)

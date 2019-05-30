@@ -13,7 +13,7 @@ import Trade.Type.DisInvest (DisInvest(..), InvestSignal(..))
 
 
 class Invest2Impulse stgy where
-  invest2impulse :: InvestSignal t -> ImpulseSignal stgy t
+  invest2impulse :: InvestSignal -> ImpulseSignal stgy
 
 
 instance Invest2Impulse Long where

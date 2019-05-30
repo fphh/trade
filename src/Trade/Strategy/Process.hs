@@ -24,12 +24,14 @@ import Trade.Type.Scale (Scale)
 
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal (Signal(..))
+import Trade.Type.Strategy.Index (Index(..))
 
 import Trade.Statistics.Algorithm (Statistics)
 
 import Trade.Strategy.Algorithm (modifySignal)
-import Trade.Strategy.Type (Signals(..), AlignedSignals(..), IndexedSignals(..), Index(..), Modified)
+import Trade.Strategy.Type (Signals(..), AlignedSignals(..), IndexedSignals(..), Modified)
 
+-- import Debug.Trace
 
 data Resample =
   Upsample
@@ -59,21 +61,24 @@ align (ResampleFunc sampleMeth timelineMeth) (Signals tickers) =
 process ::
   (Ord t, Ord sym, Statistics x, Add x, Scale x) =>
   State (IndexedSignals sym t x) [(sym, DisInvest)]
-  -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+  -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
 process frame = do
   st <- get
   let asigs = align (resample Downsample) st
       atms = alignedTimes asigs
       
       f (currentBS, acc) i t =
-        let res = evalState frame (IndexedSignals (Index i) asigs)
+        let idx = Index i
+            res = evalState frame (IndexedSignals idx asigs)
         
             p (sym, bs) = maybe (bs == Invest) (bs /=) (Map.lookup sym currentBS)
             fres = filter p res
 
             newCurrentBS = List.foldr (uncurry Map.insert) currentBS fres
 
-            h (sym, bs) = Map.alter (Just . maybe (Map.singleton t bs) (Map.insert t bs)) sym
+            -- h (sym, bs) = Map.alter (Just . maybe (Map.singleton t bs) (Map.insert t bs)) sym
+            h (sym, bs) = Map.alter (Just . maybe (Map.singleton idx bs) (Map.insert idx bs)) sym
+
             newAcc = List.foldr h acc fres
 
         in (newCurrentBS, newAcc)
@@ -85,6 +90,6 @@ process frame = do
 
 
 run ::
-  State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
-  -> ((AlignedSignals sym t x, Map sym (InvestSignal t)), Signals sym t x)
+  State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
+  -> ((AlignedSignals sym t x, Map sym InvestSignal), Signals sym t x)
 run st = runState st (Signals Map.empty)

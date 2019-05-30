@@ -29,7 +29,7 @@ import Trade.Statistics.Algorithm (Statistics)
 
 movingAverages ::
   (Ord t, Ord sym, Ord x, Statistics x, Scale x, Add x) =>
-  Window -> Window -> Map sym (Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+  Window -> Window -> Map sym (Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
 movingAverages _ _ ms | Map.null ms = error "movingAverages"
 movingAverages j k ms = do
 
@@ -55,7 +55,7 @@ movingAverages j k ms = do
 
 stdBreakout ::
   (Ord t, Ord sym, Ord x, Statistics x, Scale x, Add x) =>
-  Window -> K -> [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+  Window -> K -> [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
 stdBreakout _ _ [] = error "stdBreakout"
 stdBreakout j (K n) (vs:_) = do
 

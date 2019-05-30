@@ -3,14 +3,12 @@
 
 module Trade.Strategy.Type where
 
+
 import Data.Map (Map)
 import Data.Vector (Vector)
 
 import Trade.Type.Signal (Signal)
-
-newtype Index = Index {
-  unIndex :: Int
-  } deriving (Eq, Ord, Show, Num, Enum, Real, Integral)
+import Trade.Type.Strategy.Index (Index)
 
 newtype Focus = Focus {
   unFocus :: Int

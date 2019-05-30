@@ -26,7 +26,7 @@ import Trade.Statistics.Algorithm (Statistics)
 
 evenOdd ::
   (Ord t, Ord sym, Statistics x, Scale x, Add x) =>
-  Map sym (Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+  Map sym (Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
 evenOdd ms | Map.null ms = error "evenOdd"
 evenOdd ms = do
 

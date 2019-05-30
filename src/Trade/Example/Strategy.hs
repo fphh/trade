@@ -61,7 +61,7 @@ example = do
       asigs :: AlignedSignals Symbol BarNo Price
       ((asigs, stgy), _) = Strategy.run (strategy (Map.fromList [(A, bs)]))
 
-      xs :: Map Symbol (ImpulseSignal Long BarNo)
+      xs :: Map Symbol (ImpulseSignal Long)
       xs = fmap invest2impulse stgy
 
   t <- render (Chart.strategy xs asigs Map.empty)

@@ -12,6 +12,7 @@ import qualified Data.List as List
 
 import Trade.Type.Position (Position(..))
 
+
 import Trade.Type.Signal (Signal(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 import Trade.Type.Trade (Trade(..), TradeList(..))
@@ -19,13 +20,14 @@ import Trade.Type.Trade (Trade(..), TradeList(..))
 import Trade.Type.Impulse (Impulse(..))
 
 import Trade.Type.Strategy (Long, Short)
+import Trade.Type.Strategy.Index (Index(..))
 
 import Trade.Help.SafeTail (shead, stail)
 
 import Debug.Trace
 
 class Impulse2TradeList stgy where
-  impulse2tradeList :: (Ord t, Show t, Show ohlc) => Signal t ohlc -> ImpulseSignal stgy t -> TradeList stgy t ohlc
+  impulse2tradeList :: (Ord t, Show t, Show ohlc) => Signal t ohlc -> ImpulseSignal stgy -> TradeList stgy t ohlc
 
 
 longTag :: Impulse -> Position
@@ -45,15 +47,12 @@ extend len vs =
 
 
 impulse2tradeListHelp ::
-  (Ord t) => (Impulse -> Position) -> Signal t ohlc -> ImpulseSignal stgy t -> TradeList stgy t ohlc
+  (Ord t) => (Impulse -> Position) -> Signal t ohlc -> ImpulseSignal stgy -> TradeList stgy t ohlc
 impulse2tradeListHelp tag (Signal ps) (ImpulseSignal is) =
-  let idxs = extend (Vec.length ps - 1) (Vec.findIndices ((`Set.member` (Map.keysSet is)) . fst) ps)
-      f i j = Vec.slice i (j-i+1) ps
-      xs = Vec.zipWith f idxs (stail "stail: impulse2tradeListHelp" idxs)
-      g zs =
-        let (t, _) = shead "shead: impulse2tradeListHelp" zs
-        in maybe (error "impulse2tradeListHelp Nothing") (\sb -> Trade (tag sb) zs) (Map.lookup t is)
-  in TradeList (Vec.toList (Vec.map g xs))
+  let idxs = Map.toList is
+      f (Index i0, imp) (Index i1, _) =
+        Trade (tag imp) (trace (show (i0, i1-i0+1)) Vec.slice i0 (i1-i0+1) ps)
+  in TradeList (zipWith f idxs (tail idxs))
 
 
 instance Impulse2TradeList Long where

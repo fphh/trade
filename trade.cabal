@@ -118,6 +118,7 @@ library
                         Trade.Type.Step.Fraction
                         Trade.Type.Step.Interests
                         Trade.Type.Strategy
+                        Trade.Type.Strategy.Index
                         Trade.Type.Trade
                         Trade.Type.WinningLosing
                         Trade.Type.Yield

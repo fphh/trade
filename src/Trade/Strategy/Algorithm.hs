@@ -14,11 +14,12 @@ import Data.Vector (Vector)
 import Trade.Type.Add (Add, add)
 import Trade.Type.Scale (Scale, scale)
 import Trade.Type.Signal (Signal(..))
+import Trade.Type.Strategy.Index (Index(..))
 
 import Trade.Statistics.Algorithm (Statistics)
 import qualified Trade.Statistics.Algorithm as SA
 
-import Trade.Strategy.Type (Index(..), Focus(..), Offset(..), Modified(..), Signals(..), AlignedSignals(..), IndexedSignals(..), Window(..), K(..))
+import Trade.Strategy.Type (Focus(..), Offset(..), Modified(..), Signals(..), AlignedSignals(..), IndexedSignals(..), Window(..), K(..))
 
 
 apply :: Offset -> p -> (p -> Focus, Vector a) -> Maybe a

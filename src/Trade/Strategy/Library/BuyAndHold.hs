@@ -25,7 +25,7 @@ import Trade.Statistics.Algorithm (Statistics)
 
 buyAndHold ::
   (Ord t, Ord sym, Statistics x, Scale x, Add x) =>
-  [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
+  [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
 buyAndHold [] = error "buyAndHold"
 buyAndHold (vs:_) = do
 
