@@ -38,20 +38,20 @@ shortTag :: Impulse -> Position
 shortTag Buy = NotInvested
 shortTag Sell = Invested
 
-
+{-
 extend :: Int -> Vector Int -> Vector Int
 extend len vs =
   let l = Vec.last vs
       vs1 = if l < len then Vec.snoc vs len else vs
   in vs1
+-}
 
 
 impulse2tradeListHelp ::
   (Ord t) => (Impulse -> Position) -> Signal t ohlc -> ImpulseSignal stgy -> TradeList stgy t ohlc
 impulse2tradeListHelp tag (Signal ps) (ImpulseSignal is) =
   let idxs = Map.toList is
-      f (Index i0, imp) (Index i1, _) =
-        Trade (tag imp) (trace (show (i0, i1-i0+1)) Vec.slice i0 (i1-i0+1) ps)
+      f (Index i0, imp) (Index i1, _) = Trade (tag imp) (Vec.slice i0 (i1-i0+1) ps)
   in TradeList (zipWith f idxs (tail idxs))
 
 
