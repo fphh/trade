@@ -93,9 +93,8 @@ instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult
     text "Optimally buying and selling. Not possible in reality :( ..."
     
     subheader "Optimization Input"
-    Chart.lines
-      (Style.axTitle "Symbol" "Time" :: Style.AxisConfig UTCTime Price)
-      (Style.axTitle "Price" "Time" :: Style.AxisConfig Price UTCTime, [line "Price" ps])
+    Chart.lines (Style.axTitle "Symbol" "Time" :: Style.AxisConfig UTCTime Price) [line "Price" ps]
+    
     subheader "Optimization Result"
     text "No optimization has been done."
 

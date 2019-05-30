@@ -6,8 +6,11 @@ module Trade.Type.Signal where
 
 import Prelude hiding (scanl, map, zipWith, head, last, tail)
 
-import Data.Vector (Vector)
+import qualified Data.Set as Set
+import Data.Set (Set)
+
 import qualified Data.Vector as Vec
+import Data.Vector (Vector)
 
 import qualified Data.List as List
 
@@ -30,13 +33,6 @@ instance Functor (Signal t) where
 
 instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where
   toNumberedList (Signal pps) = toNumberedList pps
-
-{-
-data OffsettedSignal t x = OffsettedSignal {
-  offset :: t
-  , signal :: Signal t x
-  } deriving (Show, Read)
--}
 
 data Sample t x = Sample {
   inSample :: Signal t x
@@ -69,17 +65,6 @@ zipWith f x (Signal xs) =
       g (_, x) (t, y) = (t, f x y)
   in Signal (Vec.cons start (Vec.zipWith g (stail "Signal.zipWith" xs) xs))
 
-{-
-TODO: Testing
-
-test_scanl_zipWith :: (Eq t, Eq a, Fractional a) => Signal t a -> Bool
-test_scanl_zipWith ps =
-  let qs = zipWith (flip (/)) 0 ps
-      (_, start) = head ps
-      rs = scanl (*) start qs
-  in ps == rs
--}
-
 head :: Signal t y -> (t, y)
 head (Signal ps) = shead "Signal.head" ps
 
@@ -102,8 +87,8 @@ mapLast f (Signal ps)
 length :: Signal x y -> Int
 length (Signal xs) = Vec.length xs
 
--- empty :: Signal t x
--- empty = Signal (Vec.empty)
+empty :: Signal t x
+empty = Signal (Vec.empty)
 
 emptySample :: Sample t x
 emptySample = Sample mempty mempty
@@ -141,3 +126,19 @@ adjust e ts (Signal xs)
        , xs
        , Vec.map (\t -> (t, yn)) cs ]
        
+
+downsample :: (Ord t) => Set t -> Signal t x -> Signal t x
+downsample ts (Signal xs) =
+  let p (t, _) = Set.member t ts
+      ys = Vec.filter p xs
+  in Signal ys 
+
+
+upsample :: (Ord t) => Set t -> Signal t x -> Signal t x
+upsample ts (Signal xs) = error "Signal.upsample not defined"
+{-
+  let vs = Vec.fromList (Set.toList ts)
+      f (t0, y0) (t1, y1) = (t0, t1, \a -> y0 + (y1-y0)/(fromIntegral (t1-t0)) * (a - fromIntegral t0))
+      is = Vec.zipWith f xs (Vec.tail xs)
+  in error "Signal.upsample not defined"
+-}

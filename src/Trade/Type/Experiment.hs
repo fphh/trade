@@ -119,18 +119,8 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
       impSigs :: Map sym (ImpulseSignal stgy t)
       impSigs = fmap invest2impulse stgy
 
-{-
-      impSig =
-        case Map.elems impSigs of
-          [] -> ImpulseSignal Map.empty
-          x:_ -> x
--}
-
       f sym isig = maybe emptyTradeList (flip impulse2tradeList isig) (Map.lookup sym ps)
-      ts :: Map sym (TradeList stgy t ohlc)
       ts = Map.mapWithKey f impSigs
-      
-      -- ts = impulse2tradeList (snd ps) impSig
       dts = fmap tradeList2DeltaTradeList ts
 
       timeLine = alignedTimes asigs
@@ -206,13 +196,17 @@ render ::
 render (Result inp out) = do
   
   subheader "Experiment"
-      
+
+  subsubheader "Original Signals"
+  Chart.input (inputSignals inp)
+
+  subsubheader "Strategy"
   Chart.strategy (impulseSignals out) (alignedSignals out) (outputSignal out)
 
   subsubheader "Summary"
 
-  let -- why do we need the signature ???
-      f :: (ToYield x, Pretty x) => sym -> Signal t x -> HtmlReader () -> HtmlReader ()
+  --why do we need the signature ???
+  let f :: (ToYield x, Pretty x) => sym -> Signal t x -> HtmlReader () -> HtmlReader ()
       f sym sig acc = do
         text ("Symbol " ++ show sym)
         toReport (SS.sampleStatistics (barLength inp) sig)
@@ -222,8 +216,6 @@ render (Result inp out) = do
   Map.foldrWithKey' f (return ()) (outputSignal out)
 
   subsubheader "Trade statistics"
-
-
 
   let g sym sig acc = do
         text ("Symbole " ++ show sym)

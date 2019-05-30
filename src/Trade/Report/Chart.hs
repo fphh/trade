@@ -1,7 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module Trade.Report.Chart where
+
+import Prelude hiding (lines)
 
 import qualified Data.Map as Map
 import Data.Map (Map)
@@ -58,8 +61,8 @@ candle lbl cs =
 
 lines ::
   (Foldable t, E.ToPlot p, E.PlotValue x, E.PlotValue y) =>
-  AxisConfig x b -> (c, t (E.EC (E.Layout x y) (p x y))) -> HtmlReader ()
-lines acx (_acy, ls) =
+  AxisConfig x b -> t (E.EC (E.Layout x y) (p x y)) -> HtmlReader ()
+lines acx ls =
   let diagram = do
         E.setColors colors
         
@@ -68,14 +71,6 @@ lines acx (_acy, ls) =
         case axisFn acx of
           Just x -> E.layout_x_axis . E.laxis_generate E..= x
           Nothing -> return ()
-
-{-
-        E.layout_y_axis E..= xAxisLayout acy
-        E.layout_left_axis_visibility E..= axisVisibility acy
-        case axisFn acy of
-          Just x -> E.layout_y_axis . E.laxis_generate E..= x
-          Nothing -> return ()
--}
 
         mapM_ E.plot ls
 
@@ -154,4 +149,19 @@ strategy is asigs@(AlignedSignals ts _) output = do
   backtest
     (grid (axTitle "Time" "Equity / Price") cs)
     (impulseSignals ks)
+
+
+input ::
+  forall sym t x.
+  ( Show sym
+  , Line (Signal t x)
+  , E.PlotValue t
+  , E.PlotValue x) =>
+  Map sym (Signal t x) -> HtmlReader ()
+input m =
+  let h sym o acc = line (show sym) o : acc
+      mout = Map.foldrWithKey' h [] m
+      title :: AxisConfig t x
+      title = axTitle "Time" "Price"
+  in lines title mout
 

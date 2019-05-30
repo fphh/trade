@@ -10,6 +10,7 @@ import qualified Data.Map as Map
 import Data.Map (Map)
 
 import qualified Data.Set as Set
+import Data.Set (Set)
 
 import qualified Data.List as List
 
@@ -20,21 +21,38 @@ import Trade.Type.DisInvest (DisInvest(..), InvestSignal(..))
 
 import Trade.Type.Add (Add)
 import Trade.Type.Scale (Scale)
+
+import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal (Signal(..))
 
 import Trade.Statistics.Algorithm (Statistics)
 
 import Trade.Strategy.Algorithm (modifySignal)
-import Trade.Strategy.Type (Signals(..), AlignedSignals(..), IndexedSignals(..), Index(..))
+import Trade.Strategy.Type (Signals(..), AlignedSignals(..), IndexedSignals(..), Index(..), Modified)
 
 
+data Resample =
+  Upsample
+  | Downsample
 
-align :: (Ord t, Statistics x, Add x, Scale x) => Signals sym t x -> AlignedSignals sym t x
-align (Signals tickers) =
+data ResampleFunc k t x = ResampleFunc {
+  sampleMethod :: Set t -> Signal t x -> Signal t x
+  , timelineMethod :: Set t -> Map k (Set t) -> Set t
+  }
+
+resample :: (Ord t) => Resample -> ResampleFunc k t x
+resample Upsample = ResampleFunc Signal.upsample const
+resample Downsample = ResampleFunc Signal.downsample (Map.foldr (\vs acc -> Set.intersection acc vs))
+
+
+align ::
+  (Ord t, Statistics x, Add x, Scale x) =>
+  ResampleFunc (Modified sym) t x -> Signals sym t x -> AlignedSignals sym t x
+align (ResampleFunc sampleMeth timelineMeth) (Signals tickers) =
   let tmsTickers = fmap (Set.fromList . Vec.toList . Vec.map fst . unSignal) tickers
       allTimes = foldMap id tmsTickers
-      tms = Map.foldr (\vs acc -> Set.intersection acc vs) allTimes tmsTickers
-      alSigs = fmap (Vec.map snd . Vec.filter ((`Set.member` tms) . fst) . unSignal) tickers
+      tms = timelineMeth allTimes tmsTickers
+      alSigs = fmap (Vec.map snd . unSignal . sampleMeth tms) tickers
       modSigs = Map.mapWithKey modifySignal alSigs
   in AlignedSignals (Vec.fromList (Set.toList tms)) modSigs
 
@@ -44,7 +62,7 @@ process ::
   -> State (Signals sym t x) (AlignedSignals sym t x, Map sym (InvestSignal t))
 process frame = do
   st <- get
-  let asigs = align st
+  let asigs = align (resample Downsample) st
       atms = alignedTimes asigs
       
       f (currentBS, acc) i t =
@@ -53,9 +71,6 @@ process frame = do
             p (sym, bs) = maybe (bs == Invest) (bs /=) (Map.lookup sym currentBS)
             fres = filter p res
 
-            -- g (sym, bs) acc = Map.insert sym bs acc
-            -- newCurrentBS = List.foldr g currentBS fres
-            
             newCurrentBS = List.foldr (uncurry Map.insert) currentBS fres
 
             h (sym, bs) = Map.alter (Just . maybe (Map.singleton t bs) (Map.insert t bs)) sym
