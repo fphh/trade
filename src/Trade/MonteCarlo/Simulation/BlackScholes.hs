@@ -16,13 +16,10 @@ import Control.Monad.Primitive (PrimState)
 import qualified System.Random.MWC as MWC
 import qualified System.Random.MWC.Distributions as Dist
 
--- import Trade.Type.Bars (DeltaTy(Bars), BarNo(..))
-import Trade.Type.Bars (Bars(..), BarNo(..))
 
 import Trade.Type.Broom (Broom(..))
--- import Trade.Type.Equity (Equity(..))
 import Trade.Type.Price (Price(..))
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 
 
 newtype Mu = Mu {
@@ -33,15 +30,9 @@ newtype Sigma = Sigma {
   unSigma :: Double
   } deriving (Show)
 
-{-
-newtype Start = Start {
-  unStart :: Double
-  } deriving (Show)
--}
-
 
 blackScholes ::
-  MWC.Gen (PrimState IO) -> Vector t -> Price -> Mu -> Sigma -> IO (Vector (t, Price))
+  MWC.Gen (PrimState IO) -> Vector UTCTime -> Price -> Mu -> Sigma -> IO (Vector (UTCTime, Price))
 blackScholes gen interval prc (Mu mu) (Sigma sigma) = do
   let dt = 1 / fromIntegral (Vec.length interval)
       g _ = fmap (\z -> mu * dt + sigma * sqrt dt * z) (Dist.normal 0 1 gen)
@@ -51,7 +42,7 @@ blackScholes gen interval prc (Mu mu) (Sigma sigma) = do
   return (Vec.zip interval ss)
 
 
-blackScholesDet :: Word32 -> Vector t -> Price -> Mu -> Sigma -> IO (Signal t Price)
+blackScholesDet :: Word32 -> Vector UTCTime -> Price -> Mu -> Sigma -> IO (Timeseries Price)
 blackScholesDet seed interval prc mu sigma =
   MWC.initialize (Vec.singleton seed)
   >>= \gen -> fmap Signal (blackScholes gen interval prc mu sigma)

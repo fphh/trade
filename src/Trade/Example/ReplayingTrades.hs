@@ -25,7 +25,7 @@ import qualified Data.Vector as Vec
 
 import Text.Printf (printf)
 
-import Trade.Type.Bars (DeltaTy, Add, BarLength(..), BarNo(..), barLength2diffTime)
+import Trade.Type.BarLength (BarLength(..), barLength2diffTime)
 import Trade.Type.Broom (Broom) -- , broom2chart)
 import Trade.Type.Delta (ToDelta)
 -- import qualified Trade.Type.Distribution as Dist

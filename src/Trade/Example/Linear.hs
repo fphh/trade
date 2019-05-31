@@ -25,7 +25,7 @@ import qualified Trade.Analysis.Report as ARep
 
 import qualified Trade.Test.Data as TD
 
-import Trade.Type.Bars (BarLength(Day), barLength2diffTime)
+import Trade.Type.BarLength (BarLength(Day), barLength2diffTime)
 
 import Trade.Type.Step (StepTy(LongStep, ShortStep), longFraction, shortFraction, longCommission, shortCommission, shortInterests)
 import Trade.Type.Step.Commission (Commission(..), noCommission)

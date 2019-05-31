@@ -10,7 +10,6 @@ import qualified Data.Vector as Vec
 import qualified Data.Map as Map
 import Data.Map (Map)
 
-import Trade.Type.Bars (BarNo(..))
 import Trade.Type.Conversion.Invest2Impulse (invest2impulse)
 import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.Price (Price(..))

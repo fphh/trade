@@ -7,7 +7,7 @@ import Text.Printf (printf)
 
 import Data.Time.Clock (NominalDiffTime)
 
-import Trade.Type.Bars (BarLength, barLength2diffTime)
+import Trade.Type.BarLength (BarLength, barLength2diffTime)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Price (Price(..))
 

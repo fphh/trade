@@ -6,7 +6,7 @@ import qualified Data.List as List
 
 import Trade.Timeseries.Url
 
-import Trade.Type.Bars (BarLength(..))
+import Trade.Type.BarLength (BarLength(..))
 
 newtype Interval = Interval {
   unInterval :: BarLength

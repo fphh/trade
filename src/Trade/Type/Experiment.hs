@@ -14,8 +14,6 @@ import qualified Data.Vector as Vec
 import qualified Data.Map as Map
 import Data.Map (Map)
 
-import qualified Data.List as List
-
 import Data.Time.Clock (UTCTime, NominalDiffTime)
 
 import Text.Printf (PrintfArg)
@@ -26,7 +24,6 @@ import qualified Text.Blaze.Html5.Attributes as H5A
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
-import Trade.Type.Bars (DeltaTy, BarLength, Add)
 import Trade.Type.Delta (ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 
@@ -40,13 +37,13 @@ import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 
 import qualified Trade.Type.NestedMap as NestedMap
 
-import Trade.Type.Signal (Timeseries, Signal(..))
 import qualified Trade.Type.Signal as Signal
+import Trade.Type.Signal (Timeseries)
 
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
 -- import Trade.Type.Strategy (Long, Short)
-import Trade.Type.Trade (TradeList, emptyTradeList)
+import Trade.Type.Trade (emptyTradeList)
 import Trade.Type.Yield (ToYield)
 
 import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList, impulse2tradeList)
@@ -66,7 +63,6 @@ import qualified Trade.Report.Chart as Chart
 import qualified Trade.Report.SparkLine as Spark
 
 import qualified Trade.Statistics.SampleStatistics as SS
-import qualified Trade.Statistics.Statistics as Stats
 import qualified Trade.Statistics.TradeStatistics as TS
 import qualified Trade.Statistics.YieldStatistics as YS
 

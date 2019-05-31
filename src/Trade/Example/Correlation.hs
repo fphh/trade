@@ -18,7 +18,7 @@ import Data.Time.Clock (getCurrentTime)
 
 import qualified Statistics.Sample as Sample
 
-import Trade.Type.Bars (BarLength(..))
+import Trade.Type.BarLength (BarLength(..))
 
 import Trade.Type.OHLC (Close(..))
 

@@ -6,14 +6,11 @@
 
 module Trade.Report.Line where
 
-import Data.Time.Clock (UTCTime)
-
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
-import Trade.Type.Bars (BarNo)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Price (Price(..))
 import Trade.Type.Signal (Signal(..))
@@ -21,7 +18,6 @@ import Trade.Type.Signal (Signal(..))
 
 type family XTy line :: *
 
-  
 
 class Line a where
   line :: String -> a -> E.EC l (E.PlotLines (XTy a) Double)
