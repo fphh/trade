@@ -8,15 +8,15 @@ import Data.Map (Map)
 
 import Trade.Type.DisInvest (InvestSignal(..))
 
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries)
 
 import Trade.Strategy.Type (Signals, AlignedSignals)
 
 
 newtype OptimizedImpulseGenerator ohlc = OptimizedImpulseGenerator {
   unOptimizedImpulseGenerator ::
-      forall t sym. (Ord sym, Ord t) =>
-      Map sym (Signal t ohlc) -> State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym InvestSignal)
+      forall sym. (Ord sym) =>
+      Map sym (Timeseries ohlc) -> State (Signals sym ohlc) (AlignedSignals sym ohlc, Map sym InvestSignal)
   }
 
 

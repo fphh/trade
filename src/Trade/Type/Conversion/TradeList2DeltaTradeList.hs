@@ -10,21 +10,20 @@ import Trade.Type.DeltaSignal.Algorithm (shortDeltaSignal, longDeltaSignal)
 import Trade.Type.Strategy (Long, Short)
 import Trade.Type.Trade (Trade(..), TradeList(..))
 import Trade.Type.Delta (ToDelta)
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 
-import Trade.Type.Bars (Add)
 
 
 tradeList2DeltaTradeListHelper ::
-  (ToDelta ohlc, Add t) =>
-  (Signal t ohlc -> DeltaSignal t ohlc) -> TradeList stgy t ohlc -> [DeltaSignal t ohlc]
+  (ToDelta ohlc) =>
+  (Timeseries ohlc -> DeltaSignal ohlc) -> TradeList stgy ohlc -> [DeltaSignal ohlc]
 tradeList2DeltaTradeListHelper toDeltaSignal (TradeList tl) =
   let g (Trade pos ts) = (toDeltaSignal (Signal ts)) { position = pos }
   in map g tl
 
 
 class TradeList2DeltaTradeList stgy where
-  tradeList2DeltaTradeList :: (ToDelta ohlc, Add t) => TradeList stgy t ohlc -> DeltaTradeList t ohlc
+  tradeList2DeltaTradeList :: (ToDelta ohlc) => TradeList stgy ohlc -> DeltaTradeList ohlc
 
 instance TradeList2DeltaTradeList Long where
   tradeList2DeltaTradeList =

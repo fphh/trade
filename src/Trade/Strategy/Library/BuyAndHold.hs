@@ -7,7 +7,7 @@ import Control.Monad.State (State)
 
 import Data.Map (Map)
 
-import Trade.Type.Signal (Signal)
+import Trade.Type.Signal (Timeseries)
 import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
 
 
@@ -24,8 +24,8 @@ import Trade.Statistics.Algorithm (Statistics)
 
 
 buyAndHold ::
-  (Ord t, Ord sym, Statistics x, Scale x, Add x) =>
-  [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
+  (Ord sym, Statistics x, Scale x, Add x) =>
+  [(sym, Timeseries x)] -> State (Signals sym x) (AlignedSignals sym x, Map sym InvestSignal)
 buyAndHold [] = error "buyAndHold"
 buyAndHold (vs:_) = do
 

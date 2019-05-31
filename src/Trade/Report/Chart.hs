@@ -12,7 +12,7 @@ import Data.Map (Map)
 import qualified Data.Vector as Vec
 import Data.Vector (Vector)
 
-import Data.Time.Clock
+import Data.Time.Clock (UTCTime)
 
 import qualified Graphics.Rendering.Chart.Easy as E
 
@@ -30,7 +30,7 @@ import Trade.Strategy.Type (AlignedSignals(..))
 import Trade.Type.Equity (Equity)
 import Trade.Type.Impulse (Impulse)
 import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
-import Trade.Type.Signal (Signal)
+import Trade.Type.Signal (Timeseries, Signal)
 
 
 
@@ -131,10 +131,8 @@ strategy ::
   ( Show sym
   , Eq ohlc
   , E.PlotValue ohlc
-  , Ord t
-  , E.PlotValue t
-  , Line (Vector (t, ohlc))) =>
-  Map p (ImpulseSignal stgy) -> AlignedSignals sym t ohlc -> Map sym (Signal t Equity) -> HtmlReader ()
+  , Line (Vector (UTCTime, ohlc))) =>
+  Map p (ImpulseSignal stgy) -> AlignedSignals sym ohlc -> Map sym (Timeseries Equity) -> HtmlReader ()
 strategy is asigs@(AlignedSignals ts _) output = do
   let h sym o acc = line (show sym) o : acc
       mout = Map.foldrWithKey' h [] output

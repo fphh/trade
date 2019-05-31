@@ -7,13 +7,14 @@ module Trade.Statistics.TradeStatistics where
 
 import qualified Data.Vector as Vec
 
+import Data.Time.Clock (NominalDiffTime)
+
 import qualified Data.List as List
 
 import Data.Ord (comparing)
 
 import qualified Statistics.Sample as Sample
 
-import Trade.Type.Bars (DeltaTy)
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 
@@ -21,24 +22,22 @@ import Trade.Type.Yield (LogYield(..), logYield2yield)
 
 import Trade.Report.ToReport (ToReport, toReport)
 
-import Trade.Report.Pretty (Pretty)
 import qualified Trade.Report.Table as Table
 
-import Trade.Statistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
+import Trade.Statistics.Statistics (Statistics(..), formatYield, formatStat)
 
+import Trade.Statistics.Algorithm (mean, stdDev)
 
-data TradeStatistics t ohlc = TradeStatistics {
-  maxPeak :: LogYield (DeltaTy t) ohlc
-  , meanPeak :: Statistics (DeltaTyStats t) Double
-  , stdDevPeak :: Statistics (DeltaTyStats t) Double
-  , maxDrawdown :: LogYield (DeltaTy t) ohlc
-  , meanDrawdown :: Statistics (DeltaTyStats t) Double
-  , stdDevDrawdown :: Statistics (DeltaTyStats t) Double
+data TradeStatistics ohlc = TradeStatistics {
+  maxPeak :: LogYield ohlc
+  , meanPeak :: Statistics NominalDiffTime Double
+  , stdDevPeak :: Statistics NominalDiffTime Double
+  , maxDrawdown :: LogYield ohlc
+  , meanDrawdown :: Statistics NominalDiffTime Double
+  , stdDevDrawdown :: Statistics NominalDiffTime Double
   }
 
-tradeStatistics ::
-  (Eq (DeltaTy t), Real (DeltaTy t)) =>
-  [DeltaSignal t ohlc] -> TradeStatistics t ohlc
+tradeStatistics :: [DeltaSignal ohlc] -> TradeStatistics ohlc
 tradeStatistics dts =
   let maxs = map DSA.maximum dts
       mins = map DSA.minimum dts
@@ -50,14 +49,14 @@ tradeStatistics dts =
       minZsVec = Vec.fromList minZs
   in TradeStatistics {
     maxPeak = List.maximumBy (comparing logYield) maxs
-    , meanPeak = Statistics (DeltaTyStats (Sample.mean maxDtsVec)) (exp (Sample.mean maxZsVec))
-    , stdDevPeak = Statistics (DeltaTyStats (Sample.stdDev maxDtsVec)) (exp (Sample.stdDev maxZsVec))
+    , meanPeak = Statistics (mean maxDtsVec) (exp (Sample.mean maxZsVec))
+    , stdDevPeak = Statistics (stdDev maxDtsVec) (exp (Sample.stdDev maxZsVec))
     , maxDrawdown = List.minimumBy (comparing logYield) mins
-    , meanDrawdown =  Statistics (DeltaTyStats (Sample.mean minDtsVec)) (exp (Sample.mean minZsVec))
-    , stdDevDrawdown = Statistics (DeltaTyStats (Sample.stdDev minDtsVec)) (exp (Sample.stdDev minZsVec))
+    , meanDrawdown =  Statistics (mean minDtsVec) (exp (Sample.mean minZsVec))
+    , stdDevDrawdown = Statistics (stdDev minDtsVec) (exp (Sample.stdDev minZsVec))
     }
 
-tradeStatistics2table :: (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => TradeStatistics t ohlc -> [[String]]
+tradeStatistics2table :: TradeStatistics ohlc -> [[String]]
 tradeStatistics2table ts =
   [ ["Trade Statistics", "Yield", "Dur. from trade start"]
   , []
@@ -71,10 +70,10 @@ tradeStatistics2table ts =
   ]
 
 
-instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToReport (TradeStatistics t ohlc) where
+instance ToReport (TradeStatistics ohlc) where
   toReport = Table.table . tradeStatistics2table
 
 toTradeStatistics ::
-  (Functor f, Real (DeltaTy t)) =>
-  f [DeltaSignal t ohlc] -> f (TradeStatistics t ohlc)
+  (Functor f) =>
+  f [DeltaSignal ohlc] -> f (TradeStatistics ohlc)
 toTradeStatistics = fmap tradeStatistics

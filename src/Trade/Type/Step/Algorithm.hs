@@ -3,17 +3,18 @@
 
 module Trade.Type.Step.Algorithm where
 
+import Data.Time.Clock (addUTCTime)
+
 
 import qualified Data.Vector as Vec
 
 
-import Trade.Type.Bars (Add, add)
 import Trade.Type.Delta (Delta(..))
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Position (Position(Invested, NotInvested))
 
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import qualified Trade.Type.Signal as Signal
 
 import Trade.Type.Step (StepTy, longCommission, longFraction, shortCommission, shortFraction, shortInterests)
@@ -26,26 +27,26 @@ import Trade.Type.Step.Interests (Interests(..))
 import Trade.Help.SafeTail (slast)
 
 
-class StepFunction step t where
-  stepFunction :: (Add t) => step t -> Equity -> DeltaSignal t ohlc -> Signal t Equity
+class StepFunction step where
+  stepFunction :: step -> Equity -> DeltaSignal ohlc -> Timeseries Equity
 
-instance StepFunction (StepTy Long) t where
+instance StepFunction (StepTy Long) where
   stepFunction step (Equity eqty) (DeltaSignal t Invested (Signal as)) =
     let Commission com = longCommission step
         Fraction frac = longFraction step
         e0 = frac * eqty
         e1 = ((1-frac) * eqty) - com e0
-        f (dt, Delta dy) = (dt `add` t, Equity ((dy * abs e0) + e0 + e1))
+        f (dt, Delta dy) = (dt `addUTCTime` t, Equity ((dy * abs e0) + e0 + e1))
         g (Equity e) = Equity (e - com (abs (e-e1)))
     in Signal.mapLast g (Signal (Vec.map f as))
 
   stepFunction _ eqty (DeltaSignal t NotInvested as) =
-    let f (dt, _) = (dt `add` t, eqty)
+    let f (dt, _) = (dt `addUTCTime` t, eqty)
     in Signal.map f as
 
 
 
-instance StepFunction (StepTy Short) t where
+instance StepFunction (StepTy Short) where
 
   stepFunction step (Equity eqty) (DeltaSignal t Invested (Signal as)) =
     let Commission com = shortCommission step
@@ -55,7 +56,7 @@ instance StepFunction (StepTy Short) t where
         e1 = eqty - com e0
 
         (dtn, _) = slast "stepFunction: slast" as
-        f (dt, Delta dy) = (dt `add` t, Equity ((dy * e0) + e0 + e1))
+        f (dt, Delta dy) = (dt `addUTCTime` t, Equity ((dy * e0) + e0 + e1))
 
         si = unInterests (shortInterests step) (Equity e0) dtn
         
@@ -64,7 +65,7 @@ instance StepFunction (StepTy Short) t where
 
 
   stepFunction _ eqty (DeltaSignal t NotInvested as) =
-    let f (dt, _) = (dt `add` t, eqty)
+    let f (dt, _) = (dt `addUTCTime` t, eqty)
     in Signal.map f as
 
 

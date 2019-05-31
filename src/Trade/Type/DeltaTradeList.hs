@@ -3,7 +3,7 @@ module Trade.Type.DeltaTradeList where
 
 import Trade.Type.DeltaSignal
 
-data DeltaTradeList t ohlc = DeltaTradeList {
-  unDeltaTradeList :: [DeltaSignal t ohlc]
+data DeltaTradeList ohlc = DeltaTradeList {
+  unDeltaTradeList :: [DeltaSignal ohlc]
   }
 

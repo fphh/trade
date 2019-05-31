@@ -16,6 +16,10 @@ import Data.Map (Map)
 
 import qualified Data.List as List
 
+import Data.Time.Clock (UTCTime, NominalDiffTime)
+
+import Text.Printf (PrintfArg)
+
 import qualified Text.Blaze.Html5 as H5
 import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5.Attributes as H5A
@@ -36,7 +40,7 @@ import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 
 import qualified Trade.Type.NestedMap as NestedMap
 
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import qualified Trade.Type.Signal as Signal
 
 import Trade.Type.Step (StepTy)
@@ -75,44 +79,42 @@ import Trade.Report.Pretty (Pretty)
 
 
 
-data Input stgy sym t ohlc = Input {
-  step :: StepTy stgy t
+data Input stgy sym ohlc = Input {
+  step :: StepTy stgy
   , initialEquity :: Equity
-  , barLength :: DeltaTy t
+  , barLength :: NominalDiffTime
   , impulseGenerator :: OptimizedImpulseGenerator ohlc
-  , inputSignals :: Map sym (Signal t ohlc)
+  , inputSignals :: Map sym (Timeseries ohlc)
   }
 
-data Output stgy sym t ohlc = Output {
+data Output stgy sym ohlc = Output {
   impulseSignals :: Map sym (ImpulseSignal stgy)
-  , alignedSignals :: AlignedSignals sym t ohlc
-  , deltaTradeList :: Map sym (DeltaTradeList t ohlc)
-  , outputSignal :: Map sym (Signal t Equity)
+  , alignedSignals :: AlignedSignals sym ohlc
+  , deltaTradeList :: Map sym (DeltaTradeList ohlc)
+  , outputSignal :: Map sym (Timeseries Equity)
   }
 
 
-data Result stgy sym t ohlc = Result {
-  input :: Input stgy sym t ohlc
-  , output :: Output stgy sym t ohlc
+data Result stgy sym ohlc = Result {
+  input :: Input stgy sym ohlc
+  , output :: Output stgy sym ohlc
   }
 
 
 conduct ::
-  forall stgy sym t ohlc.
+  forall stgy sym ohlc.
   ( Ord sym
-  , Ord t
-  , Add t
-  , Show t, Show ohlc
+  , Show ohlc
   , ToDelta ohlc
   , TradeList2DeltaTradeList stgy
   , Impulse2TradeList stgy
   , Invest2Impulse stgy
-  , StepFunction (StepTy stgy) t) =>
-  Input stgy sym t ohlc -> Result stgy sym t ohlc
+  , StepFunction (StepTy stgy)) =>
+  Input stgy sym ohlc -> Result stgy sym ohlc
  
 conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
   let 
-      strategy :: State (Signals sym t ohlc) (AlignedSignals sym t ohlc, Map sym InvestSignal)
+      strategy :: State (Signals sym ohlc) (AlignedSignals sym ohlc, Map sym InvestSignal)
       strategy = impGen ps
       ((asigs, stgy), _) = Strategy.run strategy
 
@@ -141,14 +143,9 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
 
 
 tradeStatistics ::
-  ( Eq t
-  , Add t
-  , StepFunction (StepTy stgy) t
-  , Real (DeltaTy t)
-  , Pretty (DeltaTy t)
-  , Pretty (Stats.DeltaTyStats t)) =>
-  StepTy stgy t -> DeltaTradeList t ohlc -> HtmlReader ()
-
+  ( StepFunction (StepTy stgy)
+  , PrintfArg ohlc) =>
+  StepTy stgy -> DeltaTradeList ohlc -> HtmlReader ()
 tradeStatistics stp dtl =
 
   let sts = DSA.sortDeltaSignals dtl
@@ -171,27 +168,22 @@ tradeStatistics stp dtl =
   in sequence_ (NestedMap.fold g zs)
 
 
-lastEquity :: Result stgy sym t ohlc -> Equity
+lastEquity :: Result stgy sym ohlc -> Equity
 lastEquity (Result _ out) =
   let xs:_ = Map.elems (outputSignal out)
   in snd (Signal.last xs)
 
 render ::
-  forall stgy t ohlc sym.
+  forall stgy ohlc sym.
   ( Show sym
-  , Pretty t
-  , Add t
-  , StepFunction (StepTy stgy) t
-  , PlotValue t
-  , Pretty (DeltaTy t)
-  , Real (DeltaTy t)
-  , Pretty (Stats.DeltaTyStats t)
+  , StepFunction (StepTy stgy)
   , ToYield ohlc
   , Pretty ohlc
   , PlotValue ohlc
-  , Line (Signal t ohlc)
-  , Line (Vec.Vector (t, ohlc))) =>
-  Result stgy sym t ohlc -> HtmlReader ()
+  , PrintfArg ohlc
+  , Line (Timeseries ohlc)
+  , Line (Vec.Vector (UTCTime, ohlc))) =>
+  Result stgy sym ohlc -> HtmlReader ()
 
 render (Result inp out) = do
   
@@ -206,7 +198,7 @@ render (Result inp out) = do
   subsubheader "Summary"
 
   --why do we need the signature ???
-  let f :: (ToYield x, Pretty x) => sym -> Signal t x -> HtmlReader () -> HtmlReader ()
+  let f :: (ToYield x, Pretty x) => sym -> Timeseries x -> HtmlReader () -> HtmlReader ()
       f sym sig acc = do
         text ("Symbol " ++ show sym)
         toReport (SS.sampleStatistics (barLength inp) sig)

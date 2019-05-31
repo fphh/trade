@@ -38,7 +38,7 @@ import Trade.Type.Impulse (invert)
 import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.NonEmptyList (NonEmptyList(..))
 import Trade.Type.Price (Price(..))
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import Trade.Type.Strategy (Long, Short)
 
 import qualified Trade.Type.Experiment as Experiment
@@ -69,7 +69,7 @@ data Symbol = A deriving (Show, Eq, Ord)
 barLen :: BarLength
 barLen = Day 1
 
-ticker :: Signal UTCTime Price
+ticker :: Timeseries Price
 -- ticker = Signal (Vec.map (fmap Price) TD.testSimple)
 ticker = Signal (Vec.map (fmap Price) (Vec.take 7 TD.linear))
 
@@ -139,8 +139,8 @@ instance BT.Backtest BacktestInput where
 
 
 data BacktestResult = BacktestResult {
-  resultLW :: Experiment.Result Long Symbol UTCTime Price
-  , resultSW :: Experiment.Result Short Symbol UTCTime Price
+  resultLW :: Experiment.Result Long Symbol Price
+  , resultSW :: Experiment.Result Short Symbol Price
   }
 
 

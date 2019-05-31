@@ -2,15 +2,16 @@
 
 module Trade.Type.DeltaSignal where
 
-import Trade.Type.Bars (DeltaTy)
+import Data.Time.Clock (UTCTime)
+
 import Trade.Type.Delta (Delta(..))
 import Trade.Type.Position (Position)
-import Trade.Type.Signal (Signal)
+import Trade.Type.Signal (DeltaTimeseries)
 
 
-data DeltaSignal t ohlc =
+data DeltaSignal ohlc =
   DeltaSignal {
-  start :: t
+  start :: UTCTime
   , position :: Position
-  , delta :: Signal (DeltaTy t) (Delta ohlc)
+  , delta :: DeltaTimeseries (Delta ohlc)
   }

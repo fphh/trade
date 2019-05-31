@@ -68,7 +68,7 @@ infixr 0 :|:
 infix 1 :=:
 infix 1 :->
 
-conditions :: Condition sym -> State (IndexedSignals sym t x) [(sym, DisInvest)]
+conditions :: Condition sym -> State (IndexedSignals sym x) [(sym, DisInvest)]
 conditions (sym :=: imps) =
   let f (_ :-> bs) = [(sym, bs)]
       g (Just b :-> _) = b

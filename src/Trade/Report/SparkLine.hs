@@ -4,40 +4,29 @@
 
 module Trade.Report.SparkLine where
 
+import Data.Time.Clock (diffUTCTime)
 
-import qualified Statistics.Sample as Sample
-
-import qualified Data.Text as Text
 
 import qualified Data.Vector as Vec
 
-import qualified Data.List as List
+import qualified Statistics.Sample as Sample
+
 
 import qualified Text.Blaze.Html5 as H5
 import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5.Attributes as H5A
 
-import Text.Blaze.Svg11 ((!), mkPath, rotate, l, m)
+import Text.Blaze.Svg11 (mkPath, l, m)
 import qualified Text.Blaze.Svg11 as S
 import qualified Text.Blaze.Svg11.Attributes as A
-
-import Trade.Type.Bars (DeltaTy, Add, diff)
 
 import Trade.Type.Step.Algorithm
 
 import Trade.Type.DeltaSignal (DeltaSignal(..))
-import qualified Trade.Type.DeltaSignal.Algorithm as DSA
-import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.Equity (Equity(..))
-import Trade.Type.NestedMap (NestedMap(..))
-import qualified Trade.Type.NestedMap as NMap
-import Trade.Type.Position (Position)
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import qualified Trade.Type.Signal as Signal
-import Trade.Type.WinningLosing (WinningLosing)
 
-
-import Debug.Trace
 
 data Config = Config {
   width :: Int
@@ -49,7 +38,7 @@ defConfig = Config 120 80
   
 type Range = Double -> Double
 
-toRange :: (Eq t) => Config -> Signal t Equity -> Range
+toRange :: Config -> Timeseries Equity -> Range
 toRange conf sig =
   let (_, Equity mi) = Signal.minimum sig
       (_, Equity ma) = Signal.maximum sig
@@ -61,11 +50,9 @@ toRange conf sig =
 
 type Domain = Double -> Double
 
-toDomain ::
-  (Add t, Real (DeltaTy t)) =>
-  Config -> [Signal t Equity] -> (Double, Double, Domain)
+toDomain :: Config -> [Timeseries Equity] -> (Double, Double, Domain)
 toDomain conf sigs =
-  let ts = map (\s -> realToFrac (fst (Signal.last s) `diff` fst (Signal.head s))) sigs
+  let ts = map (\s -> realToFrac (fst (Signal.last s) `diffUTCTime` fst (Signal.head s))) sigs
       tmax = maximum ts
       vs = Vec.fromList ts
       mean = Sample.mean vs
@@ -83,13 +70,11 @@ svg conf inner =
   $ inner
 
 
-spark ::
-  (Eq t, Add t, Real (DeltaTy t)) =>
-  Config -> (Double, Double, Domain) -> Signal t Equity -> S.Svg
+spark :: Config -> (Double, Double, Domain) -> Timeseries Equity -> S.Svg
 spark conf (mean, stdDev, dom) sig@(Signal xs) =
   let t0 = fst (Signal.head sig)
       ran = toRange conf sig
-      as = Vec.map (\(t, e) -> (realToFrac (t `diff` t0), unEquity e)) xs
+      as = Vec.map (\(t, e) -> (realToFrac (t `diffUTCTime` t0), unEquity e)) xs
       f acc (t, x) =  acc >> l (dom t) (ran x)
       sty = H5A.style (H5.stringValue "stroke:#4444ff;stroke-width:1px;fill:none;")
 
@@ -142,8 +127,8 @@ spark conf (mean, stdDev, dom) sig@(Signal xs) =
 
 
 toSparkLine ::
-  (Functor f, Eq t, StepFunction step t, Add t, Real (DeltaTy t)) =>
-  step t -> f [DeltaSignal t ohlc] -> f [S.Svg]
+  (Functor f, StepFunction step) =>
+  step -> f [DeltaSignal ohlc] -> f [S.Svg]
 toSparkLine step mp =
   let eqty = Equity 1
       us = fmap (map (stepFunction step eqty)) mp

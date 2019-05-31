@@ -14,7 +14,7 @@ import Trade.Type.Add (Add)
 import Trade.Type.Scale (Scale)
 
 import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
-import Trade.Type.Signal (Signal)
+import Trade.Type.Signal (Timeseries)
 --import qualified Trade.Type.Signal as Signal
 
 import Trade.Strategy.Type (Signals, AlignedSignals, Window(..), K(..))
@@ -28,8 +28,8 @@ import Trade.Statistics.Algorithm (Statistics)
 
 
 movingAverages ::
-  (Ord t, Ord sym, Ord x, Statistics x, Scale x, Add x) =>
-  Window -> Window -> Map sym (Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
+  (Ord sym, Ord x, Statistics x, Scale x, Add x) =>
+  Window -> Window -> Map sym (Timeseries x) -> State (Signals sym x) (AlignedSignals sym x, Map sym InvestSignal)
 movingAverages _ _ ms | Map.null ms = error "movingAverages"
 movingAverages j k ms = do
 
@@ -54,8 +54,8 @@ movingAverages j k ms = do
                     , v10_1 .< v20_1 .&& v10_0 .> v20_0 :-> Invest ]
 
 stdBreakout ::
-  (Ord t, Ord sym, Ord x, Statistics x, Scale x, Add x) =>
-  Window -> K -> [(sym, Signal t x)] -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
+  (Ord sym, Ord x, Statistics x, Scale x, Add x) =>
+  Window -> K -> [(sym, Timeseries x)] -> State (Signals sym x) (AlignedSignals sym x, Map sym InvestSignal)
 stdBreakout _ _ [] = error "stdBreakout"
 stdBreakout j (K n) (vs:_) = do
 

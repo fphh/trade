@@ -3,12 +3,13 @@
 module Trade.Type.Step.Interests where
 
 
-import Trade.Type.Bars (DeltaTy)
+import Data.Time.Clock (NominalDiffTime)
+
 import Trade.Type.Equity (Equity(..))
 
 
-newtype Interests t = Interests {
-  unInterests :: Equity -> DeltaTy t -> Double
+newtype Interests = Interests {
+  unInterests :: Equity -> NominalDiffTime -> Double
   }
 
 interests :: (dt -> Double) -> Double -> Equity -> dt -> Double

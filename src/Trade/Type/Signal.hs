@@ -6,6 +6,8 @@ module Trade.Type.Signal where
 
 import Prelude hiding (scanl, map, zipWith, head, last, tail)
 
+import Data.Time.Clock (UTCTime, NominalDiffTime)
+
 import qualified Data.Set as Set
 import Data.Set (Set)
 
@@ -24,6 +26,7 @@ import Trade.Report.Pretty (Pretty)
 import Trade.Help.SafeTail (stail, shead, slast)
 
 
+
 newtype Signal t y = Signal {
   unSignal :: Vector (t, y)
   } deriving (Show, Read, Eq, Semigroup, Monoid)
@@ -34,11 +37,13 @@ instance Functor (Signal t) where
 instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where
   toNumberedList (Signal pps) = toNumberedList pps
 
+type Timeseries = Signal UTCTime
+type DeltaTimeseries = Signal NominalDiffTime
+
 data Sample t x = Sample {
   inSample :: Signal t x
   , outOfSample :: Signal t x
   } deriving (Show, Read)
-
 
 split :: Double -> Signal t x -> Sample t x
 split q _ | q < 0 || q > 1 = error "Trade.Type.Signal.Price.split: q should be between 0 and 1"

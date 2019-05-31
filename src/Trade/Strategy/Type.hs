@@ -4,10 +4,12 @@
 module Trade.Strategy.Type where
 
 
+import Data.Time.Clock (UTCTime)
+
 import Data.Map (Map)
 import Data.Vector (Vector)
 
-import Trade.Type.Signal (Signal)
+import Trade.Type.Signal (Timeseries)
 import Trade.Type.Strategy.Index (Index)
 
 newtype Focus = Focus {
@@ -39,18 +41,18 @@ data Modified sym =
   | StdDev Window K sym
   deriving (Show, Eq, Ord)
 
-newtype Signals sym t x = Signals {
-  signals :: Map (Modified sym) (Signal t x)
+newtype Signals sym x = Signals {
+  signals :: Map (Modified sym) (Timeseries x)
   } deriving (Show)
 
-data AlignedSignals sym t x = AlignedSignals {
-  alignedTimes :: Vector t
+data AlignedSignals sym x = AlignedSignals {
+  alignedTimes :: Vector UTCTime
   , modifiedSignals :: Map (Modified sym) (Index -> Focus, Vector x)
   }
   
-data IndexedSignals sym t x = IndexedSignals {
+data IndexedSignals sym x = IndexedSignals {
   index :: Index
-  , alignedSignals :: AlignedSignals sym t x
+  , alignedSignals :: AlignedSignals sym x
   }
 
 newtype Statistics sym = Statistics {

@@ -5,6 +5,7 @@ module Trade.Strategy.Process where
 
 import Control.Monad.State (State, get, runState, evalState)
 
+import Data.Time.Clock (UTCTime)
 
 import qualified Data.Map as Map
 import Data.Map (Map)
@@ -23,7 +24,7 @@ import Trade.Type.Add (Add)
 import Trade.Type.Scale (Scale)
 
 import qualified Trade.Type.Signal as Signal
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import Trade.Type.Strategy.Index (Index(..))
 
 import Trade.Statistics.Algorithm (Statistics)
@@ -37,19 +38,19 @@ data Resample =
   Upsample
   | Downsample
 
-data ResampleFunc k t x = ResampleFunc {
-  sampleMethod :: Set t -> Signal t x -> Signal t x
-  , timelineMethod :: Set t -> Map k (Set t) -> Set t
+data ResampleFunc k x = ResampleFunc {
+  sampleMethod :: Set UTCTime -> Timeseries x -> Timeseries x
+  , timelineMethod :: Set UTCTime -> Map k (Set UTCTime) -> Set UTCTime
   }
 
-resample :: (Ord t) => Resample -> ResampleFunc k t x
+resample :: Resample -> ResampleFunc k x
 resample Upsample = ResampleFunc Signal.upsample const
 resample Downsample = ResampleFunc Signal.downsample (Map.foldr (\vs acc -> Set.intersection acc vs))
 
 
 align ::
-  (Ord t, Statistics x, Add x, Scale x) =>
-  ResampleFunc (Modified sym) t x -> Signals sym t x -> AlignedSignals sym t x
+  (Statistics x, Add x, Scale x) =>
+  ResampleFunc (Modified sym) x -> Signals sym x -> AlignedSignals sym x
 align (ResampleFunc sampleMeth timelineMeth) (Signals tickers) =
   let tmsTickers = fmap (Set.fromList . Vec.toList . Vec.map fst . unSignal) tickers
       allTimes = foldMap id tmsTickers
@@ -59,15 +60,15 @@ align (ResampleFunc sampleMeth timelineMeth) (Signals tickers) =
   in AlignedSignals (Vec.fromList (Set.toList tms)) modSigs
 
 process ::
-  (Ord t, Ord sym, Statistics x, Add x, Scale x) =>
-  State (IndexedSignals sym t x) [(sym, DisInvest)]
-  -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
+  (Ord sym, Statistics x, Add x, Scale x) =>
+  State (IndexedSignals sym x) [(sym, DisInvest)]
+  -> State (Signals sym x) (AlignedSignals sym x, Map sym InvestSignal)
 process frame = do
   st <- get
   let asigs = align (resample Downsample) st
       atms = alignedTimes asigs
       
-      f (currentBS, acc) i t =
+      f (currentBS, acc) i _t =
         let idx = Index i
             res = evalState frame (IndexedSignals idx asigs)
         
@@ -90,6 +91,6 @@ process frame = do
 
 
 run ::
-  State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
-  -> ((AlignedSignals sym t x, Map sym InvestSignal), Signals sym t x)
+  State (Signals sym x) (AlignedSignals sym x, Map sym InvestSignal)
+  -> ((AlignedSignals sym x, Map sym InvestSignal), Signals sym x)
 run st = runState st (Signals Map.empty)

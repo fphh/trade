@@ -15,6 +15,8 @@ import qualified Data.Vector as Vec
 import qualified Data.Map as Map
 import Data.Map (Map)
 
+import Text.Printf (PrintfArg)
+
 import qualified Graphics.Rendering.Chart.Easy as E
 
 import qualified Trade.Analysis.Analysis as Ana
@@ -38,7 +40,7 @@ import Trade.Type.Impulse (invert)
 import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.NonEmptyList (NonEmptyList(..))
 import Trade.Type.Price (Price(..))
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import Trade.Type.Strategy (Long, Short)
 
 import qualified Trade.Type.Experiment as Experiment
@@ -102,7 +104,7 @@ instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult
 data BacktestInput = BacktestInput {
   initialEquity :: Equity
   , barLength :: NominalDiffTime
-  , outOfSample :: Map Symbol (Signal UTCTime Price)
+  , outOfSample :: Map Symbol (Timeseries Price)
   }
 
 instance BT.Backtest BacktestInput where
@@ -143,8 +145,8 @@ instance BT.Backtest BacktestInput where
 
 
 data BacktestResult = BacktestResult {
-  resultLW :: Experiment.Result Long Symbol UTCTime Price
-  , resultSW :: Experiment.Result Short Symbol UTCTime Price
+  resultLW :: Experiment.Result Long Symbol Price
+  , resultSW :: Experiment.Result Short Symbol Price
   }
 
 

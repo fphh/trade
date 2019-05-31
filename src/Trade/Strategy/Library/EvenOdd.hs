@@ -8,7 +8,7 @@ import Control.Monad.State (State)
 import qualified Data.Map as Map
 import Data.Map (Map)
 
-import Trade.Type.Signal (Signal)
+import Trade.Type.Signal (Timeseries)
 import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
 
 
@@ -25,8 +25,8 @@ import Trade.Statistics.Algorithm (Statistics)
 
 
 evenOdd ::
-  (Ord t, Ord sym, Statistics x, Scale x, Add x) =>
-  Map sym (Signal t x) -> State (Signals sym t x) (AlignedSignals sym t x, Map sym InvestSignal)
+  (Ord sym, Statistics x, Scale x, Add x) =>
+  Map sym (Timeseries x) -> State (Signals sym x) (AlignedSignals sym x, Map sym InvestSignal)
 evenOdd ms | Map.null ms = error "evenOdd"
 evenOdd ms = do
 

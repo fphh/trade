@@ -2,8 +2,10 @@
 
 module Trade.Statistics.SampleStatistics where
 
-import Trade.Type.Bars (DeltaTy, BarLength, Add, diff, barLength2diffTime)
-import Trade.Type.Signal (Signal)
+import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime)
+
+
+import Trade.Type.Signal (Timeseries)
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Yield (LogYield(..), ToYield, toYield, logYield2yield)
 
@@ -13,23 +15,23 @@ import qualified Trade.Report.Table as Table
 import Trade.Report.ToReport (ToReport, toReport)
 
 
-data SampleStatistics t ohlc = SampleStatistics {
+data SampleStatistics ohlc = SampleStatistics {
   sampleLength :: !Int
-  , initialEquity :: (t, ohlc)
-  , finalEquity :: (t, ohlc)
-  , timeSpan :: DeltaTy t
-  , yield :: LogYield (DeltaTy t) ohlc
-  , yieldPerBar :: LogYield (DeltaTy t) ohlc
+  , initialEquity :: (UTCTime, ohlc)
+  , finalEquity :: (UTCTime, ohlc)
+  , timeSpan :: NominalDiffTime
+  , yield :: LogYield ohlc
+  , yieldPerBar :: LogYield ohlc
   }
 
 
 sampleStatistics ::
-  (Add t, ToYield ohlc) =>
-  DeltaTy t -> Signal t ohlc -> SampleStatistics t ohlc
+  (ToYield ohlc) =>
+  NominalDiffTime -> Timeseries ohlc -> SampleStatistics ohlc
 sampleStatistics barLen xs =
   let ie@(t0, y0) = Signal.head xs
       fe@(tn, yn) = Signal.last xs
-      ts = tn `diff` t0
+      ts = tn `diffUTCTime` t0
       yld@(LogYield _ y) = toYield ts yn y0
       yldPerBar = LogYield barLen (y / fromIntegral (Signal.length xs))
   in SampleStatistics {
@@ -42,8 +44,8 @@ sampleStatistics barLen xs =
     }
 
 sampleStatistics2table ::
-  (Pretty t, Pretty (DeltaTy t), Pretty ohlc) =>
-  SampleStatistics t ohlc -> [[String]]
+  (Pretty ohlc) =>
+  SampleStatistics ohlc -> [[String]]
 sampleStatistics2table ss =
   let format (x, y) = [pretty x, pretty y]
   in [ "Initial" : format (initialEquity ss)
@@ -55,5 +57,5 @@ sampleStatistics2table ss =
 
 
 
-instance (Pretty t, Pretty (DeltaTy t), Pretty ohlc) => ToReport (SampleStatistics t ohlc) where
+instance (Pretty ohlc) => ToReport (SampleStatistics ohlc) where
   toReport = Table.table . sampleStatistics2table

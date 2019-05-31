@@ -4,6 +4,9 @@
 
 module Trade.Statistics.YieldStatistics where
 
+import Data.Time.Clock (NominalDiffTime)
+
+import Text.Printf (PrintfArg)
 
 import qualified Data.List as List
 import qualified Data.Vector as Vec
@@ -12,39 +15,35 @@ import Data.Ord (comparing)
 
 import qualified Statistics.Sample as Sample
 
-import Trade.Type.Bars (DeltaTy)
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 import Trade.Type.Yield (LogYield(..), logYield2yield)
 
-import Trade.Report.Pretty (Pretty)
 import qualified Trade.Report.Table as Table
 
 import Trade.Report.ToReport (ToReport, toReport)
 
-import Trade.Statistics.Statistics (Statistics(..), DeltaTyStats(..), formatYield, formatStat)
+import Trade.Statistics.Statistics (Statistics(..), formatYield, formatStat)
+import Trade.Statistics.Algorithm (mean, stdDev, skewness, kurtosis)
 
 
-
-data YieldStatistics t ohlc = YieldStatistics {
+data YieldStatistics ohlc = YieldStatistics {
   count :: !Int
-  , maximumYield :: LogYield (DeltaTy t) ohlc
-  , minimumYield :: LogYield (DeltaTy t) ohlc
-  , maximumDuration :: LogYield (DeltaTy t) ohlc
-  , minimumDuration :: LogYield (DeltaTy t) ohlc
-  , meanYield :: Statistics (DeltaTyStats t) Double
-  , stdDevYield :: Statistics (DeltaTyStats t) Double
+  , maximumYield :: LogYield ohlc
+  , minimumYield :: LogYield ohlc
+  , maximumDuration :: LogYield ohlc
+  , minimumDuration :: LogYield ohlc
+  , meanYield :: Statistics NominalDiffTime Double
+  , stdDevYield :: Statistics NominalDiffTime Double
   , skewnessYield :: Statistics Double Double
   , kurtosisYield :: Statistics Double Double
   }
 
-yieldStatistics ::
-  (Real (DeltaTy t)) =>
-  [LogYield (DeltaTy t) ohlc] -> Maybe (YieldStatistics t ohlc)
+yieldStatistics :: [LogYield ohlc] -> Maybe (YieldStatistics ohlc)
 yieldStatistics [] = Nothing
 yieldStatistics ys = Just $
   let (dts, zs) = unzip (map (\(LogYield dt y) -> (dt, y)) ys)
-      dtsVec = Vec.map realToFrac (Vec.fromList dts)
+      dtsVec = Vec.fromList dts
       zsVec = Vec.fromList zs
   in YieldStatistics {
     count = length ys
@@ -52,14 +51,15 @@ yieldStatistics ys = Just $
     , minimumYield = List.minimumBy (comparing logYield) ys
     , maximumDuration = List.maximumBy (comparing logDuration) ys
     , minimumDuration = List.minimumBy (comparing logDuration) ys
-    , meanYield = Statistics (DeltaTyStats (Sample.mean dtsVec)) (exp (Sample.mean zsVec))
-    , stdDevYield = Statistics (DeltaTyStats (Sample.stdDev dtsVec)) (exp (Sample.stdDev zsVec))
-    , skewnessYield = Statistics (Sample.skewness dtsVec) (Sample.skewness zsVec)
-    , kurtosisYield = Statistics (Sample.kurtosis dtsVec) (Sample.kurtosis zsVec)
+    , meanYield = Statistics (mean dtsVec) (exp (mean zsVec))
+    , stdDevYield = Statistics (stdDev dtsVec) (exp (stdDev zsVec))
+    , skewnessYield = Statistics (skewness dtsVec) (Sample.skewness zsVec)
+    , kurtosisYield = Statistics (kurtosis dtsVec) (Sample.kurtosis zsVec)
     }
 
 yieldStatistics2table ::
-  (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => Maybe (YieldStatistics t ohlc) -> [[String]]
+  (PrintfArg ohlc) =>
+  Maybe (YieldStatistics ohlc) -> [[String]]
 yieldStatistics2table Nothing = [["", "", "n/a"]]
 yieldStatistics2table (Just ys) =
   [ "No. of trades" : [show (count ys)]
@@ -78,11 +78,11 @@ yieldStatistics2table (Just ys) =
   , "Kurtosis (log yield)" : formatStat (kurtosisYield ys)
   ]
 
-instance (Pretty (DeltaTy t), Pretty (DeltaTyStats t)) => ToReport (Maybe (YieldStatistics t ohlc)) where
+instance (PrintfArg ohlc) => ToReport (Maybe (YieldStatistics ohlc)) where
   toReport = Table.table . yieldStatistics2table
 
 toYieldStatistics ::
-  (Functor f, Real (DeltaTy t)) =>
-  f [DeltaSignal t ohlc] -> f (Maybe (YieldStatistics t ohlc))
+  (Functor f) =>
+  f [DeltaSignal ohlc] -> f (Maybe (YieldStatistics ohlc))
 toYieldStatistics = fmap (yieldStatistics . map DSA.yield)
 

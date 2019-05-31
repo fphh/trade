@@ -5,6 +5,8 @@
 
 module Trade.MonteCarlo.ResampleTrades.Broom where
 
+import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime)
+
 import System.Random (newStdGen, randoms)
 
 import qualified Data.Vector as Vec
@@ -26,16 +28,15 @@ import Trade.Type.Step.Algorithm (StepFunction)
 
 import qualified Trade.Type.Experiment as Experiment
 
-import Trade.Type.Bars (DeltaTy, Add, add)
 import Trade.Type.Broom (Broom(..))
 
 import qualified Trade.Type.Signal as Signal
-import Trade.Type.Signal (Signal)
+import Trade.Type.Signal (Timeseries, Signal)
 
 
 
 randomDelta ::
-  Vector (DeltaSignal t ohlc) -> Vector (DeltaSignal t ohlc) -> [Int] -> [DeltaSignal t ohlc]
+  Vector (DeltaSignal ohlc) -> Vector (DeltaSignal ohlc) -> [Int] -> [DeltaSignal ohlc]
 randomDelta _ _ [] = error "Trade.MonteCarlo.ResampleTrades.Broom.randomDelta: empty list"
 randomDelta is nis (r:rs) =
   let as =
@@ -48,7 +49,7 @@ randomDelta is nis (r:rs) =
   in zipWith f rs as
 
 
-deltaBroom :: Experiment.Output stgy sym t ohlc -> Broom (IO [DeltaSignal t ohlc])
+deltaBroom :: Experiment.Output stgy sym ohlc -> Broom (IO [DeltaSignal ohlc])
 deltaBroom (Experiment.Output _ _ ds _) =
   let (_, DeltaTradeList dtl):_ = Map.toList ds
       f x@(DeltaSignal _ pos _) (us, vs) =
@@ -71,17 +72,16 @@ newtype MCCount = MCCount {
 
 
 boundaries ::
-  (Ord t, Add t) =>
-  t -> DeltaTy t -> MCCount -> Broom (IO [DeltaSignal t ohlc]) -> IO (Broom (DeltaTradeList t ohlc))
+  UTCTime -> NominalDiffTime -> MCCount -> Broom (IO [DeltaSignal ohlc]) -> IO (Broom (DeltaTradeList ohlc))
 boundaries begin duration (MCCount n) (Broom ioDs) = do
-  let maxBarNo = duration `add` begin
+  let maxBarNo = duration `addUTCTime` begin
 
       ds = take n ioDs
 
       f _ [] = []
       f pt (x@(DeltaSignal _ _ sig) : xs) =
         let (dt, _) = Signal.last sig
-            newPt = dt `add` pt
+            newPt = dt `addUTCTime` pt
         in case newPt > maxBarNo of
              True -> []
              False -> (x { start = pt }) : f newPt xs
@@ -90,9 +90,9 @@ boundaries begin duration (MCCount n) (Broom ioDs) = do
 
 
 
-data MCConfig t = MCConfig {
-  mcBegin :: t
-  , mcBars :: DeltaTy t
+data MCConfig = MCConfig {
+  mcBegin :: UTCTime
+  , mcBars :: NominalDiffTime
   , mcCount :: MCCount
   }
 
@@ -106,8 +106,8 @@ defaultMC = MCConfig {
 
 
 mc ::
-  (Ord t, Add t, StepFunction (StepTy stgy) t) =>
-  Experiment.Result stgy sym t ohlc -> MCConfig t -> IO (Broom (Signal t Equity))
+  (StepFunction (StepTy stgy)) =>
+  Experiment.Result stgy sym ohlc -> MCConfig -> IO (Broom (Timeseries Equity))
 mc result mtc = do
   let db = deltaBroom (Experiment.output result)
       stp = Experiment.step (Experiment.input result)

@@ -17,6 +17,8 @@ import Data.Map (Map)
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
+import Text.Printf (PrintfArg)
+
 import qualified Graphics.Rendering.Chart.Easy as E
 
 import qualified Data.Vector as Vec
@@ -41,7 +43,7 @@ import qualified Trade.Type.ImpulseGenerator as IG
 import Trade.Type.NonEmptyList (NonEmptyList(..))
 import Trade.Type.OHLC (Close(..))
 import Trade.Type.Price (Price(..))
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Step (StepTy(LongStep, ShortStep), longFraction, shortFraction, longCommission, shortCommission, shortInterests)
 import Trade.Type.Strategy (Long, Short)
@@ -56,7 +58,7 @@ import Trade.Type.Yield (ToYield)
 import Trade.Strategy.Type (Window(..), K(..))
 import Trade.Strategy.Library.MovingAverages (movingAverages, stdBreakout)
 
-import Trade.Statistics.Statistics (DeltaTyStats)
+import Trade.Statistics.Statistics ()
 
 import qualified Trade.Analysis.TWR as TWR
 import qualified Trade.Analysis.Risk as Risk
@@ -93,18 +95,18 @@ import qualified Trade.Timeseries.Url as Url
 data Symbol = ASym deriving (Show, Eq, Ord)
 
 
-data OptimizationInput stgy sym t ohlc = OptimizationInput {
-  optSample :: Map sym (Signal t ohlc)
+data OptimizationInput stgy sym ohlc = OptimizationInput {
+  optSample :: Map sym (Timeseries ohlc)
   , igInput :: [(Window, Window)]
-  , mcConfig :: MCConfig t
+  , mcConfig :: MCConfig
   , optEquity :: Equity
-  , barLength :: DeltaTy t
-  , step :: StepTy stgy t
+  , barLength :: NominalDiffTime
+  , step :: StepTy stgy
   }
 
   
-data OptimizationResult t sym stgy = OptimizationResult {
-  result :: Experiment.Result stgy sym t Price
+data OptimizationResult sym stgy = OptimizationResult {
+  result :: Experiment.Result stgy sym Price
   -- , broom :: Broom (Signal t Equity)
   , lastEquities :: Map (Window, Window) Equity
   }
@@ -112,17 +114,15 @@ data OptimizationResult t sym stgy = OptimizationResult {
 
 
 instance ( Ord sym
-         , Show sym, Show t
-         , Ord t
-         , Add t
+         , Show sym
          , Invest2Impulse stgy
          , TradeList2DeltaTradeList stgy
          , Impulse2TradeList stgy
-         , StepFunction (StepTy stgy) t) =>
-  Opt.Optimize (OptimizationInput stgy sym t Price) where
+         , StepFunction (StepTy stgy)) =>
+  Opt.Optimize (OptimizationInput stgy sym Price) where
 
-  type OptReportTy (OptimizationInput stgy sym t Price) = OptimizationResult t sym stgy
-  type OptInpTy (OptimizationInput stgy sym t Price) = (Window, Window)
+  type OptReportTy (OptimizationInput stgy sym Price) = OptimizationResult sym stgy
+  type OptInpTy (OptimizationInput stgy sym Price) = (Window, Window)
 
   optimize (ImpulseGenerator strat) optInp =
     let findBestWinSize winSize acc =
@@ -145,15 +145,8 @@ instance ( Ord sym
 
 
 instance ( Show sym
-         , E.PlotValue t
-         , Add t
-         , Num (DeltaTy t)
-         , Real (DeltaTy t)
-         , Pretty t
-         , Pretty (DeltaTy t)
-         , Pretty (DeltaTyStats t)
-         , StepFunction (StepTy stgy) t) =>
-  TR.ToReport (ARep.OptimizationData (OptimizationInput stgy sym t Price) (OptimizationResult t sym stgy)) where
+         , StepFunction (StepTy stgy)) =>
+  TR.ToReport (ARep.OptimizationData (OptimizationInput stgy sym Price) (OptimizationResult sym stgy)) where
 
   toReport (ARep.OptimizationData optInp (OptimizationResult res {- brm -} lastEqty)) = do
     let nOfSamp = 20
@@ -177,45 +170,39 @@ instance ( Show sym
       (Style.axTitle "Time" "Equity" {- :: Style.AxisConfig Equity t -}, broom2chart nOfSamp brm)
 -}
 
-data BacktestInput stgy sym t ohlc = BacktestInput {
+data BacktestInput stgy sym ohlc = BacktestInput {
   btEquity :: Equity
-  , btSample :: Map sym (Signal t ohlc)
-  , btBarLength :: DeltaTy t
-  , btStep :: StepTy stgy t
+  , btSample :: Map sym (Timeseries ohlc)
+  , btBarLength :: NominalDiffTime
+  , btStep :: StepTy stgy
   }
   
-data BacktestResult stgy sym t ohlc = BacktestResult (Experiment.Result stgy sym t ohlc)
+data BacktestResult stgy sym ohlc = BacktestResult (Experiment.Result stgy sym ohlc)
                           
 instance ( ToDelta ohlc
          , Ord sym
-         , Ord t
-         , Add t
-         , Show t, Show ohlc
+         , Show ohlc
          , TradeList2DeltaTradeList stgy
          , Impulse2TradeList stgy
          , Invest2Impulse stgy
-         , StepFunction (StepTy stgy) t) => BT.Backtest (BacktestInput stgy sym t ohlc) where
+         , StepFunction (StepTy stgy)) => BT.Backtest (BacktestInput stgy sym ohlc) where
   
-  type BacktestReportTy (BacktestInput stgy sym t ohlc) = BacktestResult stgy sym t ohlc
+  type BacktestReportTy (BacktestInput stgy sym ohlc) = BacktestResult stgy sym ohlc
 
   backtest (NonEmptyList optStrat _) (BacktestInput initEqty ps bl step) =
     let expmnt = Experiment.Input step initEqty bl optStrat ps
     in BacktestResult (Experiment.conduct expmnt)
 
-instance (E.PlotValue t
-         , Show sym
-         , Add t
-         , Real (DeltaTy t)
+instance (Show sym
          , E.PlotValue ohlc
-         , StepFunction (StepTy stgy) t
-         , Pretty t, Pretty (DeltaTy t)
-         , Pretty (DeltaTyStats t)
+         , StepFunction (StepTy stgy)
          , Pretty ohlc
          , Eq ohlc
          , ToYield ohlc
-         , Line (Signal t ohlc)
-         , Line (Vec.Vector (t, ohlc))) =>
-  TR.ToReport (ARep.BacktestData (BacktestInput stgy sym t ohlc) (BacktestResult stgy sym t ohlc)) where
+         , PrintfArg ohlc
+         , Line (Timeseries ohlc)
+         , Line (Vec.Vector (UTCTime, ohlc))) =>
+  TR.ToReport (ARep.BacktestData (BacktestInput stgy sym ohlc) (BacktestResult stgy sym ohlc)) where
   
   toReport (ARep.BacktestData _ (BacktestResult res)) = do
     subheader "Backtest"
@@ -223,12 +210,12 @@ instance (E.PlotValue t
  
  --------------------------------------------------------
 
-instance OD.OHLCData (OptimizationInput stgy sym t ohlc) where
-  type OHLCDataTy (OptimizationInput stgy sym t ohlc) = ohlc
+instance OD.OHLCData (OptimizationInput stgy sym ohlc) where
+  type OHLCDataTy (OptimizationInput stgy sym ohlc) = ohlc
 
 
-instance OD.OHLCData (BacktestInput stgy sym t ohlc) where
-  type OHLCDataTy (BacktestInput stgy sym t ohlc) = ohlc
+instance OD.OHLCData (BacktestInput stgy sym ohlc) where
+  type OHLCDataTy (BacktestInput stgy sym ohlc) = ohlc
 
 --------------------------------------------------------
 
@@ -236,7 +223,7 @@ barLen :: BarLength
 barLen = Min 15
 
 
-getSymbol :: Bin.Symbol -> IO (UTCTime, Signal UTCTime Price)
+getSymbol :: Bin.Symbol -> IO (UTCTime, Timeseries Price)
 getSymbol sym = do
 
   now <- getCurrentTime
@@ -256,7 +243,7 @@ getSymbol sym = do
   
   fmap ((\x -> (mcBegin, x)) . Signal . Vec.map toSignal) (Bin.getTicker req)
 
-
+{-
 blackScholes :: IO (BarNo, Signal BarNo Price)
 blackScholes = do
   
@@ -270,7 +257,7 @@ blackScholes = do
       
 --  blackScholesDet seed (T.yearsN 4) start mu sigma
   fmap (\x -> (mcBegin, x)) (blackScholesDet seed vs start mu sigma)
-
+-}
   
 
 example :: IO ()
@@ -297,14 +284,14 @@ example = do
         let day = 24*60*60
         in realToFrac dt / day
   
-      shortStep :: StepTy Short UTCTime
+      shortStep :: StepTy Short
       shortStep = ShortStep {
         shortFraction = Fraction 1
         , shortCommission = Commission (const 0)
         , shortInterests = Interests (interests rtf 0.0)
         }
 
-  let analysis :: Ana.Analysis (OptimizationInput Long Bin.Symbol UTCTime Price) (BacktestInput Long Bin.Symbol UTCTime Price)
+  let analysis :: Ana.Analysis (OptimizationInput Long Bin.Symbol Price) (BacktestInput Long Bin.Symbol Price)
       analysis = Ana.Analysis {
         Ana.title = "Replaying Long Trades"
         , Ana.impulseGenerator = IG.ImpulseGenerator (\(j, k) -> IG.OptimizedImpulseGenerator (movingAverages j k))

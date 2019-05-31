@@ -5,6 +5,8 @@ module Trade.Strategy.Algorithm where
 
 import Control.Monad.State (State, get, modify)
 
+import Data.Time.Clock (UTCTime)
+
 import qualified Data.Map as Map
 import Data.Map (Map)
 
@@ -13,7 +15,7 @@ import Data.Vector (Vector)
 
 import Trade.Type.Add (Add, add)
 import Trade.Type.Scale (Scale, scale)
-import Trade.Type.Signal (Signal(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import Trade.Type.Strategy.Index (Index(..))
 
 import Trade.Statistics.Algorithm (Statistics)
@@ -28,7 +30,7 @@ apply (Offset off) idx (f, vs) =
   in vs Vec.!? (foc+off)
 
 
-alignedSignals2signals :: (Eq t, Eq x) => AlignedSignals sym t x -> Map (Modified sym) (Maybe (Vector (t, x)))
+alignedSignals2signals :: (Eq x) => AlignedSignals sym x -> Map (Modified sym) (Maybe (Vector (UTCTime, x)))
 alignedSignals2signals (AlignedSignals tms m) =
   let f vs =
         let g i t = sequence (t, apply (Offset 0) (Index i) vs)
@@ -37,7 +39,7 @@ alignedSignals2signals (AlignedSignals tms m) =
 
 indicator ::
   (Ord sym) =>
-  (Modified sym) -> Signal t x -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
+  (Modified sym) -> Timeseries x -> State (Signals sym x) (Offset -> State (IndexedSignals sym x) (Maybe x))
 indicator mSym vs = do
   modify (\st -> st { signals = Map.insert mSym vs (signals st) })
   return $ \off -> do
@@ -45,27 +47,27 @@ indicator mSym vs = do
     let sig = modifiedSignals ast Map.! mSym
     return (apply off idx sig)
 
-time :: Offset -> State (IndexedSignals sym t x) (Maybe t)
+time :: Offset -> State (IndexedSignals sym x) (Maybe UTCTime)
 time (Offset off) = do
   IndexedSignals (Index idx) ast <- get
   let tms = alignedTimes ast
       k = idx+off
   return (tms Vec.!? k)
 
-start :: State (IndexedSignals sym t x) (Maybe t)
+start :: State (IndexedSignals sym x) (Maybe UTCTime)
 start = do
   IndexedSignals _ ast <- get
   let tms = alignedTimes ast
   return (tms Vec.!? 0)
 
 
-end :: State (IndexedSignals sym t x) (Maybe t)
+end :: State (IndexedSignals sym x) (Maybe UTCTime)
 end = do
   IndexedSignals _ ast <- get
   let tms = alignedTimes ast
   return (tms Vec.!? (Vec.length tms - 1))
 
-index :: State (IndexedSignals sym t x) Index
+index :: State (IndexedSignals sym x) Index
 index = do
   IndexedSignals idx _ <- get
   return idx
@@ -90,17 +92,17 @@ modifySignal (StdDev (Window win) (K k) _) vs =
 
 now ::
   (Ord sym) =>
-  (sym, Signal t x) -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
+  (sym, Timeseries x) -> State (Signals sym x) (Offset -> State (IndexedSignals sym x) (Maybe x))
 now (sym, vs) = indicator (Now sym) vs
 
 mavg ::
   (Ord sym) =>
-  Window -> (sym, Signal t x) -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
+  Window -> (sym, Timeseries x) -> State (Signals sym x) (Offset -> State (IndexedSignals sym x) (Maybe x))
 mavg win (sym, vs) = indicator (MAvg win sym) vs
 
 stdDev ::
   (Ord sym) =>
-  Window -> K -> (sym, Signal t x) -> State (Signals sym t x) (Offset -> State (IndexedSignals sym t x) (Maybe x))
+  Window -> K -> (sym, Timeseries x) -> State (Signals sym x) (Offset -> State (IndexedSignals sym x) (Maybe x))
 stdDev win k (sym, vs) = indicator (StdDev win k sym) vs
 
 

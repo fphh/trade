@@ -32,6 +32,7 @@ import Trade.Report.HtmlReader (render)
 
 
 
+{-
 
 data Symbol = A deriving (Show, Eq, Ord)
 
@@ -39,7 +40,7 @@ data Symbol = A deriving (Show, Eq, Ord)
 ticker :: Signal UTCTime Price
 ticker = Signal (Vec.map (fmap Price) TD.sinus)
 
-blackScholes :: IO (Signal BarNo Price)
+blackScholes :: IO (Timeseries Price)
 blackScholes = do
   
   let mu = Mu 0.5
@@ -67,3 +68,4 @@ example = do
   t <- render (Chart.strategy xs asigs Map.empty)
   BSL.putStrLn t
   
+-}
