@@ -27,13 +27,16 @@ import Trade.Type.Step.Algorithm (stepFunction, StepFunction)
 import Trade.Help.SafeTail (shead)
 
 
+import Debug.Trace
+
 deltaSignal ::
   (ToDelta ohlc, Add t) =>
   (ohlc -> ohlc -> Delta ohlc) -> Signal t ohlc -> DeltaSignal t ohlc
 deltaSignal g (Signal as) =
   let (t0, y0) = shead "deltaSignal: empty signal" as
       f (t, y) = (t `diff` t0, g y0 y)
-  in DeltaSignal t0 Invested (Signal (Vec.map f as))
+  in DeltaSignal t0 Invested (Signal (Vec.map f (Vec.tail as)))
+  -- in DeltaSignal t0 Invested (Signal (Vec.map f as))
 
 longDeltaSignal :: (ToDelta ohlc, Add t) => Signal t ohlc -> DeltaSignal t ohlc
 longDeltaSignal = deltaSignal toDelta

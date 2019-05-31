@@ -217,6 +217,8 @@ render (Result inp out) = do
 
   subsubheader "Trade statistics"
 
+  -- mapM_ (text . show . snd) (unSignal (head (Map.elems (outputSignal out))))
+
   let g sym sig acc = do
         text ("Symbole " ++ show sym)
         tradeStatistics (step inp) sig

@@ -17,8 +17,7 @@ import Trade.Type.Bars (Add)
 
 tradeList2DeltaTradeListHelper ::
   (ToDelta ohlc, Add t) =>
-  (Signal t ohlc -> DeltaSignal t ohlc)
-  -> TradeList stgy t ohlc -> [DeltaSignal t ohlc]
+  (Signal t ohlc -> DeltaSignal t ohlc) -> TradeList stgy t ohlc -> [DeltaSignal t ohlc]
 tradeList2DeltaTradeListHelper toDeltaSignal (TradeList tl) =
   let g (Trade pos ts) = (toDeltaSignal (Signal ts)) { position = pos }
   in map g tl

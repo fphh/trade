@@ -26,13 +26,13 @@ test1 =
 
 test2 :: Vector (UTCTime, Double)
 test2 =
-  let up = [10 .. 17]
+  let up = [1 .. 17]
       down = [18, 17 .. 5]
       up2 = [4 .. 14]
-      down2 = [15, 14 .. 5]
-      up3 = [4 .. 20]
-      down3 = [21, 20 .. 8]
-      up4 = [ 7 .. 17 ]
+      down2 = [15, 14 .. 2]
+      up3 = [3 .. 20]
+      down3 = [21, 20 .. 1]
+      up4 = [ 2 .. 17 ]
       down4 = [ 18, 17 .. 10]
       
       ys = up ++ down ++ up2 ++ down2 ++ up3 ++ down3 ++ up4 ++ down4

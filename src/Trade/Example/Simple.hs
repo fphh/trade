@@ -69,8 +69,8 @@ barLen :: BarLength
 barLen = Day 1
 
 ticker :: Signal UTCTime Price
--- ticker = Signal (Vec.map (fmap Price) TD.testSimple)
-ticker = Signal (Vec.map (fmap Price) TD.sinus)
+ticker = Signal (Vec.map (fmap Price) TD.test2)
+-- ticker = Signal (Vec.map (fmap Price) TD.sinus)
 
 --------------------------------------------------------
 
@@ -90,7 +90,6 @@ data OptimizationResult = OptimizationResult
 instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
   
   toReport (ARep.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
-    text "Optimally buying and selling. Not possible in reality :( ..."
     
     subheader "Optimization Input"
     Chart.lines (Style.axTitle "Symbol" "Time" :: Style.AxisConfig UTCTime Price) [line "Price" ps]
@@ -117,12 +116,12 @@ instance BT.Backtest BacktestInput where
 
 
         stp0 = LongStep {
-          longFraction = Fraction 0.5
+          longFraction = Fraction 1.0 -- 0.5
           , longCommission = Commission (const 0) -- (\c -> 0.05*c)
           }
 
         stp1 = ShortStep {
-          shortFraction = Fraction 0.5
+          shortFraction = Fraction 1.0 -- 0.5
           , shortCommission = Commission (const 0) -- (\c -> 0.05*c)
           , shortInterests = Interests (interests rtf 0)
           }
