@@ -3,27 +3,33 @@
 
 module Trade.Report.Pretty where
 
-import Text.Printf (printf)
 
 import qualified Data.List as List
 
 import Data.Time.Clock (UTCTime, NominalDiffTime)
 
+import qualified Data.Text.Lazy as Text
+import Data.Text.Lazy (Text)
+
+import Formatting (Format, (%), format, mapf, fixed, int)
+import Formatting.Time (datetime, diff, days, minutes, hours, years, decimals, seconds)
+
+import Data.String (fromString)
+
+
+import Debug.Trace
+
+formatf :: (Real b) => (a -> b) -> String -> a -> String
+formatf f str = Text.unpack . format (mapf f (fixed 6 % fromString str))
+
+
 class Pretty a where
   pretty :: a -> String
 
-instance Pretty Int where
-  pretty = show
-
-instance Pretty Integer where
-  pretty = show
-
-instance Pretty Double where
-  pretty = show
 
 instance Pretty UTCTime where
-  pretty = show
-
+  pretty = Text.unpack . format datetime
+  
 instance Pretty NominalDiffTime where
   pretty dt =
     let y :: Double
@@ -33,21 +39,23 @@ instance Pretty NominalDiffTime where
         hour = 60*min
         day = 24*hour
         month = 30*day
-        year = 365*month
-    in case y of
-         x | x < min -> printf "%.2fsec" x
-         x | x < hour -> printf "%.2fmin" (x / min)
-         x | x < day -> printf "%.2fh" (x / hour)
-         x | x < month -> printf "%.2fd" (x / day)
-         x | x < year -> printf "%.2fmonths" (x / month)
-         x -> printf "%.2fyears" (x / year)
 
-instance Pretty String where
-  pretty = id
+        fmt =
+          case y of
+            x | x < min -> seconds 2 % fromString " sec"
+            x | x < hour -> minutes 2 % fromString " min"
+            x | x < day -> hours 2 % fromString " h"
+            x | x < month -> days 2 % fromString " d"
+            x -> years 2 % fromString " years"
+    
+    in Text.unpack (format fmt dt)
 
-instance (Pretty a) => Pretty (Maybe a) where
-  pretty Nothing = "N/A"
-  pretty (Just x) = pretty x
 
-instance (Pretty a) => Pretty [a] where
-  pretty = List.intercalate ", " . map pretty
+
+
+instance Pretty Int where
+  pretty = Text.unpack . format int
+  
+instance Pretty Double where
+  pretty = Text.unpack . format (fixed 6)  
+ 

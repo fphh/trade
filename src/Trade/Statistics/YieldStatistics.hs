@@ -6,8 +6,6 @@ module Trade.Statistics.YieldStatistics where
 
 import Data.Time.Clock (NominalDiffTime)
 
-import Text.Printf (PrintfArg)
-
 import qualified Data.List as List
 import qualified Data.Vector as Vec
 
@@ -23,8 +21,10 @@ import qualified Trade.Report.Table as Table
 
 import Trade.Report.ToReport (ToReport, toReport)
 
-import Trade.Statistics.Statistics (Statistics(..), formatYield, formatStat)
+import Trade.Statistics.Statistics (Statistics(..)) -- , formatYield, formatStat)
 import Trade.Statistics.Algorithm (mean, stdDev, skewness, kurtosis)
+
+import Trade.Report.Pretty (Pretty, pretty)
 
 
 data YieldStatistics ohlc = YieldStatistics {
@@ -58,15 +58,17 @@ yieldStatistics ys = Just $
     }
 
 yieldStatistics2table ::
-  (PrintfArg ohlc) =>
+  (Pretty ohlc) =>
   Maybe (YieldStatistics ohlc) -> [[String]]
 yieldStatistics2table Nothing = [["", "", "n/a"]]
 yieldStatistics2table (Just ys) =
-  [ "No. of trades" : [show (count ys)]
+  [ "No. of trades" : [pretty (count ys)]
   , []
   , [ "", "Yield", "Duration" ]
   , []
-  , "Maximum yield trade" : formatYield (logYield2yield (maximumYield ys))
+  , "Maximum yield trade" : [pretty (logYield2yield (maximumYield ys))]
+
+  {-
   , "Minimum yield trade" : formatYield (logYield2yield (minimumYield ys))
   , []
   , "Maximum duration trade" : formatYield (logYield2yield (maximumDuration ys))
@@ -76,9 +78,10 @@ yieldStatistics2table (Just ys) =
   , "Standard dev." : formatStat (stdDevYield ys)
   , "Skewness (log yield)" : formatStat (skewnessYield ys)
   , "Kurtosis (log yield)" : formatStat (kurtosisYield ys)
+  -}
   ]
 
-instance (PrintfArg ohlc) => ToReport (Maybe (YieldStatistics ohlc)) where
+instance (Pretty ohlc) => ToReport (Maybe (YieldStatistics ohlc)) where
   toReport = Table.table . yieldStatistics2table
 
 toYieldStatistics ::

@@ -15,11 +15,11 @@ import Trade.Type.DisInvest (DisInvest(..), InvestSignal)
 import Trade.Type.Add (Add)
 import Trade.Type.Scale (Scale)
 
-import Trade.Strategy.Algorithm (time, now, start, end, index)
+import Trade.Strategy.Algorithm (now, index)
 import Trade.Strategy.Process (process)
 import Trade.Strategy.Type (Signals, AlignedSignals)
 
-import Trade.Strategy.Condition (symbol, conditions, (.=), Condition((:=:)), Implication((:->)))
+import Trade.Strategy.Condition (symbol, conditions, Condition((:=:)), Implication((:->)))
 
 import Trade.Statistics.Algorithm (Statistics)
 

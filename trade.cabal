@@ -46,7 +46,6 @@ library
                         Trade.Report.Heatmap
                         Trade.Report.HtmlReader
                         Trade.Report.Line
-                        Trade.Report.NumberedList
                         Trade.Report.Pretty
                         Trade.Report.Render
                         Trade.Report.SparkLine
@@ -58,7 +57,6 @@ library
                         Trade.Strategy.Library.BuyAndHold
                         Trade.Strategy.Library.EvenOdd
                         Trade.Strategy.Library.MovingAverages
-                        Trade.Strategy.Library.NoInvestment
                         Trade.Strategy.Process
                         Trade.Strategy.Type
                         Trade.Test.Data
@@ -159,6 +157,7 @@ library
                      , SVGFonts
                      , deepseq
                      -- , operational
+                     , formatting
 
   hs-source-dirs:      src
   default-language:    Haskell2010

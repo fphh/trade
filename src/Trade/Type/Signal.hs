@@ -20,7 +20,6 @@ import qualified Data.Foldable as Fold
 
 import Data.Function (on)
 
-import Trade.Report.NumberedList (ToNumberedList, toNumberedList)
 import Trade.Report.Pretty (Pretty)
 
 import Trade.Help.SafeTail (stail, shead, slast)
@@ -33,9 +32,6 @@ newtype Signal t y = Signal {
 
 instance Functor (Signal t) where
   fmap f (Signal ps) = Signal (Vec.map (fmap f) ps)
-
-instance (Pretty x, Pretty t) => ToNumberedList (Signal t x) where
-  toNumberedList (Signal pps) = toNumberedList pps
 
 type Timeseries = Signal UTCTime
 type DeltaTimeseries = Signal NominalDiffTime

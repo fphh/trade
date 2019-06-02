@@ -2,7 +2,9 @@
 
 module Trade.Report.Heatmap where
 
-import Text.Printf (printf)
+import qualified Data.Text.Lazy as Text
+
+import Formatting (format, fixed)
 
 import qualified Data.List as List
 
@@ -45,18 +47,16 @@ heatmap bias m =
       cbSty = H5A.style (H5.stringValue "clear:both;")
       leftSty = H5A.style (H5.stringValue commonCellSty)
       
-      format :: Double -> String
-      format x =
-        let fmt =
-              case x of
-                y | (-10) < y && y < 10 -> "%1.5f"
-                y | (-100) < y && y < 100 -> "%2.4f"
-                y | (-1000) < y && y < 1000 -> "%3.3f"
-                y | (-10000) < y && y < 10000 -> "%4.2f"
-                y | (-100000) < y && y < 100000 -> "%5.1f"
-                _ -> "%f"
-        in printf fmt x
-                    
+      fmt :: Double -> String
+      fmt x =
+        let maxDec = 6
+            dec =
+              case round (maxDec - log (abs x) / log 10) of
+                n | n <= 0 -> 0
+                n -> n
+                
+        in Text.unpack (format (fixed dec) x)
+
       content v =
         let bg =
               case v > bias of
@@ -74,7 +74,7 @@ heatmap bias m =
                 (True, _) -> bgMa
                 (_, True) -> bgMi
                 _ -> bg
-        in (H5.div ! H5A.style (H5.stringValue (commonCellSty ++ sty))) (H5.toHtml (format v))
+        in (H5.div ! H5A.style (H5.stringValue (commonCellSty ++ sty))) (H5.toHtml (fmt v))
 
       emp =
         let bg = H5A.style (H5.stringValue (commonCellSty ++ "background:rgb(200,200,120);width:60px;"))

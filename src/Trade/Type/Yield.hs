@@ -3,7 +3,15 @@
 
 module Trade.Type.Yield where
 
-import Text.Printf (printf)
+import qualified Data.Text.Lazy as Text
+import Data.Text.Lazy (Text)
+import Data.String (fromString)
+
+import Formatting (Format, (%), format, mapf, fixed, int)
+import Formatting.Time (datetime, diff, days, minutes, hours, years, decimals)
+
+
+
 
 import Data.Time.Clock (NominalDiffTime)
 
@@ -13,6 +21,7 @@ import Trade.Type.Price (Price(..))
 
 import Trade.Report.Pretty (Pretty, pretty)
 
+import Debug.Trace
 
 
 data Yield a = Yield {
@@ -48,10 +57,14 @@ instance Semigroup (LogYield a) where
 
 
 instance (Pretty a) => Pretty (LogYield a) where
-  pretty (LogYield dt a) = printf "log y = %.8f / %s" a (pretty dt)
-  
+  pretty (LogYield dt a) =
+   -- Text.unpack (format (fromString "log y = " % fixed 8 % fromString " / " % diff False) a dt)
+    Text.unpack (format (fromString "log y = " % fixed 8 % fromString " / ") a) ++ pretty dt
+
+
 instance (Pretty a) => Pretty (Yield a) where
-  pretty (Yield dt a) = printf "y = %.8f / %s" a (pretty dt)
+  pretty (Yield dt a) =
+    Text.unpack (format (fromString "y = " % fixed 8 % fromString " / ") a) ++ pretty dt
 
 
 yieldPerBar :: BarLength -> LogYield a -> LogYield a

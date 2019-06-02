@@ -17,13 +17,9 @@ import Data.Map (Map)
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
-import Text.Printf (PrintfArg)
-
 import qualified Graphics.Rendering.Chart.Easy as E
 
 import qualified Data.Vector as Vec
-
-import Text.Printf (printf)
 
 import Trade.Type.BarLength (BarLength(..), barLength2diffTime)
 import Trade.Type.Broom (Broom) -- , broom2chart)
@@ -100,7 +96,7 @@ data OptimizationInput stgy sym ohlc = OptimizationInput {
   , igInput :: [(Window, Window)]
   , mcConfig :: MCConfig
   , optEquity :: Equity
-  , barLength :: NominalDiffTime
+  , barLength :: BarLength
   , step :: StepTy stgy
   }
 
@@ -173,7 +169,7 @@ instance ( Show sym
 data BacktestInput stgy sym ohlc = BacktestInput {
   btEquity :: Equity
   , btSample :: Map sym (Timeseries ohlc)
-  , btBarLength :: NominalDiffTime
+  , btBarLength :: BarLength
   , btStep :: StepTy stgy
   }
   
@@ -199,7 +195,6 @@ instance (Show sym
          , Pretty ohlc
          , Eq ohlc
          , ToYield ohlc
-         , PrintfArg ohlc
          , Line (Timeseries ohlc)
          , Line (Vec.Vector (UTCTime, ohlc))) =>
   TR.ToReport (ARep.BacktestData (BacktestInput stgy sym ohlc) (BacktestResult stgy sym ohlc)) where
@@ -220,7 +215,7 @@ instance OD.OHLCData (BacktestInput stgy sym ohlc) where
 --------------------------------------------------------
 
 barLen :: BarLength
-barLen = Min 15
+barLen = Min 5
 
 
 getSymbol :: Bin.Symbol -> IO (UTCTime, Timeseries Price)
@@ -300,7 +295,7 @@ example = do
             optSample = Map.fromList [(sym, inSamp)]
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head inSamp)))
-            , barLength = barLength2diffTime barLen
+            , barLength = barLen
             , mcConfig = MCConfig {
                 mcBars = 60
                 , mcCount = MCCount 10
@@ -312,7 +307,7 @@ example = do
         , Ana.backtestInput = BacktestInput {
             btEquity = Equity (unPrice (snd (Signal.head outOfSamp)))
             , btSample = Map.fromList [(sym, outOfSamp)]
-            , btBarLength = barLength2diffTime barLen
+            , btBarLength = barLen
             , btStep = longStep
             }
         }

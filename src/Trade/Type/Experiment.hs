@@ -16,7 +16,6 @@ import Data.Map (Map)
 
 import Data.Time.Clock (UTCTime, NominalDiffTime)
 
-import Text.Printf (PrintfArg)
 
 import qualified Text.Blaze.Html5 as H5
 import Text.Blaze.Html5 ((!))
@@ -24,6 +23,8 @@ import qualified Text.Blaze.Html5.Attributes as H5A
 
 import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
+
+import Trade.Type.BarLength (BarLength)
 import Trade.Type.Delta (ToDelta)
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 
@@ -78,7 +79,7 @@ import Trade.Report.Pretty (Pretty)
 data Input stgy sym ohlc = Input {
   step :: StepTy stgy
   , initialEquity :: Equity
-  , barLength :: NominalDiffTime
+  , barLength :: BarLength
   , impulseGenerator :: OptimizedImpulseGenerator ohlc
   , inputSignals :: Map sym (Timeseries ohlc)
   }
@@ -140,7 +141,7 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
 
 tradeStatistics ::
   ( StepFunction (StepTy stgy)
-  , PrintfArg ohlc) =>
+  , Pretty ohlc) =>
   StepTy stgy -> DeltaTradeList ohlc -> HtmlReader ()
 tradeStatistics stp dtl =
 
@@ -176,7 +177,6 @@ render ::
   , ToYield ohlc
   , Pretty ohlc
   , PlotValue ohlc
-  , PrintfArg ohlc
   , Line (Timeseries ohlc)
   , Line (Vec.Vector (UTCTime, ohlc))) =>
   Result stgy sym ohlc -> HtmlReader ()

@@ -103,7 +103,7 @@ instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult
 
 data BacktestInput = BacktestInput {
   initialEquity :: Equity
-  , barLength :: NominalDiffTime
+  , barLength :: BarLength
   , outOfSample :: Map Symbol (Timeseries Price)
   }
 
@@ -193,7 +193,7 @@ example = do
         Ana.title = "Long/Short - Winning/Losing"
         , Ana.impulseGenerator = gen
         , Ana.optimizationInput = OptimizationInput [(A, ticker)]
-        , Ana.backtestInput = BacktestInput equity (barLength2diffTime barLen) (Map.fromList [(A, ticker)])
+        , Ana.backtestInput = BacktestInput equity barLen (Map.fromList [(A, ticker)])
         }
 
       repA = Ana.analyze (analysis gen_5_10)
