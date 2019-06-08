@@ -58,7 +58,6 @@ instance Semigroup (LogYield a) where
 
 instance (Pretty a) => Pretty (LogYield a) where
   pretty (LogYield dt a) =
-   -- Text.unpack (format (fromString "log y = " % fixed 8 % fromString " / " % diff False) a dt)
     Text.unpack (format (fromString "log y = " % fixed 8 % fromString " / ") a) ++ pretty dt
 
 
