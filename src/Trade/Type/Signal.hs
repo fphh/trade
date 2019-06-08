@@ -48,6 +48,8 @@ split q (Signal vs) =
       (i, o) = Vec.splitAt n vs
   in Sample (Signal i) (Signal o)
 
+values :: Signal t x -> Vector x
+values (Signal xs) = Vec.map snd xs
 
 map :: ((p, q) -> (r, s)) -> Signal p q -> Signal r s
 map f (Signal xs) = Signal (Vec.map f xs)

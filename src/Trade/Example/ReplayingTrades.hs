@@ -78,6 +78,8 @@ import Trade.Report.Pretty (Pretty)
 import Trade.MonteCarlo.ResampleTrades.Broom (MCConfig(..), mc, MCCount(..))
 import Trade.MonteCarlo.Simulation.BlackScholes (Mu(..), Sigma(..), blackScholesDet)
 
+import Trade.Statistics.Algorithm (Statistics)
+
 import qualified Trade.Test.Time as T
 
 import qualified Trade.Timeseries.Binance.Binance as Bin
@@ -190,10 +192,12 @@ instance ( ToDelta ohlc
     in BacktestResult (Experiment.conduct expmnt)
 
 instance (Show sym
-         , E.PlotValue ohlc
          , StepFunction (StepTy stgy)
+         , E.PlotValue ohlc
          , Pretty ohlc
          , Eq ohlc
+         , Floating ohlc
+         , Statistics ohlc
          , ToYield ohlc
          , Line (Timeseries ohlc)
          , Line (Vec.Vector (UTCTime, ohlc))) =>
@@ -215,7 +219,8 @@ instance OD.OHLCData (BacktestInput stgy sym ohlc) where
 --------------------------------------------------------
 
 barLen :: BarLength
-barLen = Min 15
+-- barLen = Min 15
+barLen = Day 1
 
 
 getSymbol :: Bin.Symbol -> IO (UTCTime, Timeseries Price)

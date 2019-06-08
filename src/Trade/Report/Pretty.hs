@@ -11,7 +11,7 @@ import Data.Time.Clock (UTCTime, NominalDiffTime)
 import qualified Data.Text.Lazy as Text
 import Data.Text.Lazy (Text)
 
-import Formatting (Format, (%), format, mapf, fixed, int)
+import Formatting (Format, Buildable, (%), format, build, mapf, fixed, int)
 import Formatting.Time (datetime, diff, days, minutes, hours, years, decimals, seconds)
 
 import Data.String (fromString)
@@ -58,4 +58,11 @@ instance Pretty Int where
   
 instance Pretty Double where
   pretty = Text.unpack . format (fixed 6)  
+
+instance Pretty Bool where
+  pretty = show
  
+
+instance Pretty a => Pretty (Maybe a) where
+  pretty (Just x) = pretty x
+  pretty Nothing = "n/a"

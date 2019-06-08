@@ -11,7 +11,7 @@ import Trade.Report.Pretty (Pretty, pretty, formatf)
 
 newtype Equity = Equity {
   unEquity :: Double
-  } deriving (Show, Read, Eq, Ord, Num, E.PlotValue)
+  } deriving (Show, Read, Eq, Ord, Num, Fractional, Floating, E.PlotValue)
 
 
 instance Pretty Equity where

@@ -2,17 +2,26 @@
 
 module Trade.Statistics.SampleStatistics where
 
-import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime)
+import qualified Data.Vector as Vec
+
+import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime, addUTCTime)
 
 import Trade.Type.BarLength (BarLength, Bars(..), barLength2diffTime)
-import Trade.Type.Signal (Timeseries)
+import Trade.Type.Percent (Percent(..))
+import Trade.Type.Signal (Timeseries, Signal(..))
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Yield (LogYield(..), ToYield, toYield, logYield2yield, yieldPerBar)
 
 
+import qualified Trade.Statistics.Algorithm as Stats
+import Trade.Statistics.Algorithm (Statistics)
+
 import Trade.Report.Pretty (Pretty, pretty)
 import qualified Trade.Report.Table as Table
 import Trade.Report.ToReport (ToReport, toReport)
+
+
+import Debug.Trace
 
 
 data SampleStatistics ohlc = SampleStatistics {
@@ -23,19 +32,32 @@ data SampleStatistics ohlc = SampleStatistics {
   , timeSpan :: NominalDiffTime
   , yield :: LogYield ohlc
   , yldPerBar :: LogYield ohlc
+  , vola30 :: Maybe Percent
+  , vola90 :: Maybe Percent
+  , vola250 :: Maybe Percent
+  , barsAvailable :: Percent
+  , isInSync :: Bool
   }
 
-
 sampleStatistics ::
-  (ToYield ohlc) =>
+  (ToYield ohlc, Fractional ohlc, Floating ohlc, Statistics ohlc) =>
   BarLength -> Timeseries ohlc -> SampleStatistics ohlc
 sampleStatistics barLen xs =
   let ie@(t0, y0) = Signal.head xs
       fe@(tn, yn) = Signal.last xs
+      ts = (tn `diffUTCTime` t0) + barLength2diffTime barLen
+      bars = ts / barLength2diffTime barLen
+      sigLen = Bars (round bars)
       yld = toYield ts yn y0
-      sigLen@(Bars bs) = Bars (Signal.length xs)
-      ts = barLength2diffTime barLen * realToFrac bs
       ypb = yieldPerBar sigLen yld
+
+      vs = Signal.values xs
+      vlen = Vec.length vs
+      vola n =
+        case vlen > n of
+          True -> Just (Stats.volatility (Vec.slice (vlen - (n+1)) (n+1) vs))
+          False -> Nothing
+
   in SampleStatistics {
     barLength = barLen
     , sampleLength = sigLen
@@ -44,6 +66,11 @@ sampleStatistics barLen xs =
     , timeSpan = ts
     , yield = yld
     , yldPerBar = ypb
+    , vola30 = vola 30
+    , vola90 = vola 90
+    , vola250 = vola 250
+    , barsAvailable = Percent (fromIntegral (Signal.length xs) / fromIntegral (unBars sigLen))
+    , isInSync = bars == fromIntegral (round bars)
     }
 
 sampleStatistics2table ::
@@ -57,7 +84,16 @@ sampleStatistics2table ss =
      , [ "Yield", "", pretty (logYield2yield (yield ss)) ]
      , [ "Yield per bar", "", pretty (logYield2yield (yldPerBar ss)) ]
      , [ "Sample length", pretty (sampleLength ss) ]
-     , [ "Bar Length", pretty (barLength ss) ] ]
+     , [ "Bar Length", pretty (barLength ss) ]
+     , []
+     , [ "Log. volatility 30 bars", pretty (vola30 ss) ]
+     , [ "Log. volatility  90 bars", pretty (vola90 ss) ]
+     , [ "Log. volatility  250 bars", pretty (vola250 ss) ]
+
+     , []
+     , [ "Signal Quality" ]
+     , [ "Bars available in time span", pretty (barsAvailable ss) ]
+     , [ "Time span / bar length is integer", pretty (isInSync ss) ] ]
 
 
 

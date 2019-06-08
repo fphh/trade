@@ -104,6 +104,7 @@ library
                         Trade.Type.NestedMap
                         Trade.Type.NonEmptyList
                         Trade.Type.OHLC
+                        Trade.Type.Percent
                         Trade.Type.Position
                         Trade.Type.Price
                         Trade.Type.Scale

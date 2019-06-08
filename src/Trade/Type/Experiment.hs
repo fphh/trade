@@ -66,6 +66,7 @@ import qualified Trade.Report.SparkLine as Spark
 import qualified Trade.Statistics.SampleStatistics as SS
 import qualified Trade.Statistics.TradeStatistics as TS
 import qualified Trade.Statistics.YieldStatistics as YS
+import Trade.Statistics.Algorithm (Statistics)
 
 import Trade.Report.ToReport (toReport)
 
@@ -188,6 +189,8 @@ render ::
   forall stgy ohlc sym.
   ( Show sym
   , StepFunction (StepTy stgy)
+  , Floating ohlc
+  , Statistics ohlc
   , ToYield ohlc
   , Pretty ohlc
   , PlotValue ohlc
@@ -205,7 +208,7 @@ render (Result inp out) = do
   subsubheader "Strategy"
   Chart.strategy (impulseSignals out) (alignedSignals out) (outputSignal out)
 
-  let f :: (ToYield x, Pretty x) => sym -> Timeseries x -> HtmlReader () -> HtmlReader ()
+  let f :: (ToYield x, Pretty x, Floating x, Statistics x) => sym -> Timeseries x -> HtmlReader () -> HtmlReader ()
       f sym sig acc = do
         acc        
         text ("Symbol " ++ show sym)
