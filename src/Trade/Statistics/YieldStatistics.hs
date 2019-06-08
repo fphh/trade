@@ -59,9 +59,9 @@ yieldStatistics ys = Just $
 
 yieldStatistics2table ::
   (Pretty ohlc) =>
-  Maybe (YieldStatistics ohlc) -> [[String]]
-yieldStatistics2table Nothing = [["", "", "n/a"]]
-yieldStatistics2table (Just ys) =
+  YieldStatistics ohlc -> [[String]]
+-- yieldStatistics2table Nothing = [["", "", "n/a"]]
+yieldStatistics2table ys =
   [ "No. of trades" : [pretty (count ys)]
   , []
   , [ "", "Yield", "Duration" ]
@@ -81,7 +81,7 @@ yieldStatistics2table (Just ys) =
   -}
   ]
 
-instance (Pretty ohlc) => ToReport (Maybe (YieldStatistics ohlc)) where
+instance (Pretty ohlc) => ToReport (YieldStatistics ohlc) where
   toReport = Table.table . yieldStatistics2table
 
 toYieldStatistics ::

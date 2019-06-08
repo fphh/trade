@@ -15,7 +15,7 @@ import Formatting.Time (datetime, diff, days, minutes, hours, years, decimals)
 
 import Data.Time.Clock (NominalDiffTime)
 
-import Trade.Type.BarLength (BarLength, barLength2diffTime)
+import Trade.Type.BarLength (Bars(..))
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.Price (Price(..))
 
@@ -67,7 +67,7 @@ instance (Pretty a) => Pretty (Yield a) where
     Text.unpack (format (fromString "y = " % fixed 8 % fromString " / ") a) ++ pretty dt
 
 
-yieldPerBar :: BarLength -> LogYield a -> LogYield a
-yieldPerBar bl (LogYield dt y) =
-  let i = dt / barLength2diffTime bl
-  in LogYield i (y / realToFrac i)
+yieldPerBar :: Bars -> LogYield a -> LogYield a
+yieldPerBar (Bars bs) (LogYield dt y) =
+  let i = dt / realToFrac bs
+  in LogYield i (y / fromIntegral bs)

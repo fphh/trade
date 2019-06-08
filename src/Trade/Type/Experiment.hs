@@ -170,6 +170,20 @@ lastEquity (Result _ out) =
   let xs:_ = Map.elems (outputSignal out)
   in snd (Signal.last xs)
 
+
+class ToParagraph a where
+  toParagraph :: String -> (sym -> a -> HtmlReader () -> HtmlReader ()) -> Map sym a ->  HtmlReader ()
+  toParagraph title f m =
+    let tt = do
+          subsubheader title
+          if (Map.size m == 0) then text "n/a" else return ()
+    in Map.foldrWithKey' f tt m
+
+instance ToParagraph (Timeseries x)
+instance ToParagraph (DeltaTradeList x)
+
+
+
 render ::
   forall stgy ohlc sym.
   ( Show sym
@@ -191,27 +205,19 @@ render (Result inp out) = do
   subsubheader "Strategy"
   Chart.strategy (impulseSignals out) (alignedSignals out) (outputSignal out)
 
-  subsubheader "Summary"
-
-  --why do we need the signature ???
   let f :: (ToYield x, Pretty x) => sym -> Timeseries x -> HtmlReader () -> HtmlReader ()
       f sym sig acc = do
+        acc        
         text ("Symbol " ++ show sym)
         toReport (SS.sampleStatistics (barLength inp) sig)
-        acc
 
-  Map.foldrWithKey' f (return ()) (inputSignals inp)
-  Map.foldrWithKey' f (return ()) (outputSignal out)
-
-  subsubheader "Trade statistics"
-
-  -- mapM_ (text . show . snd) (unSignal (head (Map.elems (outputSignal out))))
+  toParagraph "Summary Input Signals" f (inputSignals inp)
+  toParagraph "Summary Output Signals" f (outputSignal out)
 
   let g sym sig acc = do
-        text ("Symbole " ++ show sym)
-        tradeStatistics (step inp) sig
         acc
+        text ("Symbol " ++ show sym)
+        tradeStatistics (step inp) sig
 
-  Map.foldrWithKey' g (return ()) (deltaTradeList out)
-
+  toParagraph "Trade statistics" g (deltaTradeList out)
 

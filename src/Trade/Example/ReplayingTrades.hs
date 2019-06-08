@@ -215,7 +215,7 @@ instance OD.OHLCData (BacktestInput stgy sym ohlc) where
 --------------------------------------------------------
 
 barLen :: BarLength
-barLen = Min 5
+barLen = Min 15
 
 
 getSymbol :: Bin.Symbol -> IO (UTCTime, Timeseries Price)

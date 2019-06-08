@@ -91,10 +91,6 @@ data OptimizationResult = OptimizationResult
 instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
   
   toReport (ARep.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
-    text "Optimally buying and selling. Not possible in reality :( ..."
-    
-    subheader "Optimization Input"
-    Chart.lines (Style.axTitle "Symbol" "Time" :: Style.AxisConfig UTCTime Price) [line "Price" ps]
     
     subheader "Optimization Result"
     text "No optimization has been done."

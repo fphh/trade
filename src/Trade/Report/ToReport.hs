@@ -7,9 +7,10 @@ module Trade.Report.ToReport where
 
 import Control.Monad.Reader (ReaderT(..))
 
-import Text.Blaze.Html5 (Html)
+import Text.Blaze.Html5 (Html, p, toHtml)
 
 import Trade.Report.Config (HtmlReader)
+
 
 import Data.Monoid (mempty)
 
@@ -21,10 +22,10 @@ class ToReport a where
 instance ToReport () where
   toReport _ = ReaderT (const mempty)
 
-{-
+
 instance (ToReport a) => ToReport (Maybe a) where
-  toReport = maybe (toReport ()) toReport
--}
+  toReport = maybe (toReport (p (toHtml "n/a"))) toReport
+
 
 instance (ToReport a) => ToReport [a] where
   toReport = fmap mconcat . mapM toReport

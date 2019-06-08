@@ -71,8 +71,9 @@ barLen :: BarLength
 barLen = Day 1
 
 ticker :: Signal UTCTime Price
-ticker = Signal (Vec.map (fmap Price) TD.test2)
+-- ticker = Signal (Vec.map (fmap Price) TD.test2)
 -- ticker = Signal (Vec.map (fmap Price) TD.sinus)
+ticker = Signal (Vec.map (fmap Price) TD.linear)
 
 --------------------------------------------------------
 

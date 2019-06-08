@@ -4,7 +4,7 @@ module Trade.Statistics.SampleStatistics where
 
 import Data.Time.Clock (UTCTime, NominalDiffTime, diffUTCTime)
 
-import Trade.Type.BarLength (BarLength)
+import Trade.Type.BarLength (BarLength, Bars(..), barLength2diffTime)
 import Trade.Type.Signal (Timeseries)
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Yield (LogYield(..), ToYield, toYield, logYield2yield, yieldPerBar)
@@ -16,7 +16,8 @@ import Trade.Report.ToReport (ToReport, toReport)
 
 
 data SampleStatistics ohlc = SampleStatistics {
-  sampleLength :: !Int
+  barLength :: BarLength
+  , sampleLength :: Bars
   , initialEquity :: (UTCTime, ohlc)
   , finalEquity :: (UTCTime, ohlc)
   , timeSpan :: NominalDiffTime
@@ -31,11 +32,13 @@ sampleStatistics ::
 sampleStatistics barLen xs =
   let ie@(t0, y0) = Signal.head xs
       fe@(tn, yn) = Signal.last xs
-      ts = tn `diffUTCTime` t0
       yld = toYield ts yn y0
-      ypb = yieldPerBar barLen yld
+      sigLen@(Bars bs) = Bars (Signal.length xs)
+      ts = barLength2diffTime barLen * realToFrac bs
+      ypb = yieldPerBar sigLen yld
   in SampleStatistics {
-    sampleLength = Signal.length xs
+    barLength = barLen
+    , sampleLength = sigLen
     , initialEquity = ie
     , finalEquity = fe
     , timeSpan = ts
@@ -53,7 +56,8 @@ sampleStatistics2table ss =
      , [ "Time span", pretty (timeSpan ss) ]
      , [ "Yield", "", pretty (logYield2yield (yield ss)) ]
      , [ "Yield per bar", "", pretty (logYield2yield (yldPerBar ss)) ]
-     , [ "Sample length", pretty (sampleLength ss) ] ]
+     , [ "Sample length", pretty (sampleLength ss) ]
+     , [ "Bar Length", pretty (barLength ss) ] ]
 
 
 
