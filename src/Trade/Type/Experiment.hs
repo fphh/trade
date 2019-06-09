@@ -37,6 +37,10 @@ import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 
 import qualified Trade.Type.NestedMap as NestedMap
+import Trade.Type.NestedMap (NestedMap(..))
+
+import Trade.Type.Position (Position(..))
+import Trade.Type.WinningLosing (WinningLosing(..))
 
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal (Timeseries)
@@ -66,6 +70,7 @@ import qualified Trade.Report.SparkLine as Spark
 import qualified Trade.Statistics.SampleStatistics as SS
 import qualified Trade.Statistics.TradeStatistics as TS
 import qualified Trade.Statistics.YieldStatistics as YS
+import qualified Trade.Statistics.Summary as Sum
 import Trade.Statistics.Algorithm (Statistics)
 
 import Trade.Report.ToReport (toReport)
@@ -144,9 +149,9 @@ tradeStatistics ::
   ( StepFunction (StepTy stgy)
   , Pretty ohlc) =>
   StepTy stgy -> DeltaTradeList ohlc -> HtmlReader ()
-tradeStatistics stp dtl =
+tradeStatistics stp dtl = do
 
-  let sts = DSA.sortDeltaSignals dtl
+  let sts@(NestedMap nmsts) = DSA.sortDeltaSignals dtl
       sparks = Spark.toSparkLine stp sts
       ystats = YS.toYieldStatistics sts
       tstats = TS.toTradeStatistics sts
@@ -162,8 +167,16 @@ tradeStatistics stp dtl =
         let sty = H5A.style (H5.stringValue "clear:both;margin:18px;padding-top:24px;color:#006600")
             header = toReport ((H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl))))
         in [header, table]
-        
-  in sequence_ (NestedMap.fold g zs)
+
+  
+  
+  subsubheader "Summary"
+  
+  toReport $ Sum.toSummary
+    (Map.lookup Invested nmsts >>= Map.lookup Winning)
+    (Map.lookup Invested nmsts >>= Map.lookup Losing)
+  
+  sequence_ (NestedMap.fold g zs)
 
 
 lastEquity :: Result stgy sym ohlc -> Equity
@@ -207,6 +220,11 @@ render (Result inp out) = do
 
   subsubheader "Strategy"
   Chart.strategy (impulseSignals out) (alignedSignals out) (outputSignal out)
+
+  -- subsubheader "Summary"
+
+  -- toReport (Sum.summary undefined undefined)
+  -- toSummary (deltaTradeList out >>= )
 
   let f :: (ToYield x, Pretty x, Floating x, Statistics x) => sym -> Timeseries x -> HtmlReader () -> HtmlReader ()
       f sym sig acc = do

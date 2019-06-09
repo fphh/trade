@@ -57,7 +57,7 @@ instance Pretty Int where
   pretty = Text.unpack . format int
   
 instance Pretty Double where
-  pretty = Text.unpack . format (fixed 6)  
+  pretty = Text.unpack . format (fixed 12)  
 
 instance Pretty Bool where
   pretty = show

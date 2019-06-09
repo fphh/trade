@@ -8,7 +8,7 @@ module Trade.Example.ReplayingTrades where
 
 import Control.Applicative (liftA2)
 
-import Data.Time.Clock (UTCTime(..), NominalDiffTime, getCurrentTime, addUTCTime)
+import Data.Time.Clock (UTCTime(..), NominalDiffTime, getCurrentTime, addUTCTime, diffUTCTime)
 import Data.Time.Calendar (fromGregorian)
 
 import qualified Data.List as List
@@ -219,8 +219,8 @@ instance OD.OHLCData (BacktestInput stgy sym ohlc) where
 --------------------------------------------------------
 
 barLen :: BarLength
--- barLen = Min 15
-barLen = Day 1
+barLen = Min 15
+-- barLen = Min 1
 
 
 getSymbol :: Bin.Symbol -> IO (UTCTime, Timeseries Price)
@@ -232,7 +232,7 @@ getSymbol sym = do
         Bin.baseUrl = Bin.binanceBaseUrl
         , Bin.symbol = sym
         , Bin.interval = Bin.Interval barLen
-        , Bin.limit = Just 1000
+        , Bin.limit = Just 2000
         , Bin.from = Nothing
         , Bin.to = Just now -- ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
         }
@@ -258,7 +258,7 @@ blackScholes = do
 --  blackScholesDet seed (T.yearsN 4) start mu sigma
   fmap (\x -> (mcBegin, x)) (blackScholesDet seed vs start mu sigma)
 -}
-  
+
 
 example :: IO ()
 example = do
@@ -266,7 +266,6 @@ example = do
   let sym = Bin.USDT Bin.BTCUSDT
   (mcBegin, sample) <- getSymbol sym
   -- (mcBegin, sample) <- blackScholes
-
 
   let Signal.Sample inSamp outOfSamp = Signal.split 0.75 sample
   

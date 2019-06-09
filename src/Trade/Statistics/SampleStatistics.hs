@@ -30,13 +30,13 @@ data SampleStatistics ohlc = SampleStatistics {
   , initialEquity :: (UTCTime, ohlc)
   , finalEquity :: (UTCTime, ohlc)
   , timeSpan :: NominalDiffTime
+  , barsByTimeSpan :: Bars
   , yield :: LogYield ohlc
   , yldPerBar :: LogYield ohlc
   , vola30 :: Maybe Percent
   , vola90 :: Maybe Percent
   , vola250 :: Maybe Percent
-  , barsAvailable :: Percent
-  , isInSync :: Bool
+  , timeCoveredByBars :: Percent
   }
 
 sampleStatistics ::
@@ -45,11 +45,13 @@ sampleStatistics ::
 sampleStatistics barLen xs =
   let ie@(t0, y0) = Signal.head xs
       fe@(tn, yn) = Signal.last xs
-      ts = (tn `diffUTCTime` t0) + barLength2diffTime barLen
-      bars = ts / barLength2diffTime barLen
-      sigLen = Bars (round bars)
-      yld = toYield ts yn y0
-      ypb = yieldPerBar sigLen yld
+      
+      timeSpan = (tn `diffUTCTime` t0) + barLength2diffTime barLen
+      barsByTimeSpan = Bars (floor (timeSpan / barLength2diffTime barLen))
+      yld = toYield timeSpan yn y0
+      ypb = yieldPerBar barsByTimeSpan yld
+
+      sampLen = Bars (Signal.length xs)
 
       vs = Signal.values xs
       vlen = Vec.length vs
@@ -58,19 +60,22 @@ sampleStatistics barLen xs =
           True -> Just (Stats.volatility (Vec.slice (vlen - (n+1)) (n+1) vs))
           False -> Nothing
 
+      tcb = (\(Bars sl) (Bars ts) -> fromIntegral sl / fromIntegral ts) sampLen barsByTimeSpan
+
+
   in SampleStatistics {
     barLength = barLen
-    , sampleLength = sigLen
     , initialEquity = ie
     , finalEquity = fe
-    , timeSpan = ts
+    , timeSpan = timeSpan
+    , barsByTimeSpan = barsByTimeSpan
+    , sampleLength = sampLen
     , yield = yld
     , yldPerBar = ypb
     , vola30 = vola 30
     , vola90 = vola 90
     , vola250 = vola 250
-    , barsAvailable = Percent (fromIntegral (Signal.length xs) / fromIntegral (unBars sigLen))
-    , isInSync = bars == fromIntegral (round bars)
+    , timeCoveredByBars = Percent tcb
     }
 
 sampleStatistics2table ::
@@ -81,19 +86,18 @@ sampleStatistics2table ss =
   in [ "Initial" : format (initialEquity ss)
      , "Final" : format (finalEquity ss)
      , [ "Time span", pretty (timeSpan ss) ]
+     , [ "Bars by time span", pretty (barsByTimeSpan ss) ]
+     , [ "Sample length", pretty (sampleLength ss) ]
+     , [ "Bar length", pretty (barLength ss) ]
      , [ "Yield", "", pretty (logYield2yield (yield ss)) ]
      , [ "Yield per bar", "", pretty (logYield2yield (yldPerBar ss)) ]
-     , [ "Sample length", pretty (sampleLength ss) ]
-     , [ "Bar Length", pretty (barLength ss) ]
      , []
-     , [ "Log. volatility 30 bars", pretty (vola30 ss) ]
+     , [ "Log. volatility  30 bars", pretty (vola30 ss) ]
      , [ "Log. volatility  90 bars", pretty (vola90 ss) ]
-     , [ "Log. volatility  250 bars", pretty (vola250 ss) ]
-
+     , [ "Log. volatility 250 bars", pretty (vola250 ss) ]
      , []
      , [ "Signal Quality" ]
-     , [ "Bars available in time span", pretty (barsAvailable ss) ]
-     , [ "Time span / bar length is integer", pretty (isInSync ss) ] ]
+     , [ "Time covered by bars", pretty (timeCoveredByBars ss) ] ]
 
 
 

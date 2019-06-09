@@ -17,7 +17,7 @@ data Statistics t ohlc = Statistics {
 
 
 formatStat :: (Pretty t, Pretty ohlc) => Statistics t ohlc -> [String]
-formatStat (Statistics x y) = [ pretty x, pretty y]
+formatStat (Statistics t y) = [ pretty y, pretty t]
 
 formatYield :: Yield ohlc -> [String]
 formatYield (Yield dt y) = [ pretty y, pretty dt ]

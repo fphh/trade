@@ -82,6 +82,7 @@ library
                         Trade.Statistics.Algorithm
                         Trade.Statistics.SampleStatistics
                         Trade.Statistics.Statistics
+                        Trade.Statistics.Summary
                         Trade.Statistics.TradeStatistics
                         Trade.Statistics.YieldStatistics
                         Trade.Type.Add
