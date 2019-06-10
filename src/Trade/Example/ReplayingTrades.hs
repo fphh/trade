@@ -149,8 +149,6 @@ instance ( Show sym
   toReport (ARep.OptimizationData optInp (OptimizationResult res {- brm -} lastEqty)) = do
     let nOfSamp = 20
     
-    subheader "Optimization Input"
-
     Experiment.render res
 
     subsubheader "Table of last equities"

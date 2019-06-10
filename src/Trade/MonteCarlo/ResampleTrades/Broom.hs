@@ -50,7 +50,7 @@ randomDelta is nis (r:rs) =
 
 
 deltaBroom :: Experiment.Output stgy sym ohlc -> Broom (IO [DeltaSignal ohlc])
-deltaBroom (Experiment.Output _ _ ds _) =
+deltaBroom (Experiment.Output _ _ ds _ _ _) =
   let (_, DeltaTradeList dtl):_ = Map.toList ds
       f x@(DeltaSignal _ pos _) (us, vs) =
         case pos of

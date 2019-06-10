@@ -58,7 +58,9 @@ summary winners losers =
 
 summary2table :: Summary -> [[String]]
 summary2table ys =
-  [ [ "Total trades", pretty (totalTrades ys) ]
+  [ [ "Summary" ]
+  , []
+  , [ "Total trades", pretty (totalTrades ys) ]
   , [ "Profit factor", pretty (profitFactor ys) ]
   , [ "Avg. profit", pretty (avgProfit ys) ]
   , [ "StdDev. profit", pretty (stdDevProfit ys) ]

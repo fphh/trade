@@ -6,6 +6,7 @@
 
 module Trade.Type.Experiment where
 
+import Control.Applicative (liftA2)
 
 import Control.Monad.State (State)
 
@@ -26,7 +27,10 @@ import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 
 import Trade.Type.BarLength (BarLength)
 import Trade.Type.Delta (ToDelta)
+
+import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
+import Trade.Type.DeltaSignal (DeltaSignal)
 
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 
@@ -71,6 +75,7 @@ import qualified Trade.Statistics.SampleStatistics as SS
 import qualified Trade.Statistics.TradeStatistics as TS
 import qualified Trade.Statistics.YieldStatistics as YS
 import qualified Trade.Statistics.Summary as Sum
+import Trade.Statistics.Summary (Summary)
 import Trade.Statistics.Algorithm (Statistics)
 
 import Trade.Report.ToReport (toReport)
@@ -95,6 +100,8 @@ data Output stgy sym ohlc = Output {
   , alignedSignals :: AlignedSignals sym ohlc
   , deltaTradeList :: Map sym (DeltaTradeList ohlc)
   , outputSignal :: Map sym (Timeseries Equity)
+  , sortedTrades :: Map sym (NestedMap Position WinningLosing [DeltaSignal ohlc])
+  , summary :: Map sym (Maybe Summary)
   }
 
 
@@ -130,12 +137,22 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
 
       timeLine = alignedTimes asigs
 
+      sortedTrades = fmap DSA.sortDeltaSignals dts
+
+      sumry = flip fmap sortedTrades $ \(NestedMap nm) ->
+        liftA2 Sum.summary
+        (fmap (map DSA.yield) ((Map.lookup Invested nm >>= Map.lookup Winning)))
+        (fmap (map DSA.yield) (Map.lookup Invested nm >>= Map.lookup Losing))
+
+
       out = Output {
         impulseSignals = impSigs
         , alignedSignals = asigs
         , deltaTradeList = dts
         , outputSignal = fmap (Signal.adjust eqty timeLine . concatDeltaSignals stp eqty) dts
-        -- , outputSignal = Signal.adjust eqty timeLine (concatDeltaSignals stp eqty dts)
+        , sortedTrades = sortedTrades
+        , summary = sumry
+
         }
       
   in Result {
@@ -148,10 +165,10 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
 tradeStatistics ::
   ( StepFunction (StepTy stgy)
   , Pretty ohlc) =>
-  StepTy stgy -> DeltaTradeList ohlc -> HtmlReader ()
-tradeStatistics stp dtl = do
+  StepTy stgy -> NestedMap Position WinningLosing [DeltaSignal ohlc] -> HtmlReader ()
+tradeStatistics stp sts = do
 
-  let sts@(NestedMap nmsts) = DSA.sortDeltaSignals dtl
+  let -- sts@(NestedMap nmsts) = DSA.sortDeltaSignals dtl
       sparks = Spark.toSparkLine stp sts
       ystats = YS.toYieldStatistics sts
       tstats = TS.toTradeStatistics sts
@@ -167,14 +184,6 @@ tradeStatistics stp dtl = do
         let sty = H5A.style (H5.stringValue "clear:both;margin:18px;padding-top:24px;color:#006600")
             header = toReport ((H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl))))
         in [header, table]
-
-  
-  
-  subsubheader "Summary"
-  
-  toReport $ Sum.toSummary
-    (Map.lookup Invested nmsts >>= Map.lookup Winning)
-    (Map.lookup Invested nmsts >>= Map.lookup Losing)
   
   sequence_ (NestedMap.fold g zs)
 
@@ -235,10 +244,20 @@ render (Result inp out) = do
   toParagraph "Summary Input Signals" f (inputSignals inp)
   toParagraph "Summary Output Signals" f (outputSignal out)
 
+
+{-
   let g sym sig acc = do
         acc
         text ("Symbol " ++ show sym)
-        tradeStatistics (step inp) sig
+        
+        let sts@(NestedMap nmsts) = DSA.sortDeltaSignals sig
+      
+        toReport $ Sum.toSummary
+          (Map.lookup Invested nmsts >>= Map.lookup Winning)
+          (Map.lookup Invested nmsts >>= Map.lookup Losing)
+  
+        tradeStatistics (step inp) sts
+-}
 
-  toParagraph "Trade statistics" g (deltaTradeList out)
+  toParagraph "Trade statistics" g (sortedTrades out)
 
