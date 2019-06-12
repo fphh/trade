@@ -145,7 +145,7 @@ instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   toReport (ARep.BacktestData (BacktestInput inEq _ ps) (BacktestResult resLW resSW)) = do
 
     header "Backtest Result, Long"
-    Experiment.render resLW
+    Experiment.render (const (return ())) resLW
 
 --    header "Backtest Result, Short"
 --    Experiment.render resSW

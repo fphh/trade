@@ -4,6 +4,8 @@ module Trade.Statistics.Summary where
 
 import Control.Applicative (liftA2)
 
+import qualified Data.Map as Map
+
 import qualified Data.Vector as Vec
 
 import qualified Statistics.Sample as Sample
@@ -11,9 +13,14 @@ import qualified Statistics.Sample as Sample
 import qualified Trade.Type.DeltaSignal.Algorithm as DSA
 import Trade.Type.DeltaSignal (DeltaSignal(..))
 
+import Trade.Type.NestedMap (NestedMap(..))
+
+import Trade.Type.Position (Position(..))
+import Trade.Type.WinningLosing (WinningLosing(..))
+
 import Trade.Type.Yield (LogYield(..))
 
-import Trade.Report.Pretty (Pretty, pretty)
+import Trade.Report.Pretty (pretty)
 import qualified Trade.Report.Table as Table
 import Trade.Report.ToReport (ToReport, toReport)
 
@@ -35,11 +42,11 @@ data Summary = Summary {
 
 
 summary :: [LogYield ohlc] -> [LogYield ohlc] -> Summary
-summary winners losers =
-  let ws = Vec.fromList (map logYield winners)
-      ls = Vec.fromList (map logYield losers)
+summary wins losses =
+  let ws = Vec.fromList (map logYield wins)
+      ls = Vec.fromList (map logYield losses)
   in Summary {
-    totalTrades = length winners + length losers
+    totalTrades = length wins + length losses
     , profitFactor = exp (sum ws) / exp (sum ls)
     , avgProfit = exp (Sample.mean (Vec.concat [ws, ls]))
     , stdDevProfit = exp (Sample.stdDev ws)
@@ -84,8 +91,9 @@ instance ToReport Summary where
 
 
 toSummary ::
-  (Applicative f) =>
-  f [DeltaSignal ohlc] -> f [DeltaSignal ohlc] -> f Summary
-toSummary xs ys = liftA2 summary (fmap (map DSA.yield) xs) (fmap (map DSA.yield) ys)
-
-
+  NestedMap Position WinningLosing [DeltaSignal ohlc] -> Maybe Summary
+toSummary (NestedMap m) =
+  let nm = fmap (fmap (map DSA.yield)) m
+      win = Map.lookup Invested nm >>= Map.lookup Winning
+      lose = Map.lookup Invested nm >>= Map.lookup Losing
+  in liftA2 summary win lose

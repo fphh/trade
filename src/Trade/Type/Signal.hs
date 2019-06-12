@@ -36,18 +36,6 @@ instance Functor (Signal t) where
 type Timeseries = Signal UTCTime
 type DeltaTimeseries = Signal NominalDiffTime
 
-data Sample t x = Sample {
-  inSample :: Signal t x
-  , outOfSample :: Signal t x
-  } deriving (Show, Read)
-
-split :: Double -> Signal t x -> Sample t x
-split q _ | q < 0 || q > 1 = error "Trade.Type.Signal.Price.split: q should be between 0 and 1"
-split q (Signal vs) =
-  let n = floor (q * fromIntegral (Vec.length vs))
-      (i, o) = Vec.splitAt n vs
-  in Sample (Signal i) (Signal o)
-
 values :: Signal t x -> Vector x
 values (Signal xs) = Vec.map snd xs
 
@@ -92,9 +80,6 @@ length (Signal xs) = Vec.length xs
 
 empty :: Signal t x
 empty = Signal (Vec.empty)
-
-emptySample :: Sample t x
-emptySample = Sample mempty mempty
 
 
 singleton :: (t, x) -> Signal t x

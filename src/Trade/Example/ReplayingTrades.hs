@@ -39,6 +39,8 @@ import qualified Trade.Type.ImpulseGenerator as IG
 import Trade.Type.NonEmptyList (NonEmptyList(..))
 import Trade.Type.OHLC (Close(..))
 import Trade.Type.Price (Price(..))
+import Trade.Type.Sample (Sample(..))
+import qualified Trade.Type.Sample as Sample
 import Trade.Type.Signal (Timeseries, Signal(..))
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Step (StepTy(LongStep, ShortStep), longFraction, shortFraction, longCommission, shortCommission, shortInterests)
@@ -65,7 +67,7 @@ import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.Backtest as BT
 
 
-import Trade.Report.Basic (subheader, subsubheader, text)
+import Trade.Report.Basic (header, subheader, subsubheader, text)
 import qualified Trade.Report.Heatmap as Heat
 import Trade.Report.HtmlReader (render)
 import qualified Trade.Report.Style as Style
@@ -105,8 +107,7 @@ data OptimizationInput stgy sym ohlc = OptimizationInput {
   
 data OptimizationResult sym stgy = OptimizationResult {
   result :: Experiment.Result stgy sym Price
-  -- , broom :: Broom (Signal t Equity)
-  , lastEquities :: Map (Window, Window) Equity
+  , lastEquities :: Map (Window, Window) (Map sym Equity)
   }
 
 
@@ -127,7 +128,7 @@ instance ( Ord sym
           let e = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (strat winSize) (optSample optInp)
           in Map.insert winSize (Experiment.conduct e) acc
 
-        p e0 e1 = compare (Experiment.lastEquity e1) (Experiment.lastEquity e0)
+        p e0 e1 = compare (Experiment.lastEquities e1) (Experiment.lastEquities e0)
 
         strats = List.foldr findBestWinSize Map.empty (igInput optInp)
 
@@ -137,34 +138,23 @@ instance ( Ord sym
         expmnt = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) optStrat (optSample optInp)
         res = Experiment.conduct expmnt
     
-    -- brm <- mc res (mcConfig optInp)
-
-    in (RankedStrategies sortedStarts, OptimizationResult res {- brm -} (fmap Experiment.lastEquity strats))
+    in (RankedStrategies sortedStarts, OptimizationResult res (fmap Experiment.lastEquities strats))
 
 
 instance ( Show sym
+         , Ord sym
          , StepFunction (StepTy stgy)) =>
   TR.ToReport (ARep.OptimizationData (OptimizationInput stgy sym Price) (OptimizationResult sym stgy)) where
 
-  toReport (ARep.OptimizationData optInp (OptimizationResult res {- brm -} lastEqty)) = do
-    let nOfSamp = 20
-    
-    Experiment.render res
+  toReport (ARep.OptimizationData optInp (OptimizationResult res lastEqties)) =
+    let addendum sym = do
+          let eqty = unEquity (optEquity optInp)
+              g (Window y, Window x) = (y, x)
+              ms = Map.mapKeys g (fmap (fmap unEquity . Map.lookup sym) lastEqties)
+          subsubheader "Heatmap"
+          Heat.heatmap eqty ms
+    in Experiment.render addendum res
 
-    subsubheader "Table of last equities"
-
-    Heat.heatmap
-      (unEquity (optEquity optInp))
-      (Map.mapKeys (\(Window y, Window x) -> (y, x)) (fmap unEquity lastEqty))
-
-    subsubheader "Generated Broom"
-    text ("Showing " ++ show nOfSamp ++ " Monte Carlo samples")
-
-    {-
-    Rep.chart
-      (Style.axTitle "Time" "Bars" {- :: Style.AxisConfig t Price -})
-      (Style.axTitle "Time" "Equity" {- :: Style.AxisConfig Equity t -}, broom2chart nOfSamp brm)
--}
 
 data BacktestInput stgy sym ohlc = BacktestInput {
   btEquity :: Equity
@@ -190,6 +180,7 @@ instance ( ToDelta ohlc
     in BacktestResult (Experiment.conduct expmnt)
 
 instance (Show sym
+         , Ord sym
          , StepFunction (StepTy stgy)
          , E.PlotValue ohlc
          , Pretty ohlc
@@ -202,8 +193,8 @@ instance (Show sym
   TR.ToReport (ARep.BacktestData (BacktestInput stgy sym ohlc) (BacktestResult stgy sym ohlc)) where
   
   toReport (ARep.BacktestData _ (BacktestResult res)) = do
-    subheader "Backtest"
-    Experiment.render res
+    header "Backtest"
+    Experiment.render (const (return ())) res
  
  --------------------------------------------------------
 
@@ -217,7 +208,7 @@ instance OD.OHLCData (BacktestInput stgy sym ohlc) where
 --------------------------------------------------------
 
 barLen :: BarLength
-barLen = Min 15
+barLen = Hour 1
 -- barLen = Min 1
 
 
@@ -230,7 +221,7 @@ getSymbol sym = do
         Bin.baseUrl = Bin.binanceBaseUrl
         , Bin.symbol = sym
         , Bin.interval = Bin.Interval barLen
-        , Bin.limit = Just 2000
+        , Bin.limit = Just 1000
         , Bin.from = Nothing
         , Bin.to = Just now -- ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
         }
@@ -262,10 +253,10 @@ example :: IO ()
 example = do
 
   let sym = Bin.USDT Bin.BTCUSDT
-  (mcBegin, sample) <- getSymbol sym
+  (mcBegin, timeseries) <- getSymbol sym
   -- (mcBegin, sample) <- blackScholes
 
-  let Signal.Sample inSamp outOfSamp = Signal.split 0.75 sample
+  let sample = Sample.split 0.75 timeseries
   
       f (j, k) = (Window j, Window k)
       wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
@@ -288,9 +279,12 @@ example = do
         , shortInterests = Interests (interests rtf 0.0)
         }
 
-  let analysis :: Ana.Analysis (OptimizationInput Long Bin.Symbol Price) (BacktestInput Long Bin.Symbol Price)
-      analysis = Ana.Analysis {
-        Ana.title = "Replaying Long Trades"
+  let analysis ::
+        Sample Price
+        -> Ana.Analysis (OptimizationInput Long Bin.Symbol Price) (BacktestInput Long Bin.Symbol Price)
+        
+      analysis (Sample inSamp outOfSamp) = Ana.Analysis {
+        Ana.title = "This is the strategy name"
         , Ana.impulseGenerator = IG.ImpulseGenerator (\(j, k) -> IG.OptimizedImpulseGenerator (movingAverages j k))
 
         , Ana.optimizationInput = OptimizationInput {
@@ -314,7 +308,7 @@ example = do
             }
         }
 
-      rep = Ana.analyze analysis
+      rep = Ana.analyze (analysis sample)
 
   t <- render rep
   

@@ -51,7 +51,6 @@ import Trade.Type.Signal (Timeseries)
 
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
--- import Trade.Type.Strategy (Long, Short)
 import Trade.Type.Trade (emptyTradeList)
 import Trade.Type.Yield (ToYield)
 
@@ -65,9 +64,8 @@ import qualified Trade.Strategy.Process as Strategy
 
 import Trade.Report.Line (Line(..))
 
---import qualified Trade.Report.Report as Rep
 
-import Trade.Report.Basic (subheader, subsubheader, text)
+import Trade.Report.Basic (header, subheader, subsubheader, text)
 import qualified Trade.Report.Chart as Chart
 import qualified Trade.Report.SparkLine as Spark
 
@@ -95,14 +93,19 @@ data Input stgy sym ohlc = Input {
   , inputSignals :: Map sym (Timeseries ohlc)
   }
 
-data Output stgy sym ohlc = Output {
-  impulseSignals :: Map sym (ImpulseSignal stgy)
-  , alignedSignals :: AlignedSignals sym ohlc
-  , deltaTradeList :: Map sym (DeltaTradeList ohlc)
-  , outputSignal :: Map sym (Timeseries Equity)
-  , sortedTrades :: Map sym (NestedMap Position WinningLosing [DeltaSignal ohlc])
-  , summary :: Map sym (Maybe Summary)
+data OutputPerSymbol stgy ohlc = OutputPerSymbol {
+  impulseSignals :: ImpulseSignal stgy
+  , deltaTradeList :: DeltaTradeList ohlc
+  , outputSignal :: Timeseries Equity
+  , sortedTrades :: NestedMap Position WinningLosing [DeltaSignal ohlc]
+  , summary :: Maybe Summary
   }
+
+data Output stgy sym ohlc = Output {
+  alignedSignals :: AlignedSignals sym ohlc
+  , outputPerSymbol :: Map sym (OutputPerSymbol stgy ohlc)
+  }
+
 
 
 data Result stgy sym ohlc = Result {
@@ -127,32 +130,26 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
       strategy :: State (Signals sym ohlc) (AlignedSignals sym ohlc, Map sym InvestSignal)
       strategy = impGen ps
       ((asigs, stgy), _) = Strategy.run strategy
-
-      impSigs :: Map sym (ImpulseSignal stgy)
-      impSigs = fmap invest2impulse stgy
-
-      f sym isig = maybe emptyTradeList (flip impulse2tradeList isig) (Map.lookup sym ps)
-      ts = Map.mapWithKey f impSigs
-      dts = fmap tradeList2DeltaTradeList ts
-
       timeLine = alignedTimes asigs
 
-      sortedTrades = fmap DSA.sortDeltaSignals dts
-
-      sumry = flip fmap sortedTrades $ \(NestedMap nm) ->
-        liftA2 Sum.summary
-        (fmap (map DSA.yield) ((Map.lookup Invested nm >>= Map.lookup Winning)))
-        (fmap (map DSA.yield) (Map.lookup Invested nm >>= Map.lookup Losing))
-
+      f sym isig =
+        let impSig = invest2impulse (stgy Map.! sym)
+            ts = impulse2tradeList isig impSig
+            dts = tradeList2DeltaTradeList ts
+            sds = DSA.sortDeltaSignals dts
+            sumry = Sum.toSummary sds
+            outSig = Signal.adjust eqty timeLine (concatDeltaSignals stp eqty dts)
+        in OutputPerSymbol {
+          impulseSignals = impSig
+          , deltaTradeList = dts
+          , outputSignal = outSig
+          , sortedTrades = sds
+          , summary = sumry
+          }
 
       out = Output {
-        impulseSignals = impSigs
-        , alignedSignals = asigs
-        , deltaTradeList = dts
-        , outputSignal = fmap (Signal.adjust eqty timeLine . concatDeltaSignals stp eqty) dts
-        , sortedTrades = sortedTrades
-        , summary = sumry
-
+        alignedSignals = asigs
+        , outputPerSymbol = Map.mapWithKey f (inputSignals inp)
         }
       
   in Result {
@@ -161,15 +158,13 @@ conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
     }
 
 
-
 tradeStatistics ::
   ( StepFunction (StepTy stgy)
   , Pretty ohlc) =>
   StepTy stgy -> NestedMap Position WinningLosing [DeltaSignal ohlc] -> HtmlReader ()
 tradeStatistics stp sts = do
 
-  let -- sts@(NestedMap nmsts) = DSA.sortDeltaSignals dtl
-      sparks = Spark.toSparkLine stp sts
+  let sparks = Spark.toSparkLine stp sts
       ystats = YS.toYieldStatistics sts
       tstats = TS.toTradeStatistics sts
 
@@ -188,28 +183,14 @@ tradeStatistics stp sts = do
   sequence_ (NestedMap.fold g zs)
 
 
-lastEquity :: Result stgy sym ohlc -> Equity
-lastEquity (Result _ out) =
-  let xs:_ = Map.elems (outputSignal out)
-  in snd (Signal.last xs)
-
-
-class ToParagraph a where
-  toParagraph :: String -> (sym -> a -> HtmlReader () -> HtmlReader ()) -> Map sym a ->  HtmlReader ()
-  toParagraph title f m =
-    let tt = do
-          subsubheader title
-          if (Map.size m == 0) then text "n/a" else return ()
-    in Map.foldrWithKey' f tt m
-
-instance ToParagraph (Timeseries x)
-instance ToParagraph (DeltaTradeList x)
-
+lastEquities :: Result stgy sym ohlc -> Map sym Equity
+lastEquities (Result _ out) = fmap (snd . Signal.last . outputSignal) (outputPerSymbol out)
 
 
 render ::
   forall stgy ohlc sym.
   ( Show sym
+  , Ord sym
   , StepFunction (StepTy stgy)
   , Floating ohlc
   , Statistics ohlc
@@ -218,46 +199,36 @@ render ::
   , PlotValue ohlc
   , Line (Timeseries ohlc)
   , Line (Vec.Vector (UTCTime, ohlc))) =>
-  Result stgy sym ohlc -> HtmlReader ()
+  (sym -> HtmlReader ()) -> Result stgy sym ohlc -> HtmlReader ()
 
-render (Result inp out) = do
+render addendum (Result inp out) = do
+
+  let ops = outputPerSymbol out
   
-  subheader "Experiment"
-
-  subsubheader "Original Signals"
+  subheader "Original Signals"
   Chart.input (inputSignals inp)
 
-  subsubheader "Strategy"
-  Chart.strategy (impulseSignals out) (alignedSignals out) (outputSignal out)
-
-  -- subsubheader "Summary"
-
-  -- toReport (Sum.summary undefined undefined)
-  -- toSummary (deltaTradeList out >>= )
-
-  let f :: (ToYield x, Pretty x, Floating x, Statistics x) => sym -> Timeseries x -> HtmlReader () -> HtmlReader ()
-      f sym sig acc = do
-        acc        
-        text ("Symbol " ++ show sym)
-        toReport (SS.sampleStatistics (barLength inp) sig)
-
-  toParagraph "Summary Input Signals" f (inputSignals inp)
-  toParagraph "Summary Output Signals" f (outputSignal out)
-
-
-{-
-  let g sym sig acc = do
-        acc
-        text ("Symbol " ++ show sym)
-        
-        let sts@(NestedMap nmsts) = DSA.sortDeltaSignals sig
-      
-        toReport $ Sum.toSummary
-          (Map.lookup Invested nmsts >>= Map.lookup Winning)
-          (Map.lookup Invested nmsts >>= Map.lookup Losing)
+  subheader "Strategy"
+  Chart.strategy (fmap impulseSignals ops) (alignedSignals out) (fmap outputSignal ops)
   
-        tradeStatistics (step inp) sts
--}
+  let f sym ops acc = do
+        acc
+        
+        subheader ("Symbol '" ++ show sym ++ "'")
 
-  toParagraph "Trade statistics" g (sortedTrades out)
+        subsubheader ("Input Signal")
+        toReport (SS.sampleStatistics (barLength inp) ((inputSignals inp) Map.! sym))
+        
+        subsubheader "Output Equity"
+        toReport (SS.sampleStatistics (barLength inp) (outputSignal ops))
 
+        subsubheader "Summary"
+        toReport (summary ops)
+  
+        subsubheader "Trade Statistics"
+        tradeStatistics (step inp) (sortedTrades ops)
+
+        addendum sym
+
+  Map.foldrWithKey' f (header "Analysis") ops
+  

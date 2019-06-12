@@ -108,6 +108,7 @@ library
                         Trade.Type.Percent
                         Trade.Type.Position
                         Trade.Type.Price
+                        Trade.Type.Sample
                         Trade.Type.Scale
                         Trade.Type.Signal
                         Trade.Type.Signal.Equity

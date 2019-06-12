@@ -34,6 +34,7 @@ import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal (Timeseries, Signal)
 
 
+{-
 
 randomDelta ::
   Vector (DeltaSignal ohlc) -> Vector (DeltaSignal ohlc) -> [Int] -> [DeltaSignal ohlc]
@@ -63,13 +64,14 @@ deltaBroom (Experiment.Output _ _ ds _ _ _) =
       g = newStdGen >>= return . randomDelta is nis . randoms
   in Broom (repeat g)
 
-
+-}
 
 newtype MCCount = MCCount {
   unMCCount :: Int
   } deriving (Show)
 
 
+{-
 
 boundaries ::
   UTCTime -> NominalDiffTime -> MCCount -> Broom (IO [DeltaSignal ohlc]) -> IO (Broom (DeltaTradeList ohlc))
@@ -87,6 +89,7 @@ boundaries begin duration (MCCount n) (Broom ioDs) = do
              False -> (x { start = pt }) : f newPt xs
 
   fmap (Broom . map (DeltaTradeList . f begin)) (sequence ds)
+-}
 
 
 
@@ -108,6 +111,9 @@ defaultMC = MCConfig {
 mc ::
   (StepFunction (StepTy stgy)) =>
   Experiment.Result stgy sym ohlc -> MCConfig -> IO (Broom (Timeseries Equity))
+mc = undefined
+
+{-  
 mc result mtc = do
   let db = deltaBroom (Experiment.output result)
       stp = Experiment.step (Experiment.input result)
@@ -115,3 +121,4 @@ mc result mtc = do
   broom <- boundaries (mcBegin mtc) (mcBars mtc) (mcCount mtc) db
   return (fmap (concatDeltaSignals stp eqty) broom)
 
+-}

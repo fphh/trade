@@ -160,10 +160,10 @@ instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
     text "Trading at fraction 0.5, commission ??, short interests ?? per day."
 
     header "Backtest Result, Long"
-    Experiment.render resLW
+    Experiment.render (const (return ())) resLW
 
     header "Backtest Result, Short"
-    Experiment.render resSW
+    Experiment.render (const (return ())) resSW
 
     -- mapM_ text (map show (Vec.toList (Vec.map show (unSignal $ Experiment.outputSignal (Experiment.output resLW)))))
 

@@ -77,7 +77,7 @@ example = do
       f (Bin.ETH u, us) (Bin.ETH v, vs) = ((u, v), Sample.correlation (Vec.zip us vs))
       as = filter (\((x, y), _) -> x /= y) (liftA2 f xs xs)
       
-  t <- render (Heat.heatmap 0 (Map.fromList as))
+  t <- render (Heat.heatmap 0 (fmap Just (Map.fromList as)))
   
   BSL.putStrLn t
  

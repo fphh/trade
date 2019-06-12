@@ -2,6 +2,8 @@
 
 module Trade.Report.Heatmap where
 
+import Control.Monad (join)
+
 import qualified Data.Text.Lazy as Text
 
 import Formatting (format, fixed)
@@ -13,9 +15,11 @@ import Data.Map (Map)
 
 import qualified Data.Set as Set
 
+import Data.Maybe (catMaybes)
+
 
 import qualified Text.Blaze.Html5 as H5
-import Text.Blaze.Html5 (Html, (!))
+import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5.Attributes as H5A
 
 import Trade.Report.ToReport (toReport)
@@ -28,7 +32,7 @@ data Cell y x =
   | YIndex y
   | Value (y, x)
 
-heatmap :: (Ord x, Ord y, Show y, Show x) => Double -> Map (y, x) Double -> HtmlReader ()
+heatmap :: (Ord x, Ord y, Show y, Show x) => Double -> Map (y, x) (Maybe Double) -> HtmlReader ()
 heatmap bias m =
   let (ys, xs) = unzip (Map.keys m)
       ys' = Set.toList (Set.fromList ys)
@@ -36,7 +40,7 @@ heatmap bias m =
       emptyRow = Empty : map XIndex xs'
       rows = emptyRow : map (\y -> YIndex y : map (\x -> Value (y, x)) xs') ys'
 
-      vs = Map.elems m
+      vs = catMaybes (Map.elems m)
       mi = List.minimum vs
       ma = List.maximum vs
       stepHi = 256 / (ma-bias)
@@ -83,7 +87,7 @@ heatmap bias m =
       g Empty = emp
       g (XIndex x) = (H5.div ! leftSty) (H5.toHtml (show x))
       g (YIndex y) = (H5.div ! leftSty) (H5.toHtml (show y))
-      g (Value as) = maybe emp content (Map.lookup as m)
+      g (Value as) = maybe emp content (join (Map.lookup as m))
 
       f rs = (H5.div ! cbSty) (mapM_ g rs)
 
