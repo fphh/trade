@@ -136,12 +136,6 @@ instance BT.Backtest BacktestInput where
         expmntSW = Experiment.Input stp1 initEqty bl optStrat ps
         esSW = Experiment.conduct expmntSW
 
-        expmntLL = Experiment.Input stp0 initEqty bl optStrat ps
-        esLL = Experiment.conduct expmntLL
-
-        expmntSL = Experiment.Input stp1 initEqty bl optStrat ps
-        esSL = Experiment.conduct expmntSL
-
     in (BacktestResult esLW esSW)
 
 
@@ -157,15 +151,11 @@ instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
 
     subheader "Fees"
 
-    text "Trading at fraction 0.5, commission ??, short interests ?? per day."
-
     header "Backtest Result, Long"
     Experiment.render (const (return ())) resLW
 
     header "Backtest Result, Short"
     Experiment.render (const (return ())) resSW
-
-    -- mapM_ text (map show (Vec.toList (Vec.map show (unSignal $ Experiment.outputSignal (Experiment.output resLW)))))
 
 --------------------------------------------------------
 
