@@ -78,7 +78,6 @@ import Trade.Report.Line (Line)
 import Trade.Report.Pretty (Pretty)
 import Trade.Report.Sample (renderToDirectory)
 
-import Trade.MonteCarlo.ResampleTrades.Broom (MCConfig(..), mc, MCCount(..))
 import Trade.MonteCarlo.Simulation.BlackScholes (Mu(..), Sigma(..), blackScholesDet)
 
 import Trade.Statistics.Algorithm (Statistics)
@@ -99,7 +98,6 @@ data Symbol = ASym deriving (Show, Eq, Ord)
 data OptimizationInput stgy sym ohlc = OptimizationInput {
   optSample :: Map sym (Timeseries ohlc)
   , igInput :: [(Window, Window)]
-  , mcConfig :: MCConfig
   , optEquity :: Equity
   , barLength :: BarLength
   , step :: StepTy stgy
@@ -293,11 +291,6 @@ example = do
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head inSamp)))
             , barLength = barLen
-            , mcConfig = MCConfig {
-                mcBars = 60
-                , mcCount = MCCount 10
-                , mcBegin = mcBegin
-                }
             , step = longStep
             -- , step = shortStep
             }
