@@ -76,6 +76,7 @@ import qualified Trade.Report.ToReport as TR
 import Trade.Report.Line (Line)
 
 import Trade.Report.Pretty (Pretty)
+import Trade.Report.Sample (renderToDirectory)
 
 import Trade.MonteCarlo.ResampleTrades.Broom (MCConfig(..), mc, MCCount(..))
 import Trade.MonteCarlo.Simulation.BlackScholes (Mu(..), Sigma(..), blackScholesDet)
@@ -221,7 +222,7 @@ getSymbol sym = do
         Bin.baseUrl = Bin.binanceBaseUrl
         , Bin.symbol = sym
         , Bin.interval = Bin.Interval barLen
-        , Bin.limit = Just 1000
+        , Bin.limit = Just 2000
         , Bin.from = Nothing
         , Bin.to = Just now -- ((fromIntegral (negate (10*24*60*60))) `addUTCTime` now)
         }
@@ -256,11 +257,11 @@ example = do
   (mcBegin, timeseries) <- getSymbol sym
   -- (mcBegin, sample) <- blackScholes
 
-  let sample = Sample.split 0.75 timeseries
+  let -- sample = Sample.split 0.75 timeseries
   
       f (j, k) = (Window j, Window k)
-      wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
-      -- wins = map f (filter (uncurry (/=)) (liftA2 (,) [5..10] [1..10]))
+      -- wins = map f (filter (uncurry (/=)) (liftA2 (,) [1 .. 100] [1 .. 100]))
+      wins = map f (filter (uncurry (/=)) (liftA2 (,) [5..10] [5..10]))
 
       longStep = LongStep {
         longFraction = Fraction 1
@@ -284,7 +285,7 @@ example = do
         -> Ana.Analysis (OptimizationInput Long Bin.Symbol Price) (BacktestInput Long Bin.Symbol Price)
         
       analysis (Sample inSamp outOfSamp) = Ana.Analysis {
-        Ana.title = "This is the strategy name"
+        Ana.title = "The Title"
         , Ana.impulseGenerator = IG.ImpulseGenerator (\(j, k) -> IG.OptimizedImpulseGenerator (movingAverages j k))
 
         , Ana.optimizationInput = OptimizationInput {
@@ -308,9 +309,11 @@ example = do
             }
         }
 
-      rep = Ana.analyze (analysis sample)
+      smps = Sample.bsplit 1000 0.75 timeseries
+      anas = map analysis smps
+      rep = map (Ana.analyze . analysis) smps 
 
-  t <- render rep
-  
-  BSL.putStrLn t
+  -- mapM_ (\x -> render x >>= BSL.putStrLn) rep
 
+
+  renderToDirectory "output" rep

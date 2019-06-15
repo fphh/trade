@@ -94,9 +94,6 @@ instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult
   
   toReport (ARep.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
     
-    subheader "Optimization Input"
-    Chart.lines (Style.axTitle "Symbol" "Time" :: Style.AxisConfig UTCTime Price) [line "Price" ps]
-    
     subheader "Optimization Result"
     text "No optimization has been done."
 
@@ -148,8 +145,6 @@ data BacktestResult = BacktestResult {
 instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   
   toReport (ARep.BacktestData (BacktestInput inEq _ ps) (BacktestResult resLW resSW)) = do
-
-    subheader "Fees"
 
     header "Backtest Result, Long"
     Experiment.render (const (return ())) resLW

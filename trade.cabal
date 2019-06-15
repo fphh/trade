@@ -48,6 +48,7 @@ library
                         Trade.Report.Line
                         Trade.Report.Pretty
                         Trade.Report.Render
+                        Trade.Report.Sample
                         Trade.Report.SparkLine
                         Trade.Report.Style
                         Trade.Report.Table
@@ -161,6 +162,8 @@ library
                      , deepseq
                      -- , operational
                      , formatting
+                     , directory
+                     
 
   hs-source-dirs:      src
   default-language:    Haskell2010

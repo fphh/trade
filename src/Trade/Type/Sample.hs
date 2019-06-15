@@ -21,3 +21,13 @@ split q (Signal vs) =
 
 emptySample :: Sample x
 emptySample = Sample mempty mempty
+
+
+bsplit :: Int -> Double -> Timeseries x -> [Sample x]
+bsplit n q (Signal xs) =
+  let k = floor (fromIntegral n * q)
+      go xs | n > Vec.length xs = []
+      go xs =
+        let (as, bs) = Vec.splitAt k (Vec.take n xs)
+        in Sample (Signal as) (Signal bs) : go (Vec.drop (n-k) xs)
+  in go xs

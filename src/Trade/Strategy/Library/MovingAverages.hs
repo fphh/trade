@@ -53,6 +53,13 @@ movingAverages j k ms = do
       symbol vs :=: [ v10_1 .> v20_1 .&& v10_0 .< v20_0 :-> Disinvest
                     , v10_1 .< v20_1 .&& v10_0 .> v20_0 :-> Invest ]
 
+
+
+
+
+
+
+
 stdBreakout ::
   (Ord sym, Ord x, Statistics x, Scale x, Add x) =>
   Window -> K -> [(sym, Timeseries x)] -> State (Signals sym x) (AlignedSignals sym x, Map sym InvestSignal)
