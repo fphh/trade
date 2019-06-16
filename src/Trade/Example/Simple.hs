@@ -78,13 +78,13 @@ ticker = Signal (Vec.map (fmap Price) TD.sinus)
 --------------------------------------------------------
 
 
-data OptimizationInput = OptimizationInput [(Symbol, Signal UTCTime Price)]
+data OptimizationInput = OptimizationInput
 
 instance Opt.Optimize OptimizationInput where
   type OptReportTy OptimizationInput = OptimizationResult
   type OptInpTy OptimizationInput = ()
 
-  optimize (IG.ImpulseGenerator strat) (OptimizationInput sig) =
+  optimize (IG.ImpulseGenerator strat) OptimizationInput =
     (IG.RankedStrategies [strat ()], OptimizationResult)
 
 
@@ -92,7 +92,7 @@ data OptimizationResult = OptimizationResult
 
 instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
   
-  toReport (ARep.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
+  toReport (ARep.OptimizationData OptimizationInput OptimizationResult) = do
     
     subheader "Optimization Result"
     text "No optimization has been done."
@@ -103,36 +103,20 @@ data BacktestInput = BacktestInput {
   initialEquity :: Equity
   , barLength :: BarLength
   , outOfSample :: Map Symbol (Timeseries Price)
+  , stepLong :: StepTy Long
+  , stepShort :: StepTy Short
   }
 
 instance BT.Backtest BacktestInput where
   type BacktestReportTy BacktestInput = BacktestResult
 
-  backtest (NonEmptyList optStrat@(IG.OptimizedImpulseGenerator strat) _) (BacktestInput initEqty bl ps) =
-
-    let rtf dt =
-          let day = 24*60*60
-          in realToFrac dt / day
-
-
-        stp0 = LongStep {
-          longFraction = Fraction 1.0 -- 0.5
-          , longCommission = Commission (const 0) -- (\c -> 0.05*c)
-          }
-
-        stp1 = ShortStep {
-          shortFraction = Fraction 1.0 -- 0.5
-          , shortCommission = Commission (const 0) -- (\c -> 0.05*c)
-          , shortInterests = Interests (interests rtf 0)
-          }
-
-
-        expmntLW = Experiment.Input stp0 initEqty bl optStrat ps
+  backtest (NonEmptyList optStrat@(IG.OptimizedImpulseGenerator strat) _) (BacktestInput initEqty bl ps stpL stpS) =
+    let expmntLW = Experiment.Input stpL initEqty bl optStrat ps
         esLW = Experiment.conduct expmntLW
 
-        expmntSW = Experiment.Input stp1 initEqty bl optStrat ps
+        expmntSW = Experiment.Input stpS initEqty bl optStrat ps
         esSW = Experiment.conduct expmntSW
-
+        
     in (BacktestResult esLW esSW)
 
 
@@ -144,7 +128,7 @@ data BacktestResult = BacktestResult {
 
 instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   
-  toReport (ARep.BacktestData (BacktestInput inEq _ ps) (BacktestResult resLW resSW)) = do
+  toReport (ARep.BacktestData (BacktestInput inEq _ _ _ _) (BacktestResult resLW resSW)) = do
 
     header "Backtest Result, Long"
     Experiment.render (const (return ())) resLW
@@ -173,13 +157,30 @@ example = do
   
       gen_5_10 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator (movingAverages win5 win10)))
       gen_10_5 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator (movingAverages win10 win5)))
+      
+      rtf dt =
+          let day = 24*60*60
+          in realToFrac dt / day
+
+
+      stpL = LongStep {
+        longFraction = Fraction 1.0 -- 0.5
+        , longCommission = Commission (const 0) -- (\c -> 0.05*c)
+        }
+
+      stpS = ShortStep {
+        shortFraction = Fraction 1.0 -- 0.5
+        , shortCommission = Commission (const 0) -- (\c -> 0.05*c)
+        , shortInterests = Interests (interests rtf 0)
+        }
+
 
       analysis :: IG.ImpulseGenerator () Price -> Ana.Analysis OptimizationInput BacktestInput
       analysis gen = Ana.Analysis {
         Ana.title = "Long/Short - Winning/Losing"
         , Ana.impulseGenerator = gen
-        , Ana.optimizationInput = OptimizationInput [(A, ticker)]
-        , Ana.backtestInput = BacktestInput equity barLen (Map.fromList [(A, ticker)])
+        , Ana.optimizationInput = OptimizationInput
+        , Ana.backtestInput = BacktestInput equity barLen (Map.fromList [(A, ticker)]) stpL stpS
         }
 
       repA = Ana.analyze (analysis gen_5_10)
