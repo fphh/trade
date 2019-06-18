@@ -63,9 +63,8 @@ import qualified Trade.Analysis.Risk as Risk
 import qualified Trade.Analysis.OHLCData as OD
 import qualified Trade.Analysis.Report as ARep
 import qualified Trade.Analysis.Optimize as Opt
-import qualified Trade.Analysis.Analysis as Ana
 import qualified Trade.Analysis.Backtest as BT
-
+import Trade.Analysis.Analysis (Analysis(..), analyzeHelper)
 
 import Trade.Report.Basic (header, subheader, subsubheader, text)
 import qualified Trade.Report.Heatmap as Heat
@@ -74,6 +73,7 @@ import qualified Trade.Report.Style as Style
 import qualified Trade.Report.Table as Tab
 import qualified Trade.Report.ToReport as TR
 import Trade.Report.Line (Line)
+import Trade.Report.Config (HtmlReader)
 
 import Trade.Report.Pretty (Pretty)
 import Trade.Report.Sample (renderToDirectory)
@@ -109,40 +109,34 @@ data OptimizationResult sym stgy = OptimizationResult {
   , lastEquities :: Map (Window, Window) (Map sym Equity)
   }
 
+optimize ::
+  (Ord sym
+  , TradeList2DeltaTradeList stgy
+  , Impulse2TradeList stgy
+  , Invest2Impulse stgy
+  , StepFunction (StepTy stgy)) =>
+  ImpulseGenerator (Window, Window) Price
+  -> OptimizationInput stgy sym Price
+  -> (RankedStrategies Price, OptimizationResult sym stgy)
+optimize (ImpulseGenerator strat) optInp =
+  let findBestWinSize winSize acc =
+        let e = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (strat winSize) (optSample optInp)
+        in Map.insert winSize (Experiment.conduct e) acc
 
+      p e0 e1 = compare (Experiment.lastEquities e1) (Experiment.lastEquities e0)
 
-instance ( Ord sym
-         , Show sym
-         , Invest2Impulse stgy
-         , TradeList2DeltaTradeList stgy
-         , Impulse2TradeList stgy
-         , StepFunction (StepTy stgy)) =>
-  Opt.Optimize (OptimizationInput stgy sym Price) where
+      strats = List.foldr findBestWinSize Map.empty (igInput optInp)
 
-  type OptReportTy (OptimizationInput stgy sym Price) = OptimizationResult sym stgy
-  type OptInpTy (OptimizationInput stgy sym Price) = (Window, Window)
-
-  optimize (ImpulseGenerator strat) optInp =
-    let findBestWinSize winSize acc =
-          let e = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (strat winSize) (optSample optInp)
-          in Map.insert winSize (Experiment.conduct e) acc
-
-        p e0 e1 = compare (Experiment.lastEquities e1) (Experiment.lastEquities e0)
-
-        strats = List.foldr findBestWinSize Map.empty (igInput optInp)
-
-        f (Experiment.Result inp _) = Experiment.impulseGenerator inp
-        sortedStarts@(optStrat:_) = map f (List.sortBy p (Map.elems strats))
+      f (Experiment.Result inp _) = Experiment.impulseGenerator inp
+      sortedStarts@(optStrat:_) = map f (List.sortBy p (Map.elems strats))
  
-        expmnt = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) optStrat (optSample optInp)
-        res = Experiment.conduct expmnt
+      expmnt = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) optStrat (optSample optInp)
+      res = Experiment.conduct expmnt
     
-    in (RankedStrategies sortedStarts, OptimizationResult res (fmap Experiment.lastEquities strats))
+  in (RankedStrategies sortedStarts, OptimizationResult res (fmap Experiment.lastEquities strats))
 
 
-instance ( Show sym
-         , Ord sym
-         , StepFunction (StepTy stgy)) =>
+instance (Ord sym, Show sym, StepFunction (StepTy stgy)) =>
   TR.ToReport (ARep.OptimizationData (OptimizationInput stgy sym Price) (OptimizationResult sym stgy)) where
 
   toReport (ARep.OptimizationData optInp (OptimizationResult res lastEqties)) =
@@ -154,6 +148,7 @@ instance ( Show sym
           Heat.heatmap eqty ms
     in Experiment.render addendum res
 
+--------------------------------------------------------
 
 data BacktestInput stgy sym ohlc = BacktestInput {
   btEquity :: Equity
@@ -163,30 +158,30 @@ data BacktestInput stgy sym ohlc = BacktestInput {
   }
   
 data BacktestResult stgy sym ohlc = BacktestResult (Experiment.Result stgy sym ohlc)
-                          
-instance ( ToDelta ohlc
-         , Ord sym
-         , Show ohlc
-         , TradeList2DeltaTradeList stgy
-         , Impulse2TradeList stgy
-         , Invest2Impulse stgy
-         , StepFunction (StepTy stgy)) => BT.Backtest (BacktestInput stgy sym ohlc) where
-  
-  type BacktestReportTy (BacktestInput stgy sym ohlc) = BacktestResult stgy sym ohlc
 
-  backtest (NonEmptyList optStrat _) (BacktestInput initEqty ps bl step) =
-    let expmnt = Experiment.Input step initEqty bl optStrat ps
-    in BacktestResult (Experiment.conduct expmnt)
 
-instance (Show sym
+backtest ::
+  ( Ord sym
+  , TradeList2DeltaTradeList stgy
+  , Impulse2TradeList stgy
+  , Invest2Impulse stgy
+  , StepFunction (StepTy stgy)) =>
+  NonEmptyList (IG.OptimizedImpulseGenerator Price)
+  -> BacktestInput stgy sym Price
+  -> BacktestResult stgy sym Price
+backtest (NonEmptyList optStrat _) (BacktestInput initEqty ps bl step) =
+  let expmnt = Experiment.Input step initEqty bl optStrat ps
+  in BacktestResult (Experiment.conduct expmnt)
+
+
+instance ( Show sym
          , Ord sym
          , StepFunction (StepTy stgy)
-         , E.PlotValue ohlc
-         , Pretty ohlc
-         , Eq ohlc
          , Floating ohlc
          , Statistics ohlc
          , ToYield ohlc
+         , Pretty ohlc
+         , E.PlotValue ohlc
          , Line (Timeseries ohlc)
          , Line (Vec.Vector (UTCTime, ohlc))) =>
   TR.ToReport (ARep.BacktestData (BacktestInput stgy sym ohlc) (BacktestResult stgy sym ohlc)) where
@@ -195,14 +190,24 @@ instance (Show sym
     header "Backtest"
     Experiment.render (const (return ())) res
  
- --------------------------------------------------------
+--------------------------------------------------------
 
-instance OD.OHLCData (OptimizationInput stgy sym ohlc) where
-  type OHLCDataTy (OptimizationInput stgy sym ohlc) = ohlc
-
-
-instance OD.OHLCData (BacktestInput stgy sym ohlc) where
-  type OHLCDataTy (BacktestInput stgy sym ohlc) = ohlc
+analyze ::
+  ( Show symOpt
+  , Ord symOpt
+  , TradeList2DeltaTradeList stgyOpt
+  , Impulse2TradeList stgyOpt
+  , Invest2Impulse stgyOpt
+  , StepFunction (StepTy stgyOpt)
+  , Show symBack
+  , Ord symBack
+  , TradeList2DeltaTradeList stgyBack
+  , Impulse2TradeList stgyBack
+  , Invest2Impulse stgyBack
+  , StepFunction (StepTy stgyBack)) =>
+  Analysis (OptimizationInput stgyOpt symOpt Price) (BacktestInput stgyBack symBack Price) (Window, Window) Price
+  -> HtmlReader ()
+analyze = analyzeHelper optimize backtest
 
 --------------------------------------------------------
 
@@ -280,13 +285,13 @@ example = do
 
   let analysis ::
         Sample Price
-        -> Ana.Analysis (OptimizationInput Long Bin.Symbol Price) (BacktestInput Long Bin.Symbol Price)
-        
-      analysis (Sample inSamp outOfSamp) = Ana.Analysis {
-        Ana.title = "The Title"
-        , Ana.impulseGenerator = IG.ImpulseGenerator (\(j, k) -> IG.OptimizedImpulseGenerator (movingAverages j k))
+        -> Analysis (OptimizationInput Long Bin.Symbol Price) (BacktestInput Long Bin.Symbol Price) (Window, Window) Price
 
-        , Ana.optimizationInput = OptimizationInput {
+      analysis (Sample inSamp outOfSamp) = Analysis {
+        title = "The Title"
+        , impulseGenerator = IG.ImpulseGenerator (\(j, k) -> IG.OptimizedImpulseGenerator (movingAverages j k))
+
+        , optimizationInput = OptimizationInput {
             optSample = Map.fromList [(sym, inSamp)]
             , igInput = wins
             , optEquity = Equity (unPrice (snd (Signal.head inSamp)))
@@ -294,7 +299,7 @@ example = do
             , step = longStep
             -- , step = shortStep
             }
-        , Ana.backtestInput = BacktestInput {
+        , backtestInput = BacktestInput {
             btEquity = Equity (unPrice (snd (Signal.head outOfSamp)))
             , btSample = Map.fromList [(sym, outOfSamp)]
             , btBarLength = barLen
@@ -304,7 +309,7 @@ example = do
 
       smps = Sample.bsplit 1000 0.75 timeseries
       anas = map analysis smps
-      rep = map (Ana.analyze . analysis) smps 
+      rep = map (analyze . analysis) smps 
 
   -- mapM_ (\x -> render x >>= BSL.putStrLn) rep
 

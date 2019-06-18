@@ -4,13 +4,17 @@ module Trade.Type.ImpulseGenerator where
 
 import Control.Monad.State (State)
 
+import qualified Data.Map as Map
 import Data.Map (Map)
+
+import qualified Data.Vector as Vec
+
 
 import Trade.Type.DisInvest (InvestSignal(..))
 
 import Trade.Type.Signal (Timeseries)
 
-import Trade.Strategy.Type (Signals, AlignedSignals)
+import Trade.Strategy.Type (Signals, AlignedSignals(..))
 
 
 newtype OptimizedImpulseGenerator ohlc = OptimizedImpulseGenerator {
@@ -28,4 +32,11 @@ newtype ImpulseGenerator optData ohlc = ImpulseGenerator {
 newtype RankedStrategies ohlc = RankedStrategies {
   rankedStrategies :: [OptimizedImpulseGenerator ohlc]
   }
+
+
+noImpulses :: ImpulseGenerator optData ohlc
+noImpulses = ImpulseGenerator $
+  \_ -> OptimizedImpulseGenerator $
+        \_ -> return (AlignedSignals Vec.empty Map.empty, Map.empty)
+
 

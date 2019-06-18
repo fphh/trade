@@ -22,14 +22,16 @@ months y =
       f m = Vec.fromList (map g (catMaybes (map (fromGregorianValid y m) ds)))
   in map f ms
 
+jan2017, feb2017, mar2017, apr2017, may2017, jun2017, jul2017, aug2017, sept2017, okt2017, nov2017, dez2017 :: Vector UTCTime
+
 months2017 :: [Vector UTCTime]
 months2017@([jan2017, feb2017, mar2017, apr2017, may2017, jun2017, jul2017, aug2017, sept2017, okt2017, nov2017, dez2017]) = months 2017
 
 year :: Integer -> Vector UTCTime
 year y = Vec.concat (months y)
 
-years :: Vector UTCTime
-years = Vec.concat (map year [2010 .. 2017])
+someYears :: Vector UTCTime
+someYears = Vec.concat (map year [2010 .. 2017])
 
-yearsN :: Integer -> Vector UTCTime
-yearsN n = Vec.concat (map year [2017-n+1 .. 2017])
+-- yearsN :: Integer -> Vector UTCTime
+-- yearsN n = Vec.concat (map year [2017-n+1 .. 2017])

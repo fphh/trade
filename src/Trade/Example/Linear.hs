@@ -7,7 +7,7 @@
 
 module Trade.Example.Linear where
 
-import Data.Time.Clock (UTCTime, NominalDiffTime)
+import Data.Time.Clock (UTCTime)
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Data.Vector as Vec
@@ -15,27 +15,19 @@ import qualified Data.Vector as Vec
 import qualified Data.Map as Map
 import Data.Map (Map)
 
-import qualified Graphics.Rendering.Chart.Easy as E
-
-import qualified Trade.Analysis.Analysis as Ana
-import qualified Trade.Analysis.Backtest as BT
-import qualified Trade.Analysis.OHLCData as OD
-import qualified Trade.Analysis.Optimize as Opt
+import Trade.Analysis.Analysis (analyzeHelper, Analysis(..))
 import qualified Trade.Analysis.Report as ARep
 
 import qualified Trade.Test.Data as TD
 
-import Trade.Type.BarLength (BarLength(Day), barLength2diffTime)
+import Trade.Type.BarLength (BarLength(Day))
 
 import Trade.Type.Step (StepTy(LongStep, ShortStep), longFraction, shortFraction, longCommission, shortCommission, shortInterests)
-import Trade.Type.Step.Commission (Commission(..), noCommission)
-import Trade.Type.Step.Fraction (Fraction(..), fullFraction)
+import Trade.Type.Step.Commission (noCommission)
+import Trade.Type.Step.Fraction (fullFraction)
 import Trade.Type.Step.Interests (Interests(..), interests)
 
-import Trade.Type.DisInvest (InvestSignal)
 import Trade.Type.Equity (Equity(..))
-import Trade.Type.Impulse (invert)
-import Trade.Type.ImpulseSignal (ImpulseSignal)
 import Trade.Type.NonEmptyList (NonEmptyList(..))
 import Trade.Type.Price (Price(..))
 import Trade.Type.Signal (Timeseries, Signal(..))
@@ -45,26 +37,19 @@ import qualified Trade.Type.Experiment as Experiment
 import qualified Trade.Type.ImpulseGenerator as IG
 
 
-import Trade.Strategy.Library.BuyAndHold (buyAndHold)
 import Trade.Strategy.Library.EvenOdd (evenOdd)
-import Trade.Strategy.Library.MovingAverages (movingAverages)
 import Trade.Strategy.Type (Window(..))
-import qualified Trade.Strategy.Process as Strategy
-
-import Trade.Report.Line (Line, line)
 
 
 import Trade.Report.Basic (text, header, subheader)
-import qualified Trade.Report.Chart as Chart
 import Trade.Report.HtmlReader (render)
-import qualified Trade.Report.Style as Style
 import qualified Trade.Report.ToReport as TR
 
-import Trade.Type.DeltaTradeList (DeltaTradeList(..))
-import Trade.Type.DeltaSignal (DeltaSignal(..))
 
+import Trade.Report.Config (HtmlReader)
 
 data Symbol = A deriving (Show, Eq, Ord)
+
 
 barLen :: BarLength
 barLen = Day 1
@@ -76,22 +61,18 @@ ticker = Signal (Vec.map (fmap Price) (Vec.take 7 TD.linear))
 --------------------------------------------------------
 
 
-data OptimizationInput = OptimizationInput [(Symbol, Signal UTCTime Price)]
-
-instance Opt.Optimize OptimizationInput where
-  type OptReportTy OptimizationInput = OptimizationResult
-  type OptInpTy OptimizationInput = ()
-
-  optimize (IG.ImpulseGenerator strat) (OptimizationInput sig) =
-    (IG.RankedStrategies [strat ()], OptimizationResult)
-
-
+data OptimizationInput = OptimizationInput
 data OptimizationResult = OptimizationResult
 
+optimize ::
+  IG.ImpulseGenerator () ohlc
+  -> OptimizationInput
+  -> (IG.RankedStrategies ohlc, OptimizationResult)
+optimize (IG.ImpulseGenerator strat) OptimizationInput =
+  (IG.RankedStrategies [strat ()], OptimizationResult)
+
 instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult) where
-  
-  toReport (ARep.OptimizationData (OptimizationInput ((_, ps):_)) OptimizationResult) = do
-    
+  toReport (ARep.OptimizationData OptimizationInput OptimizationResult) = do
     subheader "Optimization Result"
     text "No optimization has been done."
 
@@ -100,39 +81,10 @@ instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult
 data BacktestInput = BacktestInput {
   initialEquity :: Equity
   , barLength :: BarLength
-  , outOfSample :: Map Symbol (Signal UTCTime Price)
+  , outOfSample :: Map Symbol (Timeseries Price)
+  , stepLong :: StepTy Long
+  , stepShort :: StepTy Short
   }
-
-instance BT.Backtest BacktestInput where
-  type BacktestReportTy BacktestInput = BacktestResult
-
-  backtest (NonEmptyList optStrat@(IG.OptimizedImpulseGenerator strat) _) (BacktestInput initEqty bl ps) =
-
-    let rtf dt =
-          let day = 24*60*60
-          in realToFrac dt / day
-
-
-        stp0 = LongStep {
-          longFraction = Fraction 1
-          , longCommission = Commission (const 0) -- (\c -> 0.05*c)
-          }
-
-        stp1 = ShortStep {
-          shortFraction = Fraction 1
-          , shortCommission = Commission (const 0) -- (\c -> 0.05*c)
-          , shortInterests = Interests (interests rtf 0)
-          }
-
-
-        expmntLW = Experiment.Input stp0 initEqty bl optStrat ps
-        esLW = Experiment.conduct expmntLW
-
-        expmntSW = Experiment.Input stp1 initEqty bl optStrat ps
-        esSW = Experiment.conduct expmntSW
-
-    in (BacktestResult esLW esSW)
-
 
 data BacktestResult = BacktestResult {
   resultLW :: Experiment.Result Long Symbol Price
@@ -140,25 +92,32 @@ data BacktestResult = BacktestResult {
   }
 
 
+backtest ::
+  NonEmptyList (IG.OptimizedImpulseGenerator Price)
+  -> BacktestInput
+  -> BacktestResult
+backtest (NonEmptyList optStrat _) (BacktestInput initEqty bl ps stpL stpS) =
+  let expmntLW = Experiment.Input stpL initEqty bl optStrat ps
+      esLW = Experiment.conduct expmntLW
+      expmntSW = Experiment.Input stpS initEqty bl optStrat ps
+      esSW = Experiment.conduct expmntSW
+  in (BacktestResult esLW esSW)
+
+
 instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   
-  toReport (ARep.BacktestData (BacktestInput inEq _ ps) (BacktestResult resLW resSW)) = do
+  toReport (ARep.BacktestData _ (BacktestResult resLW resSW)) = do
 
     header "Backtest Result, Long"
     Experiment.render (const (return ())) resLW
 
---    header "Backtest Result, Short"
---    Experiment.render resSW
-
-    -- mapM_ text (map show (Vec.toList (Vec.map show (unSignal $ Experiment.outputSignal (Experiment.output resLW)))))
+    header "Backtest Result, Short"
+    Experiment.render (const (return ())) resSW
 
 --------------------------------------------------------
 
-instance OD.OHLCData OptimizationInput where
-  type OHLCDataTy OptimizationInput = Price
-
-instance OD.OHLCData BacktestInput where
-  type OHLCDataTy BacktestInput = Price
+analyze :: Analysis OptimizationInput BacktestInput () Price -> HtmlReader ()
+analyze = analyzeHelper optimize backtest
 
 --------------------------------------------------------
 
@@ -171,17 +130,34 @@ example = do
       win5 = Window 5
       win10 = Window 10
   
-      gen_5_10 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator evenOdd))
+      eo = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator evenOdd))
+      
+      rtf dt =
+          let day = 24*60*60
+          in realToFrac dt / day
 
-      analysis :: IG.ImpulseGenerator () Price -> Ana.Analysis OptimizationInput BacktestInput
-      analysis gen = Ana.Analysis {
-        Ana.title = "Long/Short - Winning/Losing"
-        , Ana.impulseGenerator = gen
-        , Ana.optimizationInput = OptimizationInput [(A, ticker)]
-        , Ana.backtestInput = BacktestInput equity barLen (Map.fromList [(A, ticker)])
+
+      stpL = LongStep {
+        longFraction = fullFraction
+        , longCommission = noCommission
         }
 
-      repA = Ana.analyze (analysis gen_5_10)
+      stpS = ShortStep {
+        shortFraction = fullFraction
+        , shortCommission = noCommission
+        , shortInterests = Interests (interests rtf 0)
+        }
+
+      analysis :: IG.ImpulseGenerator () Price -> Analysis OptimizationInput BacktestInput () Price
+      analysis gen = Analysis {
+        title = "Linear even/odd"
+        , impulseGenerator = gen
+        , optimizationInput = OptimizationInput
+        , backtestInput = BacktestInput equity barLen (Map.fromList [(A, ticker)]) stpL stpS
+        }
+
+      repA = analyze (analysis eo)
 
   a <- render repA
   BSL.putStrLn a
+

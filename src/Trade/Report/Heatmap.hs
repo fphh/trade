@@ -45,8 +45,10 @@ heatmap bias m =
       ma = List.maximum vs
       stepHi = 256 / (ma-bias)
       stepLo = 256 / (bias - mi)
+
+      width = 80
       
-      commonCellSty = "float:left;border:1px solid #000000;width:60px;"
+      commonCellSty = "float:left;border:1px solid #000000;width:" ++ show width ++ "px;"
             
       cbSty = H5A.style (H5.stringValue "clear:both;")
       leftSty = H5A.style (H5.stringValue commonCellSty)
@@ -81,7 +83,7 @@ heatmap bias m =
         in (H5.div ! H5A.style (H5.stringValue (commonCellSty ++ sty))) (H5.toHtml (fmt v))
 
       emp =
-        let bg = H5A.style (H5.stringValue (commonCellSty ++ "background:rgb(200,200,120);width:60px;"))
+        let bg = H5A.style (H5.stringValue (commonCellSty ++ "background:rgb(200,200,120);width:" ++ show width ++ "px;"))
         in (H5.div ! bg) (H5.preEscapedToHtml "&nbsp;")
 
       g Empty = emp

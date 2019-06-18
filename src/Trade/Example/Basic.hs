@@ -9,12 +9,13 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Trade.Type.ImpulseGenerator as IG
 
 import qualified Trade.Analysis.Backtest as BT
-import qualified Trade.Analysis.Analysis as Ana
+import Trade.Analysis.Analysis (Analysis(..), analyzeHelper)
 import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Analysis.OHLCData as OD
 import qualified Trade.Analysis.Report as ARep
 
 import Trade.Report.Basic (subheader, text)
+import Trade.Report.Config (HtmlReader)
 import Trade.Report.HtmlReader (render)
 import qualified Trade.Report.ToReport as TR
 
@@ -22,12 +23,12 @@ import qualified Trade.Report.ToReport as TR
   
 data OptimizationInput = OptimizationInput
 
-instance Opt.Optimize OptimizationInput where
-  type OptReportTy OptimizationInput = OptimizationResult
-  type OptInpTy OptimizationInput = OD.NoOHLC
-
-  optimize (IG.ImpulseGenerator strat) OptimizationInput =
-    (IG.RankedStrategies [strat OD.NoOHLC], OptimizationResult)
+optimize ::
+  IG.ImpulseGenerator OD.NoOHLC ohlc
+  -> OptimizationInput
+  -> (IG.RankedStrategies ohlc, OptimizationResult)
+optimize (IG.ImpulseGenerator strat) OptimizationInput =
+  (IG.RankedStrategies [strat OD.NoOHLC], OptimizationResult)
 
 
 data OptimizationResult = OptimizationResult
@@ -41,9 +42,8 @@ instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult
 
 data BacktestInput = BacktestInput
 
-instance BT.Backtest BacktestInput where
-  type BacktestReportTy BacktestInput = BacktestResult
-  backtest _ _ = BacktestResult
+backtest :: a -> b -> BacktestResult
+backtest _ _ = BacktestResult
 
 
 data BacktestResult = BacktestResult
@@ -55,11 +55,8 @@ instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
     
 --------------------------------------------------------
 
-instance OD.OHLCData OptimizationInput where
-  type OHLCDataTy OptimizationInput = OD.NoOHLC
-
-instance OD.OHLCData BacktestInput where
-  type OHLCDataTy BacktestInput = OD.NoOHLC
+analyze :: Analysis OptimizationInput BacktestInput OD.NoOHLC ohlc -> HtmlReader ()
+analyze = analyzeHelper optimize backtest
 
 --------------------------------------------------------
 
@@ -67,15 +64,15 @@ instance OD.OHLCData BacktestInput where
 example :: IO ()
 example = do
 
-  let analysis :: Ana.Analysis OptimizationInput BacktestInput
-      analysis = Ana.Analysis {
-        Ana.title = "Basic Report"
-        , Ana.impulseGenerator = undefined -- IG.optImpGen2impGen IG.noImpulses
-        , Ana.optimizationInput = OptimizationInput
-        , Ana.backtestInput = BacktestInput
+  let analysis :: Analysis OptimizationInput BacktestInput _a _b
+      analysis = Analysis {
+        title = "Basic Report"
+        , impulseGenerator = IG.noImpulses
+        , optimizationInput = OptimizationInput
+        , backtestInput = BacktestInput
         }
 
-      rep = Ana.analyze analysis
+      rep = analyze analysis
 
   t <- render rep
   
