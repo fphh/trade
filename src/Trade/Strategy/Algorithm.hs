@@ -15,7 +15,7 @@ import Data.Vector (Vector)
 
 import Trade.Type.Add (Add, add)
 import Trade.Type.Scale (Scale, scale)
-import Trade.Type.Signal (Timeseries, Signal(..))
+import Trade.Type.Signal (Timeseries)
 import Trade.Type.Strategy.Index (Index(..))
 
 import Trade.Statistics.Algorithm (Statistics)

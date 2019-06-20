@@ -20,7 +20,7 @@ import Trade.Strategy.Type (Signals, AlignedSignals(..))
 newtype OptimizedImpulseGenerator ohlc = OptimizedImpulseGenerator {
   unOptimizedImpulseGenerator ::
       forall sym. (Ord sym) =>
-      Map sym (Timeseries ohlc) -> State (Signals sym ohlc) (AlignedSignals sym ohlc, Map sym InvestSignal)
+      sym -> Map sym (Timeseries ohlc) -> State (Signals sym ohlc) (AlignedSignals sym ohlc, Map sym InvestSignal)
   }
 
 
@@ -37,6 +37,6 @@ newtype RankedStrategies ohlc = RankedStrategies {
 noImpulses :: ImpulseGenerator optData ohlc
 noImpulses = ImpulseGenerator $
   \_ -> OptimizedImpulseGenerator $
-        \_ -> return (AlignedSignals Vec.empty Map.empty, Map.empty)
+        \_ _ -> return (AlignedSignals Vec.empty Map.empty, Map.empty)
 
 

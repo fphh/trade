@@ -23,6 +23,8 @@ import Trade.Type.DisInvest (DisInvest(..), InvestSignal(..))
 import Trade.Type.Add (Add)
 import Trade.Type.Scale (Scale)
 
+import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator (..))
+
 import qualified Trade.Type.Signal as Signal
 import Trade.Type.Signal (Timeseries, Signal(..))
 import Trade.Type.Strategy.Index (Index(..))
@@ -89,8 +91,18 @@ process frame = do
   return (asigs, fmap InvestSignal xs)
 
 
+run ::
+  (Ord sym) =>
+  sym
+  -> Map sym (Timeseries ohlc)
+  -> OptimizedImpulseGenerator ohlc
+  -> ((AlignedSignals sym ohlc, Map sym InvestSignal), Signals sym ohlc)
+run sym m (OptimizedImpulseGenerator impGen) =
+  runState (impGen sym m) (Signals Map.empty)
 
+{-
 run ::
   State (Signals sym x) (AlignedSignals sym x, Map sym InvestSignal)
   -> ((AlignedSignals sym x, Map sym InvestSignal), Signals sym x)
 run st = runState st (Signals Map.empty)
+-}

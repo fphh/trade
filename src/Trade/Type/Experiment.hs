@@ -6,16 +6,13 @@
 
 module Trade.Type.Experiment where
 
-import Control.Applicative (liftA2)
-
-import Control.Monad.State (State)
 
 import qualified Data.Vector as Vec
 
 import qualified Data.Map as Map
 import Data.Map (Map)
 
-import Data.Time.Clock (UTCTime, NominalDiffTime)
+import Data.Time.Clock (UTCTime)
 
 
 import qualified Text.Blaze.Html5 as H5
@@ -28,14 +25,10 @@ import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 import Trade.Type.BarLength (BarLength)
 import Trade.Type.Delta (ToDelta)
 
-import qualified Trade.Type.DeltaSignal.Algorithm as DSA
-import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals)
 import Trade.Type.DeltaSignal (DeltaSignal)
-
-import qualified Trade.Type.DeltaSignal.Algorithm as DSA
+import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals, sortDeltaSignals)
 
 import Trade.Type.DeltaTradeList (DeltaTradeList)
-import Trade.Type.DisInvest (InvestSignal)
 import Trade.Type.Equity (Equity(..))
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal(..))
@@ -51,7 +44,7 @@ import Trade.Type.Signal (Timeseries)
 
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
-import Trade.Type.Trade (emptyTradeList)
+
 import Trade.Type.Yield (ToYield)
 
 import Trade.Type.Conversion.Impulse2TradeList (Impulse2TradeList, impulse2tradeList)
@@ -59,13 +52,13 @@ import Trade.Type.Conversion.Invest2Impulse (Invest2Impulse, invest2impulse)
 
 import Trade.Type.Conversion.TradeList2DeltaTradeList (TradeList2DeltaTradeList, tradeList2DeltaTradeList)
 
-import Trade.Strategy.Type (Signals(..), AlignedSignals(..))
+import Trade.Strategy.Type (AlignedSignals(..))
 import qualified Trade.Strategy.Process as Strategy
 
 import Trade.Report.Line (Line(..))
 
 
-import Trade.Report.Basic (header, subheader, subsubheader, text)
+import Trade.Report.Basic (header, subheader, subsubheader)
 import qualified Trade.Report.Chart as Chart
 import qualified Trade.Report.SparkLine as Spark
 
@@ -78,8 +71,6 @@ import Trade.Statistics.Algorithm (Statistics)
 
 import Trade.Report.ToReport (toReport)
 
-import Trade.Help.SafeTail (slast)
-
 import Trade.Report.Config (HtmlReader)
 import Trade.Report.Pretty (Pretty)
 
@@ -89,6 +80,7 @@ data Input stgy sym ohlc = Input {
   step :: StepTy stgy
   , initialEquity :: Equity
   , barLength :: BarLength
+  , symbol :: sym
   , impulseGenerator :: OptimizedImpulseGenerator ohlc
   , inputSignals :: Map sym (Timeseries ohlc)
   }
@@ -125,18 +117,16 @@ conduct ::
   , StepFunction (StepTy stgy)) =>
   Input stgy sym ohlc -> Result stgy sym ohlc
  
-conduct inp@(Input stp eqty _ (OptimizedImpulseGenerator impGen) ps) =
-  let 
-      strategy :: State (Signals sym ohlc) (AlignedSignals sym ohlc, Map sym InvestSignal)
-      strategy = impGen ps
-      ((asigs, stgy), _) = Strategy.run strategy
+conduct inp@(Input stp eqty _ sym impGen ps) =
+  
+  let ((asigs, stgy), _) = Strategy.run sym ps impGen
       timeLine = alignedTimes asigs
 
-      f sym isig =
-        let impSig = invest2impulse (stgy Map.! sym)
+      f smbl isig =
+        let impSig = invest2impulse (stgy Map.! smbl)
             ts = impulse2tradeList isig impSig
             dts = tradeList2DeltaTradeList ts
-            sds = DSA.sortDeltaSignals dts
+            sds = sortDeltaSignals dts
             sumry = Sum.toSummary sds
             outSig = Signal.adjust eqty timeLine (concatDeltaSignals stp eqty dts)
         in OutputPerSymbol {
@@ -177,8 +167,8 @@ tradeStatistics stp sts = do
 
       g pos wl table =
         let sty = H5A.style (H5.stringValue "clear:both;margin:18px;padding-top:24px;color:#006600")
-            header = toReport ((H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl))))
-        in [header, table]
+            hdr = toReport ((H5.div ! sty) (H5.b (H5.preEscapedToHtml (show pos ++ "/" ++ show wl))))
+        in [hdr, table]
   
   sequence_ (NestedMap.fold g zs)
 
@@ -211,7 +201,7 @@ render addendum (Result inp out) = do
   subheader "Strategy"
   Chart.strategy (fmap impulseSignals ops) (alignedSignals out) (fmap outputSignal ops)
   
-  let f sym ops acc = do
+  let f sym outps acc = do
         acc
         
         subheader ("Symbol '" ++ show sym ++ "'")
@@ -220,13 +210,13 @@ render addendum (Result inp out) = do
         toReport (SS.sampleStatistics (barLength inp) ((inputSignals inp) Map.! sym))
         
         subsubheader "Output Equity"
-        toReport (SS.sampleStatistics (barLength inp) (outputSignal ops))
+        toReport (SS.sampleStatistics (barLength inp) (outputSignal outps))
 
         subsubheader "Summary"
-        toReport (summary ops)
+        toReport (summary outps)
   
         subsubheader "Trade Statistics"
-        tradeStatistics (step inp) (sortedTrades ops)
+        tradeStatistics (step inp) (sortedTrades outps)
 
         addendum sym
 

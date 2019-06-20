@@ -1,7 +1,6 @@
 
 module Trade.Example.Strategy where
 
-import Data.Time.Clock (UTCTime)
 
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
@@ -20,7 +19,7 @@ import Trade.Type.Strategy (Long)
 import Trade.Strategy.Library.MovingAverages (movingAverages)
 
 import qualified Trade.Strategy.Process as Strategy
-import Trade.Strategy.Type (Window(..), AlignedSignals)
+import Trade.Strategy.Type (Window(..))
 
 import Trade.MonteCarlo.Simulation.BlackScholes (Mu(..), Sigma(..), blackScholesDet)
 
@@ -57,9 +56,8 @@ example = do
   bs <- blackScholes
 
   let strategy = movingAverages (Window 10) (Window 20)
-
-      asigs :: AlignedSignals Symbol Price
-      ((asigs, stgy), _) = Strategy.run (strategy (Map.fromList [(A, bs)]))
+      m = Map.fromList [(A, bs)]
+      ((asigs, stgy), _) = Strategy.run A m strategy
 
       xs :: Map Symbol (ImpulseSignal Long)
       xs = fmap invest2impulse stgy

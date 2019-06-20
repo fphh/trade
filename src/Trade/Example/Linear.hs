@@ -50,6 +50,7 @@ import Trade.Report.Config (HtmlReader)
 
 data Symbol = A deriving (Show, Eq, Ord)
 
+{-
 
 barLen :: BarLength
 barLen = Day 1
@@ -161,3 +162,4 @@ example = do
   a <- render repA
   BSL.putStrLn a
 
+-}

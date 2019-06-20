@@ -81,6 +81,7 @@ instance TR.ToReport (ARep.OptimizationData OptimizationInput OptimizationResult
 data BacktestInput = BacktestInput {
   initialEquity :: Equity
   , barLength :: BarLength
+  , symbol :: Symbol
   , outOfSample :: Map Symbol (Timeseries Price)
   , stepLong :: StepTy Long
   , stepShort :: StepTy Short
@@ -96,10 +97,10 @@ backtest ::
   NonEmptyList (IG.OptimizedImpulseGenerator Price)
   -> BacktestInput
   -> BacktestResult
-backtest (NonEmptyList optStrat _) (BacktestInput initEqty bl ps stpL stpS) =
-  let expmntLW = Experiment.Input stpL initEqty bl optStrat ps
+backtest (NonEmptyList optStrat _) (BacktestInput initEqty bl sym ps stpL stpS) =
+  let expmntLW = Experiment.Input stpL initEqty bl sym optStrat ps
       esLW = Experiment.conduct expmntLW
-      expmntSW = Experiment.Input stpS initEqty bl optStrat ps
+      expmntSW = Experiment.Input stpS initEqty bl sym optStrat ps
       esSW = Experiment.conduct expmntSW
   in (BacktestResult esLW esSW)
 
@@ -130,8 +131,8 @@ example = do
       win5 = Window 5
       win10 = Window 10
   
-      gen_5_10 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator (movingAverages win5 win10)))
-      gen_10_5 = IG.ImpulseGenerator (const (IG.OptimizedImpulseGenerator (movingAverages win10 win5)))
+      gen_5_10 = IG.ImpulseGenerator (const (movingAverages win5 win10))
+      gen_10_5 = IG.ImpulseGenerator (const (movingAverages win10 win5))
       
       rtf dt =
           let day = 24*60*60
@@ -155,7 +156,7 @@ example = do
         title = "Long/Short - Winning/Losing"
         , impulseGenerator = gen
         , optimizationInput = OptimizationInput
-        , backtestInput = BacktestInput equity barLen (Map.fromList [(A, ticker)]) stpL stpS
+        , backtestInput = BacktestInput equity barLen A (Map.fromList [(A, ticker)]) stpL stpS
         }
 
       repA = analyze (analysis gen_5_10)

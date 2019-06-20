@@ -96,7 +96,8 @@ data Symbol = ASym deriving (Show, Eq, Ord)
 
 
 data OptimizationInput stgy sym ohlc = OptimizationInput {
-  optSample :: Map sym (Timeseries ohlc)
+  symbol :: sym
+  , optSample :: Map sym (Timeseries ohlc)
   , igInput :: [(Window, Window)]
   , optEquity :: Equity
   , barLength :: BarLength
@@ -120,7 +121,7 @@ optimize ::
   -> (RankedStrategies Price, OptimizationResult sym stgy)
 optimize (ImpulseGenerator strat) optInp =
   let findBestWinSize winSize acc =
-        let e = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (strat winSize) (optSample optInp)
+        let e = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (symbol optInp) (strat winSize) (optSample optInp)
         in Map.insert winSize (Experiment.conduct e) acc
 
       p e0 e1 = compare (Experiment.lastEquities e1) (Experiment.lastEquities e0)
@@ -130,7 +131,7 @@ optimize (ImpulseGenerator strat) optInp =
       f (Experiment.Result inp _) = Experiment.impulseGenerator inp
       sortedStarts@(optStrat:_) = map f (List.sortBy p (Map.elems strats))
  
-      expmnt = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) optStrat (optSample optInp)
+      expmnt = Experiment.Input (step optInp) (optEquity optInp) (barLength optInp) (symbol optInp) optStrat (optSample optInp)
       res = Experiment.conduct expmnt
     
   in (RankedStrategies sortedStarts, OptimizationResult res (fmap Experiment.lastEquities strats))
@@ -152,7 +153,8 @@ instance (Ord sym, Show sym, StepFunction (StepTy stgy)) =>
 
 data BacktestInput stgy sym ohlc = BacktestInput {
   btEquity :: Equity
-  , btSample :: Map sym (Timeseries ohlc)
+  , btSymbol :: sym
+  , btSample :: Map sym (Sample ohlc)
   , btBarLength :: BarLength
   , btStep :: StepTy stgy
   }
@@ -169,8 +171,8 @@ backtest ::
   NonEmptyList (IG.OptimizedImpulseGenerator Price)
   -> BacktestInput stgy sym Price
   -> BacktestResult stgy sym Price
-backtest (NonEmptyList optStrat _) (BacktestInput initEqty ps bl step) =
-  let expmnt = Experiment.Input step initEqty bl optStrat ps
+backtest (NonEmptyList optStrat _) (BacktestInput initEqty sym ps bl step) =
+  let expmnt = Experiment.Input step initEqty bl sym optStrat ps
   in BacktestResult (Experiment.conduct expmnt)
 
 
@@ -284,34 +286,35 @@ example = do
         }
 
   let analysis ::
-        Sample Price
+        Int
+        -> Sample Price
         -> Analysis (OptimizationInput Long Bin.Symbol Price) (BacktestInput Long Bin.Symbol Price) (Window, Window) Price
 
-      analysis (Sample inSamp outOfSamp) = Analysis {
+      analysis idx as = Analysis {
         title = "The Title"
         , impulseGenerator = IG.ImpulseGenerator (\(j, k) -> IG.OptimizedImpulseGenerator (movingAverages j k))
 
         , optimizationInput = OptimizationInput {
-            optSample = Map.fromList [(sym, inSamp)]
+            optSample = Map.fromList [(sym, Sample.cutInSample s)]
             , igInput = wins
-            , optEquity = Equity (unPrice (snd (Signal.head inSamp)))
+            , optEquity = Equity (unPrice (Sample.startPrice s))
             , barLength = barLen
             , step = longStep
             -- , step = shortStep
             }
         , backtestInput = BacktestInput {
-            btEquity = Equity (unPrice (snd (Signal.head outOfSamp)))
-            , btSample = Map.fromList [(sym, outOfSamp)]
+            btEquity = Equity (unPrice (Sample.splitPrice s))
+            , btSample = Map.fromList [(sym, s)]
             , btBarLength = barLen
             , btStep = longStep
             }
         }
 
-      smps = Sample.bsplit 1000 0.75 timeseries
-      anas = map analysis smps
+      Sample idx as = Sample.bsplit 1000 0.75 timeseries
+      anas = map (analysis idx) as
       rep = map (analyze . analysis) smps 
 
   -- mapM_ (\x -> render x >>= BSL.putStrLn) rep
 
 
-  renderToDirectory "output" rep
+  renderToDirectory "output2" rep
