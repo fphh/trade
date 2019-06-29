@@ -8,9 +8,7 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import qualified Trade.Type.ImpulseGenerator as IG
 
-import qualified Trade.Analysis.Backtest as BT
 import Trade.Analysis.Analysis (Analysis(..), analyzeHelper)
-import qualified Trade.Analysis.Optimize as Opt
 import qualified Trade.Analysis.OHLCData as OD
 import qualified Trade.Analysis.Report as ARep
 

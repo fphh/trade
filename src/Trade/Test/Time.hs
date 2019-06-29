@@ -30,8 +30,8 @@ months2017@([jan2017, feb2017, mar2017, apr2017, may2017, jun2017, jul2017, aug2
 year :: Integer -> Vector UTCTime
 year y = Vec.concat (months y)
 
-someYears :: Vector UTCTime
-someYears = Vec.concat (map year [2010 .. 2017])
+someYears :: Int -> Vector UTCTime
+someYears n = Vec.concat (map year (take n [2000, 2001 ..]))
 
 -- yearsN :: Integer -> Vector UTCTime
 -- yearsN n = Vec.concat (map year [2017-n+1 .. 2017])

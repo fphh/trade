@@ -65,6 +65,16 @@ tail (Signal ps) = Signal (stail "Signal.head" ps)
 last :: Signal t y -> (t, y)
 last (Signal ps) = slast "Signal.tail" ps
 
+slice :: Int -> Int -> Signal t y -> Signal t y
+slice j k (Signal as) = Signal (Vec.slice j k as)
+
+splitAt :: Int -> Signal t y -> (Signal t y, Signal t y)
+splitAt n (Signal as) =
+  (\(xs, ys) -> (Signal xs, Signal ys)) (Vec.splitAt n as)
+
+concat :: [Signal t y] -> Signal t y
+concat as = Signal (Vec.concat (List.map unSignal as))
+
 mapFirst :: (y -> y) -> Signal t y -> Signal t y
 mapFirst f (Signal ps)
   | Vec.length ps == 0 = error "Signal.mapFirst: empty vector"

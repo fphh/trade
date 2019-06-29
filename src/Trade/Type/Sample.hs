@@ -8,8 +8,12 @@ import qualified Data.Vector as Vec
 import Trade.Type.Signal (Signal(..), Timeseries)
 
 
+newtype SplitIndex = SplitIndex {
+  unSplitIndex :: Int
+  } deriving (Show)
+
 data Sample x = Sample {
-  splitIndex :: Int
+  splitIndex :: SplitIndex
   , timeseries :: [Timeseries x]
   }
 
@@ -20,7 +24,7 @@ bsplit n q (Signal vs) =
       go xs | Vec.length xs == 0 = []
       go xs = Signal (Vec.take n xs) : go (Vec.drop l xs)
   in case (Vec.length vs - n) `mod` l of
-       0 -> Sample k (go vs)
+       0 -> Sample (SplitIndex k) (go vs)
        _ -> error "bsplit: could not use whole sample"
 
 
@@ -31,11 +35,11 @@ startTime (Signal vs) = fst (Vec.head vs)
 startPrice :: Timeseries x -> x
 startPrice (Signal vs) = snd (Vec.head vs)
 
-splitTime :: Int -> Timeseries x -> UTCTime
-splitTime n (Signal vs) = fst (vs Vec.! n)
+splitTime :: SplitIndex -> Timeseries x -> UTCTime
+splitTime (SplitIndex n) (Signal vs) = fst (vs Vec.! n)
 
-splitPrice :: Int -> Timeseries x -> x
-splitPrice n (Signal vs) = snd (vs Vec.! n)
+splitPrice :: SplitIndex -> Timeseries x -> x
+splitPrice (SplitIndex n) (Signal vs) = snd (vs Vec.! n)
 
 
 {-

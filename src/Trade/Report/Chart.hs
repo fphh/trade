@@ -29,9 +29,9 @@ import Trade.Strategy.Type (AlignedSignals(..))
 
 import Trade.Type.Equity (Equity)
 import Trade.Type.Impulse (Impulse)
-import Trade.Type.ImpulseSignal (ImpulseSignal, curve)
-import Trade.Type.Signal (Timeseries, Signal)
-
+import Trade.Type.ImpulseSignal (ImpulseSignal(..), curve)
+import Trade.Type.Signal (Timeseries, Signal(..))
+import qualified Trade.Type.Signal as Signal
 
 
 
@@ -138,7 +138,7 @@ strategy is asigs@(AlignedSignals ts _) output = do
       mout = Map.foldrWithKey' h [] output
 
       f sym (Just ss) acc = line (show sym) ss : acc
-      f _ _ acc = acc      
+      f _ _ acc = acc
       cs = Map.foldrWithKey' f mout (alignedSignals2signals asigs)
 
       g _ i acc = curve ts i : acc
@@ -148,6 +148,16 @@ strategy is asigs@(AlignedSignals ts _) output = do
     (grid (axTitle "Time" "Equity / Price") cs)
     (impulseSignals ks)
 
+bt :: Map UTCTime Impulse -> Timeseries Equity -> HtmlReader ()
+bt m sig@(Signal as) =
+  let (t0, _) = Vec.head as
+      (tn, _) = Vec.last as
+      is = (t0, Nothing) `Vec.cons` (Vec.map (fmap Just) (Vec.fromList (Map.toList m))) `Vec.snoc` (tn, Nothing)
+  in backtest
+     (grid (axTitle "Time" "Equity / Price") [line "Equity" sig])
+     (impulseSignals [is])
+
+  
 
 input ::
   forall sym t x.

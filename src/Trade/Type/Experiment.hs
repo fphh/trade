@@ -9,6 +9,8 @@ module Trade.Type.Experiment where
 
 import qualified Data.Vector as Vec
 
+import qualified Data.List as List
+
 import qualified Data.Map as Map
 import Data.Map (Map)
 
@@ -25,16 +27,19 @@ import Graphics.Rendering.Chart.Axis.Types (PlotValue)
 import Trade.Type.BarLength (BarLength)
 import Trade.Type.Delta (ToDelta)
 
-import Trade.Type.DeltaSignal (DeltaSignal)
+import Trade.Type.DeltaSignal (DeltaSignal(..))
 import Trade.Type.DeltaSignal.Algorithm (concatDeltaSignals, sortDeltaSignals)
 
-import Trade.Type.DeltaTradeList (DeltaTradeList)
+import Trade.Type.DeltaTradeList (DeltaTradeList(..))
 import Trade.Type.Equity (Equity(..))
+import Trade.Type.Impulse (Impulse)
 import Trade.Type.ImpulseGenerator (OptimizedImpulseGenerator(..))
 import Trade.Type.ImpulseSignal (ImpulseSignal(..))
 
 import qualified Trade.Type.NestedMap as NestedMap
 import Trade.Type.NestedMap (NestedMap(..))
+
+import Trade.Type.Sample (SplitIndex(..), splitTime)
 
 import Trade.Type.Position (Position(..))
 import Trade.Type.WinningLosing (WinningLosing(..))
@@ -44,6 +49,8 @@ import Trade.Type.Signal (Timeseries)
 
 import Trade.Type.Step (StepTy)
 import Trade.Type.Step.Algorithm (StepFunction)
+
+import Trade.Type.Strategy.Index (Index(..))
 
 import Trade.Type.Yield (ToYield)
 
@@ -76,6 +83,7 @@ import Trade.Report.Pretty (Pretty)
 
 
 
+
 data Input stgy sym ohlc = Input {
   step :: StepTy stgy
   , initialEquity :: Equity
@@ -86,7 +94,7 @@ data Input stgy sym ohlc = Input {
   }
 
 data OutputPerSymbol stgy ohlc = OutputPerSymbol {
-  impulseSignals :: ImpulseSignal stgy
+  impulseSignal :: ImpulseSignal stgy
   , deltaTradeList :: DeltaTradeList ohlc
   , outputSignal :: Timeseries Equity
   , sortedTrades :: NestedMap Position WinningLosing [DeltaSignal ohlc]
@@ -97,7 +105,6 @@ data Output stgy sym ohlc = Output {
   alignedSignals :: AlignedSignals sym ohlc
   , outputPerSymbol :: Map sym (OutputPerSymbol stgy ohlc)
   }
-
 
 
 data Result stgy sym ohlc = Result {
@@ -130,7 +137,7 @@ conduct inp@(Input stp eqty _ sym impGen ps) =
             sumry = Sum.toSummary sds
             outSig = Signal.adjust eqty timeLine (concatDeltaSignals stp eqty dts)
         in OutputPerSymbol {
-          impulseSignals = impSig
+          impulseSignal = impSig
           , deltaTradeList = dts
           , outputSignal = outSig
           , sortedTrades = sds
@@ -199,7 +206,7 @@ render addendum (Result inp out) = do
   Chart.input (inputSignals inp)
 
   subheader "Strategy"
-  Chart.strategy (fmap impulseSignals ops) (alignedSignals out) (fmap outputSignal ops)
+  Chart.strategy (fmap impulseSignal ops) (alignedSignals out) (fmap outputSignal ops)
   
   let f sym outps acc = do
         acc
