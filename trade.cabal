@@ -128,7 +128,7 @@ library
   -- other-extensions:
   build-depends:       base >=4.11 && <4.12
                      , containers
-                     , mtl
+                     , transformers
                      , time
                      , random
                      , vector

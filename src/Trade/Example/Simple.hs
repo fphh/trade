@@ -98,22 +98,27 @@ backtest ::
   -> BacktestInput
   -> BacktestResult
 backtest (NonEmptyList optStrat _) (BacktestInput initEqty bl sym ps stpL stpS) =
-  let expmntLW = Experiment.Input stpL initEqty bl sym optStrat ps
-      esLW = Experiment.conduct expmntLW
-      expmntSW = Experiment.Input stpS initEqty bl sym optStrat ps
-      esSW = Experiment.conduct expmntSW
+  let configLW = Experiment.Config stpL initEqty  bl
+      expmntLW = Experiment.Input sym optStrat ps
+      esLW = Experiment.conduct expmntLW configLW
+
+      configSW = Experiment.Config stpS initEqty  bl
+      expmntSW = Experiment.Input sym optStrat ps
+      esSW = Experiment.conduct expmntSW configSW
   in (BacktestResult esLW esSW)
 
 
 instance TR.ToReport (ARep.BacktestData BacktestInput BacktestResult) where
   
-  toReport (ARep.BacktestData _ (BacktestResult resLW resSW)) = do
+  toReport (ARep.BacktestData (BacktestInput initEqty bl _ _ stpL stpS) (BacktestResult resLW resSW)) = do
 
+    let configLW = Experiment.Config stpL initEqty  bl
     header "Backtest Result, Long"
-    Experiment.render (const (return ())) resLW
+    Experiment.render configLW (const (return ())) resLW
 
+    let configSW = Experiment.Config stpS initEqty  bl
     header "Backtest Result, Short"
-    Experiment.render (const (return ())) resSW
+    Experiment.render configSW (const (return ())) resSW
 
 --------------------------------------------------------
 

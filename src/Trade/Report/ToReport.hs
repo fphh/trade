@@ -3,9 +3,8 @@
 
 module Trade.Report.ToReport where
 
--- import Control.Monad
 
-import Control.Monad.Reader (ReaderT(..))
+import Control.Monad.Trans.Reader (ReaderT(..))
 
 import Text.Blaze.Html5 (Html, p, toHtml)
 

@@ -2,7 +2,7 @@
 
 module Trade.Type.ImpulseGenerator where
 
-import Control.Monad.State (State)
+import Control.Monad.Trans.State (State)
 
 import qualified Data.Map as Map
 import Data.Map (Map)

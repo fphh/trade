@@ -93,6 +93,7 @@ import qualified Trade.Timeseries.Binance.Interval as Bin
 import qualified Trade.Timeseries.Binance.Symbol as Bin
 import qualified Trade.Timeseries.Url as Url
 
+{-
 
 data Symbol = ASym deriving (Show, Eq, Ord)
 
@@ -285,6 +286,10 @@ example = do
 
   -- renderToDirectory "output2" rep
   return ()
+
+-}
+
+
 
 
 

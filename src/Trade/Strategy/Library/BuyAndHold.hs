@@ -3,7 +3,7 @@ module Trade.Strategy.Library.BuyAndHold where
 
 import Control.Monad (void)
 
-import Control.Monad.State (State)
+import Control.Monad.Trans.State (State)
 
 import Data.Map (Map)
 

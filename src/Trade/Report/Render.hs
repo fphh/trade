@@ -1,7 +1,7 @@
 
 module Trade.Report.Render where
 
-import Control.Monad.Reader (ReaderT(..), reader)
+import Control.Monad.Trans.Reader (ReaderT(..), reader)
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.Char8 as BSL

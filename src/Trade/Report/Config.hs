@@ -2,7 +2,7 @@
 
 module Trade.Report.Config where
 
-import Control.Monad.Reader (ReaderT, ask, reader)
+import Control.Monad.Trans.Reader (ReaderT, ask, reader)
 
 import Graphics.Rendering.Chart.Backend.Diagrams (FontSelector, loadSansSerifFonts)
 
@@ -19,7 +19,7 @@ data Config = Config {
   }
 
 
-type HtmlReader a = ReaderT Config MarkupM a
+type HtmlReader = ReaderT Config MarkupM
 
 
 userConfig :: HtmlReader UserConfig

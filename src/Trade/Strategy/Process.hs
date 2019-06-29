@@ -3,7 +3,7 @@
 module Trade.Strategy.Process where
 
 
-import Control.Monad.State (State, get, runState, evalState)
+import Control.Monad.Trans.State (State, get, runState, evalState)
 
 import Data.Time.Clock (UTCTime)
 

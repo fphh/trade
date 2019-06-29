@@ -3,7 +3,7 @@
 module Trade.Strategy.Algorithm where
 
 
-import Control.Monad.State (State, get, modify)
+import Control.Monad.Trans.State (State, get, modify)
 
 import Data.Time.Clock (UTCTime)
 

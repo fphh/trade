@@ -2,7 +2,7 @@
 
 module Trade.Report.HtmlReader where
 
-import Control.Monad.Reader (ReaderT(..))
+import Control.Monad.Trans.Reader (ReaderT(..))
 
 import qualified Data.ByteString.Lazy as BSL
 

@@ -4,7 +4,7 @@ module Trade.Strategy.Condition where
 
 import Control.Applicative (liftA2)
 
-import Control.Monad.State (State)
+import Control.Monad.Trans.State (State)
 
 import qualified Data.List as List
 

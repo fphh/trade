@@ -1,11 +1,12 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 
 module Trade.Type.Experiment where
 
+import Control.Monad.Trans.Class (lift)
+
+import Control.Monad.Trans.Reader (ReaderT, runReaderT, asks, reader)
+import Data.Functor.Identity (Identity(..))
 
 import qualified Data.Vector as Vec
 
@@ -81,14 +82,17 @@ import Trade.Report.ToReport (toReport)
 import Trade.Report.Config (HtmlReader)
 import Trade.Report.Pretty (Pretty)
 
-
-
-
-data Input stgy sym ohlc = Input {
+data Config stgy = Config {
   step :: StepTy stgy
   , initialEquity :: Equity
   , barLength :: BarLength
-  , symbol :: sym
+  }
+
+
+type ExpReader stgy = ReaderT (Config stgy)
+
+data Input sym ohlc = Input {
+  symbol :: sym
   , impulseGenerator :: OptimizedImpulseGenerator ohlc
   , inputSignals :: Map sym (Timeseries ohlc)
   }
@@ -108,13 +112,12 @@ data Output stgy sym ohlc = Output {
 
 
 data Result stgy sym ohlc = Result {
-  input :: Input stgy sym ohlc
+  input :: Input sym ohlc
   , output :: Output stgy sym ohlc
   }
 
 
-conduct ::
-  forall stgy sym ohlc.
+conductHelper ::
   ( Ord sym
   , Show ohlc
   , ToDelta ohlc
@@ -122,9 +125,12 @@ conduct ::
   , Impulse2TradeList stgy
   , Invest2Impulse stgy
   , StepFunction (StepTy stgy)) =>
-  Input stgy sym ohlc -> Result stgy sym ohlc
+  Input sym ohlc -> ExpReader stgy Identity (Result stgy sym ohlc)
  
-conduct inp@(Input stp eqty _ sym impGen ps) =
+conductHelper inp@(Input sym impGen ps) = do
+
+  stp <- asks step
+  eqty <- asks initialEquity
   
   let ((asigs, stgy), _) = Strategy.run sym ps impGen
       timeLine = alignedTimes asigs
@@ -149,11 +155,21 @@ conduct inp@(Input stp eqty _ sym impGen ps) =
         , outputPerSymbol = Map.mapWithKey f (inputSignals inp)
         }
       
-  in Result {
+  return $ Result {
     input = inp
     , output = out
     }
 
+conduct ::
+  ( Ord sym
+  , Show ohlc
+  , ToDelta ohlc
+  , TradeList2DeltaTradeList stgy
+  , Impulse2TradeList stgy
+  , Invest2Impulse stgy
+  , StepFunction (StepTy stgy)) =>
+  Input sym ohlc -> Config stgy -> Result stgy sym ohlc
+conduct i c = runIdentity (runReaderT (conductHelper i) c)
 
 tradeStatistics ::
   ( StepFunction (StepTy stgy)
@@ -184,48 +200,72 @@ lastEquities :: Result stgy sym ohlc -> Map sym Equity
 lastEquities (Result _ out) = fmap (snd . Signal.last . outputSignal) (outputPerSymbol out)
 
 
-render ::
-  forall stgy ohlc sym.
+renderHelper ::
   ( Show sym
   , Ord sym
-  , StepFunction (StepTy stgy)
+  , Eq ohlc
+  , Pretty ohlc
+  , ToYield ohlc
   , Floating ohlc
   , Statistics ohlc
-  , ToYield ohlc
-  , Pretty ohlc
   , PlotValue ohlc
-  , Line (Timeseries ohlc)
-  , Line (Vec.Vector (UTCTime, ohlc))) =>
-  (sym -> HtmlReader ()) -> Result stgy sym ohlc -> HtmlReader ()
+  , Line (Signal.Signal UTCTime ohlc)
+  , Line (Vec.Vector (UTCTime, ohlc))
+  , StepFunction (StepTy stgy)) =>
+  (sym -> HtmlReader ())
+  -> Result stgy sym ohlc
+  -> ExpReader stgy HtmlReader ()
 
-render addendum (Result inp out) = do
+renderHelper addendum (Result inp out) = do
 
-  let ops = outputPerSymbol out
-  
-  subheader "Original Signals"
-  Chart.input (inputSignals inp)
+  bl <- asks barLength
+  stp <- asks step
 
-  subheader "Strategy"
-  Chart.strategy (fmap impulseSignal ops) (alignedSignals out) (fmap outputSignal ops)
-  
-  let f sym outps acc = do
-        acc
+  lift $ do
+
+    let ops = outputPerSymbol out
+        f sym outps acc = do
+          acc
         
-        subheader ("Symbol '" ++ show sym ++ "'")
+          subheader ("Symbol '" ++ show sym ++ "'")
 
-        subsubheader ("Input Signal")
-        toReport (SS.sampleStatistics (barLength inp) ((inputSignals inp) Map.! sym))
+          subsubheader ("Input Signal")
+          toReport (SS.sampleStatistics bl ((inputSignals inp) Map.! sym))
         
-        subsubheader "Output Equity"
-        toReport (SS.sampleStatistics (barLength inp) (outputSignal outps))
+          subsubheader "Output Equity"
+          toReport (SS.sampleStatistics bl (outputSignal outps))
 
-        subsubheader "Summary"
-        toReport (summary outps)
+          subsubheader "Summary"
+          toReport (summary outps)
   
-        subsubheader "Trade Statistics"
-        tradeStatistics (step inp) (sortedTrades outps)
+          subsubheader "Trade Statistics"
+          tradeStatistics stp (sortedTrades outps)
 
-        addendum sym
+          addendum sym
+          
+    subheader "Original Signals"
+    Chart.input (inputSignals inp)
 
-  Map.foldrWithKey' f (header "Analysis") ops
-  
+    subheader "Strategy"
+    Chart.strategy (fmap impulseSignal ops) (alignedSignals out) (fmap outputSignal ops)
+
+    Map.foldrWithKey' f (header "Analysis") ops
+
+render ::
+  ( Show sym
+  , Ord sym
+  , Eq ohlc
+  , Pretty ohlc
+  , ToYield ohlc
+  , Floating ohlc
+  , Statistics ohlc
+  , PlotValue ohlc
+  , Line (Signal.Signal UTCTime ohlc)
+  , Line (Vec.Vector (UTCTime, ohlc))
+  , StepFunction (StepTy stgy)) =>
+  Config stgy
+  -> (sym -> HtmlReader ())
+  -> Result stgy sym ohlc
+  -> HtmlReader ()
+render cfg addendum res =
+  runReaderT (renderHelper addendum res) cfg
