@@ -6,7 +6,6 @@ module Trade.Type.Experiment where
 import Control.Monad.Trans.Class (lift)
 
 import Control.Monad.Trans.Reader (ReaderT, runReaderT, asks, reader)
-import Data.Functor.Identity (Identity(..))
 
 import qualified Data.Vector as Vec
 
@@ -118,14 +117,15 @@ data Result stgy sym ohlc = Result {
 
 
 conductHelper ::
-  ( Ord sym
+  ( Monad m
+  , Ord sym
   , Show ohlc
   , ToDelta ohlc
   , TradeList2DeltaTradeList stgy
   , Impulse2TradeList stgy
   , Invest2Impulse stgy
   , StepFunction (StepTy stgy)) =>
-  Input sym ohlc -> ExpReader stgy Identity (Result stgy sym ohlc)
+  Input sym ohlc -> ExpReader stgy m (Result stgy sym ohlc)
  
 conductHelper inp@(Input sym impGen ps) = do
 
@@ -168,8 +168,8 @@ conduct ::
   , Impulse2TradeList stgy
   , Invest2Impulse stgy
   , StepFunction (StepTy stgy)) =>
-  Input sym ohlc -> Config stgy -> Result stgy sym ohlc
-conduct i c = runIdentity (runReaderT (conductHelper i) c)
+  Config stgy -> Input sym ohlc -> Result stgy sym ohlc
+conduct c i = runIdentity (runReaderT (conductHelper i) c)
 
 tradeStatistics ::
   ( StepFunction (StepTy stgy)

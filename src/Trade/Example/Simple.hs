@@ -100,11 +100,11 @@ backtest ::
 backtest (NonEmptyList optStrat _) (BacktestInput initEqty bl sym ps stpL stpS) =
   let configLW = Experiment.Config stpL initEqty  bl
       expmntLW = Experiment.Input sym optStrat ps
-      esLW = Experiment.conduct expmntLW configLW
+      esLW = Experiment.conduct configLW expmntLW
 
       configSW = Experiment.Config stpS initEqty  bl
       expmntSW = Experiment.Input sym optStrat ps
-      esSW = Experiment.conduct expmntSW configSW
+      esSW = Experiment.conduct configSW expmntSW
   in (BacktestResult esLW esSW)
 
 

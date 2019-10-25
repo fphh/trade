@@ -8,6 +8,8 @@ module Trade.Example.ReplayingTrades where
 
 import Control.Applicative (liftA2)
 
+import Data.Functor.Identity (Identity)
+
 import Data.Time.Clock (UTCTime(..), NominalDiffTime, getCurrentTime, addUTCTime, diffUTCTime)
 import Data.Time.Calendar (fromGregorian)
 
@@ -93,7 +95,6 @@ import qualified Trade.Timeseries.Binance.Interval as Bin
 import qualified Trade.Timeseries.Binance.Symbol as Bin
 import qualified Trade.Timeseries.Url as Url
 
-{-
 
 data Symbol = ASym deriving (Show, Eq, Ord)
 
@@ -124,18 +125,23 @@ optimize ::
   , StepFunction (StepTy stgy)) =>
   ImpulseGenerator optInp ohlc
   -> OptimizationInput optInp stgy sym ohlc 
-  -> [(optInp, Experiment.Result stgy sym ohlc)]
+  -> Experiment.ExpReader stgy Identity [(optInp, Experiment.Result stgy sym ohlc)]
 optimize (ImpulseGenerator strat) optInp =
-  let f winSize =
+  let -- f :: optInp -> (optInp, Experiment.Input sym ohlc)
+      f winSize =
         let e = Experiment.Input
-              (step optInp)
-              (optEquity optInp)
-              (barLength optInp)
               (symbol optInp)
               (strat winSize)
               (optSample optInp)
+{-
+            c = Experiment.Config
+                (step optInp)
+                (optEquity optInp)
+                (barLength optInp)
+                -}
+
         in (winSize, e)
-  in map (fmap Experiment.conduct . f) (igInput optInp)
+  in mapM (sequence . fmap Experiment.conductHelper . f) (igInput optInp)
 
 
 select ::
@@ -286,8 +292,6 @@ example = do
 
   -- renderToDirectory "output2" rep
   return ()
-
--}
 
 
 
